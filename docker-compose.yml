@@ -1,0 +1,21 @@
+services:
+  server:
+    build: ./server
+    environment:
+      - QV_DB_PATH=/app/data/quantumvault.db
+    volumes:
+      - qv-data:/app/data
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  qv-data:

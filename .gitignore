@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+server/dist/
+web/dist/
+*.tsbuildinfo
+
+# local SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
+# logs & os cruft
+*.log
+.DS_Store
