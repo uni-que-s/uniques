@@ -50,54 +50,53 @@ jobs:
         run: npm run build
 
   docker:
-    name: Docker images — build & smoke-test
+    name: Docker stack — build & integration smoke-test
     runs-on: ubuntu-latest
     needs: [server, web]
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
 
-      - name: Build server image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./server
-          push: false
-          load: true
-          tags: quantumvault-server:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # Build both images via compose — this is the real deployment artifact.
+      - name: Build images
+        run: docker compose build
 
-      - name: Build web image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./web
-          push: false
-          load: true
-          tags: quantumvault-web:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Start the stack
+        run: docker compose up -d
 
-      - name: Smoke-test server container
+      - name: Smoke-test the running stack
         run: |
-          docker run -d --name qv -p 4000:4000 quantumvault-server:ci
+          # 1) Web tier serves the SPA shell.
           ok=""
           for i in $(seq 1 20); do
-            if curl -fsS http://localhost:4000/api/health; then ok=1; break; fi
-            sleep 2
-          done
-          echo
-          docker logs qv
-          if [ -z "$ok" ]; then echo "::error::server container never became healthy"; exit 1; fi
-          echo "server container healthy"
-
-      - name: Verify web container serves the dashboard
-        run: |
-          docker run -d --name qvweb -p 8080:80 quantumvault-web:ci
-          ok=""
-          for i in $(seq 1 15); do
             if curl -fsS http://localhost:8080/ | grep -qi "<!doctype html"; then ok=1; break; fi
             sleep 2
           done
-          docker logs qvweb
-          if [ -z "$ok" ]; then echo "::error::web container did not serve index.html"; exit 1; fi
-          echo "web container healthy"
+          [ -n "$ok" ] || { echo "::error::web did not serve index.html"; exit 1; }
+          echo "web: index.html served"
+
+          # 2) API reachable directly on the server container.
+          ok=""
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:4000/api/health | grep -q '"status":"ok"'; then ok=1; break; fi
+            sleep 2
+          done
+          [ -n "$ok" ] || { echo "::error::server /api/health not healthy"; exit 1; }
+          echo "server: /api/health ok (direct)"
+
+          # 3) API reachable THROUGH the nginx proxy — validates the /api/ proxy_pass
+          #    and that the web tier resolves the 'server' host on the compose network.
+          ok=""
+          for i in $(seq 1 15); do
+            if curl -fsS http://localhost:8080/api/health | grep -q '"status":"ok"'; then ok=1; break; fi
+            sleep 2
+          done
+          [ -n "$ok" ] || { echo "::error::nginx did not proxy /api to the server"; exit 1; }
+          echo "web -> server proxy: /api/health ok"
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
