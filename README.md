@@ -28,6 +28,9 @@ risk once a cryptographically-relevant quantum computer exists.
   **remaining** engineering effort, so the inventory becomes a worklist, not just
   a report. Status **persists across re-scans**, so progress isn't lost when the
   codebase is scanned again.
+- **Drift detection** — each scan is diffed against the previous one, so the
+  dashboard flags **new findings introduced** and **findings removed** since last
+  time — catching, e.g., a PR that adds a fresh RSA usage.
 - **Compliance automation** — maps findings to FISMA / CISA / FedRAMP controls
   with pass/gap/fail status and remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset

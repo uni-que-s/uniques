@@ -95,4 +95,32 @@ test("store: remediation status carries forward across re-scans", () => {
   }
 });
 
+test("store: scan delta reports new and removed findings vs the previous scan", () => {
+  const org = "org_delta";
+  const src = mkdtempSync(join(tmpdir(), "qv-delta-src-"));
+  try {
+    // Scan 1: one RSA finding + one DH finding.
+    writeFileSync(
+      join(src, "app.ts"),
+      ["const k = generateKeyPairSync('rsa', { modulusLength: 2048 });", "createDiffieHellman(2048);"].join("\n"),
+    );
+    store.runScan(src, undefined, org);
+    assert.equal(store.dashboard(org).delta.hasPrevious, false, "first scan has no previous");
+
+    // Scan 2: remove the DH line, add a DES line -> 1 new, 1 removed.
+    writeFileSync(
+      join(src, "app.ts"),
+      ["const k = generateKeyPairSync('rsa', { modulusLength: 2048 });", "const c = createCipheriv('des-ede3', k, iv);"].join("\n"),
+    );
+    store.runScan(src, undefined, org);
+
+    const delta = store.dashboard(org).delta;
+    assert.equal(delta.hasPrevious, true);
+    assert.ok(delta.newFindings >= 1, `expected >=1 new, got ${delta.newFindings}`);
+    assert.ok(delta.removedFindings >= 1, `expected >=1 removed, got ${delta.removedFindings}`);
+  } finally {
+    rmSync(src, { recursive: true, force: true });
+  }
+});
+
 test.after(() => rmSync(dbDir, { recursive: true, force: true }));

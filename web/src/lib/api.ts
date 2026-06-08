@@ -72,6 +72,7 @@ export interface Dashboard {
   migrationProgressPct: number;
   migrationEffortDays: number;
   remainingEffortDays: number;
+  delta: { hasPrevious: boolean; newFindings: number; removedFindings: number };
   avgCompliancePct: number;
   frameworks: { framework: string; scorePct: number; status: ComplianceStatus }[];
   lastScan: { id: string; filesScanned: number; durationMs: number; finishedAt: string } | null;

@@ -127,6 +127,25 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
         </div>
       )}
 
+      {data.delta?.hasPrevious && (data.delta.newFindings > 0 || data.delta.removedFindings > 0) && (
+        <div
+          className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-4 py-2 text-sm ${
+            data.delta.newFindings > 0
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+          }`}
+        >
+          <span className="font-semibold uppercase tracking-wider text-xs opacity-80">Since previous scan</span>
+          <span>
+            <span className="font-bold">+{data.delta.newFindings}</span> new finding
+            {data.delta.newFindings === 1 ? "" : "s"}
+          </span>
+          <span>
+            <span className="font-bold">−{data.delta.removedFindings}</span> removed
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Crypto Assets" value={data.totalAssets} accent="#818cf8" />
         <StatCard
