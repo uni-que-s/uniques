@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getAssets,
   updateAssetStatus,
+  downloadAssetsCsv,
   ASSET_STATUSES,
   type CryptoAsset,
   type Severity,
@@ -74,6 +75,18 @@ export default function Assets() {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
+        <button
+          onClick={() => {
+            const params: Record<string, string> = {};
+            if (family) params.family = family;
+            if (priority) params.priority = priority;
+            if (q) params.q = q;
+            downloadAssetsCsv(params);
+          }}
+          className="ml-auto rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-indigo-500 hover:text-white"
+        >
+          Export CSV
+        </button>
       </div>
 
       <Card>

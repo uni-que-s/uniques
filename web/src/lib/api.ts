@@ -112,6 +112,18 @@ export const getAssets = (params?: Record<string, string>) =>
   http.get<CryptoAsset[]>("/assets", { params }).then((r) => r.data);
 export const updateAssetStatus = (id: string, status: AssetStatus) =>
   http.patch<CryptoAsset>(`/assets/${id}/status`, { status }).then((r) => r.data);
+
+export async function downloadAssetsCsv(params?: Record<string, string>) {
+  const res = await http.get("/assets/export.csv", { params, responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quantumvault-assets.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 export const getCompliance = () => http.get<ComplianceReport[]>("/compliance").then((r) => r.data);
 
 export async function downloadComplianceJson(framework: string) {

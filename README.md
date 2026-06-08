@@ -30,7 +30,8 @@ risk once a cryptographically-relevant quantum computer exists.
   codebase is scanned again.
 - **Compliance automation** — maps findings to FISMA / CISA / FedRAMP controls
   with pass/gap/fail status and remediation guidance; exports an auditor-ready
-  **JSON** (system of record) or **print-to-PDF HTML** report.
+  **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
+  inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
   scan, asset, and report is scoped to an organization. An unauthenticated demo
   org is seeded so the dashboard is populated out of the box.
@@ -103,6 +104,7 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | GET | `/api/health` | | Service + pattern count |
 | GET | `/api/dashboard` | | Posture + migration progress for the latest scan |
 | GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
+| GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |
 | GET | `/api/assets/:id` | | Single asset with risk breakdown |
 | PATCH | `/api/assets/:id/status` | ● | Set remediation status (`open`/`in_progress`/`migrated`/`accepted`) |
 | POST | `/api/scans` | ● | Scan a local path `{ "target": "/abs/path" }` |

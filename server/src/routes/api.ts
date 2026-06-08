@@ -6,6 +6,7 @@ import { patternCount } from "../discovery/patterns.js";
 import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
 import { renderReportHtml } from "../compliance/export.js";
+import { assetsToCsv } from "../discovery/csv.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
@@ -21,6 +22,17 @@ api.get("/dashboard", (req, res) => {
 api.get("/assets", (req, res) => {
   const { family, priority, q } = req.query as Record<string, string>;
   res.json(store.getAssets({ family, priority, q }, req.orgId));
+});
+
+// Raw inventory export for spreadsheets / SIEM / ticketing. Honors the same
+// filters as GET /assets. Declared before "/assets/:id" so the literal path
+// isn't captured as an id.
+api.get("/assets/export.csv", (req, res) => {
+  const { family, priority, q } = req.query as Record<string, string>;
+  const assets = store.getAssets({ family, priority, q }, req.orgId);
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="quantumvault-assets.csv"`);
+  res.send(assetsToCsv(assets));
 });
 
 api.get("/assets/:id", (req, res) => {

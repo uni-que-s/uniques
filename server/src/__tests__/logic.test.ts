@@ -8,6 +8,7 @@ import { scoreAsset, scoreAssets } from "../risk/scorer.js";
 import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js";
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
+import { assetsToCsv } from "../discovery/csv.js";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
 
 /** Build a minimal valid CryptoAsset for scoring tests. */
@@ -100,6 +101,25 @@ test("patterns: extractKeyBits respects family-specific valid sizes", () => {
   // symmetric only accepts 128/256
   assert.equal(extractKeyBits("aes-128-gcm", "SymmetricLegacy"), 128);
   assert.equal(extractKeyBits("no digits here", "RSA"), null);
+});
+
+// ------------------------------------------------------------- CSV export
+test("csv: header row + RFC-4180 escaping of commas, quotes, and newlines", () => {
+  const csv = assetsToCsv([
+    asset({ family: "RSA", file: "src/a,b.ts", snippet: 'say "hi"', algorithm: "RSA" }),
+  ]);
+  const lines = csv.split("\r\n");
+  assert.match(lines[0], /^file,line,family,algorithm,/);
+  // comma-containing field is quoted; embedded quotes are doubled
+  assert.ok(lines[1].includes('"src/a,b.ts"'), lines[1]);
+  assert.ok(lines[1].includes('"say ""hi"""'), lines[1]);
+  assert.equal(csv.endsWith("\r\n"), true);
+});
+
+test("csv: empty inventory still emits a header row", () => {
+  const csv = assetsToCsv([]);
+  assert.match(csv, /^file,line,family,/);
+  assert.equal(csv.trim().split("\r\n").length, 1);
 });
 
 // ------------------------------------------------------------- repo normalizer (SSRF guard)
