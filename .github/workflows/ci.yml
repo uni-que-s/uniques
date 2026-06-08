@@ -48,6 +48,8 @@ jobs:
       - run: npm ci
       - name: Type-check & build
         run: npm run build
+      - name: Unit tests
+        run: npm test
 
   docker:
     name: Docker stack — build & integration smoke-test
