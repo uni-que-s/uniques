@@ -26,7 +26,8 @@ risk once a cryptographically-relevant quantum computer exists.
 - **Migration tracking** — mark each asset `open → in progress → migrated →
   accepted risk`. The dashboard shows live **migration progress** and the
   **remaining** engineering effort, so the inventory becomes a worklist, not just
-  a report.
+  a report. Status **persists across re-scans**, so progress isn't lost when the
+  codebase is scanned again.
 - **Compliance automation** — maps findings to FISMA / CISA / FedRAMP controls
   with pass/gap/fail status and remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report.
@@ -128,8 +129,9 @@ GitHub Actions runs on every push/PR:
 
 ## Notes & roadmap
 
-- Remediation status is tied to a scan's assets; re-scanning produces a fresh
-  inventory (status starts at `open`).
+- Remediation status **carries forward across re-scans**: a finding marked
+  migrated/in-progress/accepted keeps that status when the codebase is re-scanned,
+  matched by file + detection pattern + matched line (line numbers may shift).
 - The risk model is a transparent, auditable weighted heuristic — not a black-box
   ML model — by design.
 - Next up: GitHub OAuth onboarding and a hosted deployment.

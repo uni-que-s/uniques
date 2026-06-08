@@ -62,4 +62,37 @@ test("store: status updates drive migration progress and are org-scoped", () => 
   }
 });
 
+test("store: remediation status carries forward across re-scans", () => {
+  const org = "org_rescan";
+  const src = mkdtempSync(join(tmpdir(), "qv-rescan-src-"));
+  try {
+    writeFileSync(
+      join(src, "app.ts"),
+      ["const k = generateKeyPairSync('rsa', { modulusLength: 2048 });", "createDiffieHellman(2048);"].join("\n"),
+    );
+
+    // First scan, then resolve one finding.
+    store.runScan(src, undefined, org);
+    const before = store.getAssets(undefined, org);
+    const target = before.find((a) => a.patternId === "rsa-modulus-bits") ?? before[0];
+    store.updateAssetStatus(target.id, "migrated", org);
+
+    // Re-scan the same (unchanged) source — a brand new scan with new asset ids.
+    store.runScan(src, undefined, org);
+    const after = store.getAssets(undefined, org);
+
+    // New scan => different asset ids, but the resolved finding stays "migrated".
+    assert.ok(!after.some((a) => a.id === target.id), "re-scan should produce fresh asset ids");
+    const carried = after.find((a) => a.patternId === target.patternId && a.file === target.file);
+    assert.equal(carried?.status, "migrated", "status should carry across re-scan");
+
+    // Other findings remain open, and progress reflects exactly one carried asset.
+    const dash = store.dashboard(org);
+    assert.equal(dash.byStatus.migrated, 1);
+    assert.ok(dash.byStatus.open >= 1);
+  } finally {
+    rmSync(src, { recursive: true, force: true });
+  }
+});
+
 test.after(() => rmSync(dbDir, { recursive: true, force: true }));
