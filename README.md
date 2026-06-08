@@ -121,8 +121,13 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 ## Testing & CI/CD
 
 ```bash
-npm --prefix server test     # node:test unit + store integration suite
+npm --prefix server test     # node:test: unit + store + HTTP API integration suite
 ```
+
+The suite boots the real Express app on an ephemeral port (against an isolated
+SQLite db) and drives it over HTTP — covering auth guards, org isolation, scan →
+status → CSV export, and error paths — alongside unit tests for scoring, patterns,
+repo normalization, the scanner, and CSV escaping.
 
 GitHub Actions runs on every push/PR:
 

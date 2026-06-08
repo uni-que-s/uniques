@@ -1,21 +1,12 @@
-import express from "express";
-import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { api } from "./routes/api.js";
-import { authRouter } from "./routes/auth.js";
-import { withAuth } from "./auth/middleware.js";
+import { createApp } from "./app.js";
 import { store } from "./store/store.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use("/api", withAuth);
-app.use("/api/auth", authRouter);
-app.use("/api", api);
+const app = createApp();
 
 // Seed an initial scan over the bundled sample target on first boot only, so the
 // dashboard is populated out of the box. On later boots the persisted scan is
