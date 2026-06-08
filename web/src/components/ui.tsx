@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Severity, ComplianceStatus } from "../lib/api";
+import type { Severity, ComplianceStatus, AssetStatus } from "../lib/api";
 
 export const SEVERITY_COLOR: Record<Severity, string> = {
   critical: "#f43f5e",
@@ -37,6 +37,25 @@ const STATUS_META: Record<ComplianceStatus, { label: string; color: string }> = 
 
 export function StatusBadge({ status }: { status: ComplianceStatus }) {
   const m = STATUS_META[status];
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      style={{ color: m.color, backgroundColor: `${m.color}1f`, border: `1px solid ${m.color}55` }}
+    >
+      {m.label}
+    </span>
+  );
+}
+
+export const ASSET_STATUS_META: Record<AssetStatus, { label: string; color: string }> = {
+  open: { label: "Open", color: "#94a3b8" },
+  in_progress: { label: "In Progress", color: "#facc15" },
+  migrated: { label: "Migrated", color: "#34d399" },
+  accepted: { label: "Accepted Risk", color: "#a78bfa" },
+};
+
+export function AssetStatusBadge({ status }: { status: AssetStatus }) {
+  const m = ASSET_STATUS_META[status];
   return (
     <span
       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"

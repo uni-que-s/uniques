@@ -143,6 +143,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
           pqcReplacement: pattern.pqcReplacement,
+          status: "open",
         });
       }
     }

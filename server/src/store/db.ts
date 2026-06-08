@@ -64,7 +64,8 @@ db.exec(`
     pqc_replacement    TEXT NOT NULL,
     risk_score         INTEGER,
     risk_priority      TEXT,
-    risk_json          TEXT
+    risk_json          TEXT,
+    status             TEXT NOT NULL DEFAULT 'open'
   );
 
   CREATE TABLE IF NOT EXISTS reports (
@@ -83,6 +84,17 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assets_org ON assets(org_id);
   CREATE INDEX IF NOT EXISTS idx_scans_org ON scans(org_id);
 `);
+
+// Lightweight, idempotent migrations for databases created before a column
+// existed. CREATE TABLE IF NOT EXISTS does not alter existing tables, so add
+// new columns here; the ALTER throws (and is ignored) once the column exists.
+for (const stmt of [`ALTER TABLE assets ADD COLUMN status TEXT NOT NULL DEFAULT 'open'`]) {
+  try {
+    db.exec(stmt);
+  } catch {
+    /* column already present — nothing to do */
+  }
+}
 
 export const DEFAULT_ORG_ID = "org_default";
 

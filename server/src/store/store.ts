@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { CryptoAsset, ComplianceReport, RiskScore, ScanJob } from "../types.js";
+import type { AssetStatus, CryptoAsset, ComplianceReport, RiskScore, ScanJob } from "../types.js";
+import { ASSET_STATUSES, RESOLVED_STATUSES } from "../types.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { scoreAssets } from "../risk/scorer.js";
 import { generateReport, FRAMEWORKS } from "../compliance/reporter.js";
@@ -19,6 +20,7 @@ interface AssetRow {
   quantum_vulnerable: number;
   pqc_replacement: string;
   risk_json: string | null;
+  status: string;
 }
 
 interface ScanRow {
@@ -56,6 +58,7 @@ function rowToAsset(r: AssetRow): CryptoAsset {
     patternId: r.pattern_id,
     quantumVulnerable: !!r.quantum_vulnerable,
     pqcReplacement: r.pqc_replacement,
+    status: (r.status as AssetStatus) ?? "open",
     risk: r.risk_json ? (JSON.parse(r.risk_json) as RiskScore) : undefined,
   };
 }
@@ -92,8 +95,11 @@ class Store {
   );
   private clearLatest = db.prepare(`UPDATE scans SET is_latest = 0 WHERE org_id = ?`);
   private insertAsset = db.prepare(
-    `INSERT INTO assets (id, scan_id, org_id, file, line, family, algorithm, key_bits, language, snippet, pattern_id, quantum_vulnerable, pqc_replacement, risk_score, risk_priority, risk_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO assets (id, scan_id, org_id, file, line, family, algorithm, key_bits, language, snippet, pattern_id, quantum_vulnerable, pqc_replacement, risk_score, risk_priority, risk_json, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  private updateStatus = db.prepare(
+    `UPDATE assets SET status = ? WHERE id = ? AND org_id = ?`,
   );
   private insertReport = db.prepare(
     `INSERT OR REPLACE INTO reports (framework, scan_id, org_id, generated_at, overall_status, score_pct, summary, controls_json)
@@ -143,6 +149,7 @@ class Store {
           a.risk?.score ?? null,
           a.risk?.priority ?? null,
           a.risk ? JSON.stringify(a.risk) : null,
+          a.status,
         );
       }
       for (const fw of FRAMEWORKS) {
@@ -212,6 +219,20 @@ class Store {
     return row ? rowToAsset(row) : undefined;
   }
 
+  /**
+   * Update an asset's remediation status. Scoped to the org so one tenant can't
+   * mutate another's assets. Returns the updated asset, or undefined if no asset
+   * with that id exists for the org.
+   */
+  updateAssetStatus(id: string, status: AssetStatus, orgId = DEFAULT_ORG_ID): CryptoAsset | undefined {
+    if (!ASSET_STATUSES.includes(status)) {
+      throw new Error(`invalid status: ${status}`);
+    }
+    const res = this.updateStatus.run(status, id, orgId);
+    if (res.changes === 0) return undefined;
+    return this.getAsset(id, orgId);
+  }
+
   getReports(scanId?: string, orgId = DEFAULT_ORG_ID): ComplianceReport[] {
     const sid = scanId ?? this.latestScanId(orgId);
     if (!sid) return [];
@@ -238,14 +259,22 @@ class Store {
     const assets = this.getAssets(undefined, orgId);
     const byFamily: Record<string, number> = {};
     const byPriority: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+    const byStatus: Record<AssetStatus, number> = { open: 0, in_progress: 0, migrated: 0, accepted: 0 };
     let migrationEffortDays = 0;
+    let remainingEffortDays = 0;
 
     for (const a of assets) {
       byFamily[a.family] = (byFamily[a.family] ?? 0) + 1;
       const p = a.risk?.priority ?? "low";
       byPriority[p] += 1;
-      migrationEffortDays += a.risk?.migrationEffortDays ?? 0;
+      byStatus[a.status] += 1;
+      const effort = a.risk?.migrationEffortDays ?? 0;
+      migrationEffortDays += effort;
+      if (!RESOLVED_STATUSES.includes(a.status)) remainingEffortDays += effort;
     }
+
+    const resolved = byStatus.migrated + byStatus.accepted;
+    const migrationProgressPct = assets.length ? Math.round((resolved / assets.length) * 100) : 0;
 
     const reports = this.getReports(undefined, orgId);
     const avgCompliance = reports.length
@@ -259,7 +288,10 @@ class Store {
       quantumVulnerable: assets.filter((a) => a.quantumVulnerable).length,
       byFamily,
       byPriority,
+      byStatus,
+      migrationProgressPct,
       migrationEffortDays,
+      remainingEffortDays,
       avgCompliancePct: avgCompliance,
       frameworks: reports.map((r) => ({
         framework: r.framework,

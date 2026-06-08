@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAssets, type CryptoAsset, type Severity } from "../lib/api";
-import { Card, SeverityBadge, FAMILY_COLOR } from "../components/ui";
+import {
+  getAssets,
+  updateAssetStatus,
+  ASSET_STATUSES,
+  type CryptoAsset,
+  type Severity,
+  type AssetStatus,
+} from "../lib/api";
+import { Card, SeverityBadge, AssetStatusBadge, ASSET_STATUS_META, FAMILY_COLOR } from "../components/ui";
+import { useAuth } from "../lib/auth";
 
 const FAMILIES = ["RSA", "ECC", "DSA", "DH", "SymmetricLegacy", "HashLegacy"];
 const PRIORITIES: Severity[] = ["critical", "high", "medium", "low"];
 
 export default function Assets() {
+  const { user } = useAuth();
   const [assets, setAssets] = useState<CryptoAsset[]>([]);
   const [q, setQ] = useState("");
   const [family, setFamily] = useState("");
@@ -14,7 +23,13 @@ export default function Assets() {
 
   useEffect(() => {
     getAssets().then(setAssets);
-  }, []);
+  }, [user]);
+
+  const applyStatus = async (asset: CryptoAsset, status: AssetStatus) => {
+    const updated = await updateAssetStatus(asset.id, status);
+    setAssets((prev) => prev.map((a) => (a.id === updated.id ? { ...a, status: updated.status } : a)));
+    setSelected((cur) => (cur && cur.id === updated.id ? { ...cur, status: updated.status } : cur));
+  };
 
   const filtered = useMemo(() => {
     return assets.filter((a) => {
@@ -70,6 +85,7 @@ export default function Assets() {
               <th className="px-5 py-3 font-medium">Key</th>
               <th className="px-5 py-3 font-medium">Risk</th>
               <th className="px-5 py-3 font-medium">Priority</th>
+              <th className="px-5 py-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -93,11 +109,12 @@ export default function Assets() {
                   <span className="font-semibold text-slate-200">{a.risk?.score ?? "—"}</span>
                 </td>
                 <td className="px-5 py-3">{a.risk && <SeverityBadge level={a.risk.priority} />}</td>
+                <td className="px-5 py-3"><AssetStatusBadge status={a.status} /></td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
+                <td colSpan={6} className="px-5 py-8 text-center text-slate-500">
                   No assets match your filters.
                 </td>
               </tr>
@@ -106,13 +123,44 @@ export default function Assets() {
         </table>
       </Card>
 
-      {selected && <AssetDrawer asset={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <AssetDrawer
+          asset={selected}
+          canEdit={!!user}
+          onStatusChange={applyStatus}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }
 
-function AssetDrawer({ asset, onClose }: { asset: CryptoAsset; onClose: () => void }) {
+function AssetDrawer({
+  asset,
+  canEdit,
+  onStatusChange,
+  onClose,
+}: {
+  asset: CryptoAsset;
+  canEdit: boolean;
+  onStatusChange: (asset: CryptoAsset, status: AssetStatus) => Promise<void>;
+  onClose: () => void;
+}) {
   const f = asset.risk?.factors;
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const change = async (status: AssetStatus) => {
+    setSaving(true);
+    setErr(null);
+    try {
+      await onStatusChange(asset, status);
+    } catch (e: any) {
+      setErr(e?.response?.data?.error ?? "Failed to update status.");
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <div className="fixed inset-0 z-20 flex justify-end bg-black/50" onClick={onClose}>
       <div
@@ -130,6 +178,41 @@ function AssetDrawer({ asset, onClose }: { asset: CryptoAsset; onClose: () => vo
         <div className="mt-4 flex items-center gap-2">
           {asset.risk && <SeverityBadge level={asset.risk.priority} />}
           <span className="text-sm text-slate-400">Risk score {asset.risk?.score}/100</span>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Remediation Status
+            </span>
+            <AssetStatusBadge status={asset.status} />
+          </div>
+          {canEdit ? (
+            <div className="flex flex-wrap gap-1.5">
+              {ASSET_STATUSES.map((s) => {
+                const active = asset.status === s;
+                const color = ASSET_STATUS_META[s].color;
+                return (
+                  <button
+                    key={s}
+                    disabled={saving || active}
+                    onClick={() => change(s)}
+                    className="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed"
+                    style={
+                      active
+                        ? { color, backgroundColor: `${color}1f`, borderColor: `${color}55` }
+                        : { color: "#94a3b8", backgroundColor: "transparent", borderColor: "#334155" }
+                    }
+                  >
+                    {ASSET_STATUS_META[s].label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">Sign in to update remediation status.</p>
+          )}
+          {err && <p className="mt-2 text-xs text-rose-300">{err}</p>}
         </div>
 
         <pre className="mt-4 overflow-x-auto rounded-lg border border-slate-800 bg-black/40 p-3 font-mono text-xs text-amber-200">

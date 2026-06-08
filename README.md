@@ -1,36 +1,58 @@
 # QuantumVault
 
-Quantum-safe cryptography platform. Discovers quantum-vulnerable cryptographic
-assets across a codebase, scores them for migration priority, and auto-generates
-FISMA / CISA / FedRAMP compliance reports.
+[![CI](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml/badge.svg)](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml)
 
-Implements the three core capabilities from the product blueprint:
+**Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
+cryptographic assets across a codebase, scores them for post-quantum migration
+priority, tracks remediation to completion, and auto-generates FISMA / CISA /
+FedRAMP compliance reports.
 
-1. **Cryptographic Asset Discovery** — pattern-based scanner that detects RSA, ECC,
-   DSA, Diffie-Hellman, legacy symmetric (DES/3DES/AES-128) and broken hashes
-   (MD5/SHA-1) across 20+ file types and many languages.
-2. **Risk Scoring & Prioritization** — a 5-factor weighted model (data sensitivity,
-   retention exposure, harvest-now-decrypt-later exposure, compliance impact,
-   business impact) producing a 0–100 score, priority tier, and migration effort.
-3. **Compliance Automation** — maps findings to control catalogs and generates
-   per-framework reports with pass/gap/fail status and remediation guidance.
+It closes the full loop — **discover → prioritize → track → prove compliance** —
+for the "harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at
+risk once a cryptographically-relevant quantum computer exists.
+
+## Features
+
+- **Cryptographic asset discovery** — a 12-pattern, language-agnostic scanner
+  detects RSA, ECC (incl. Ed25519/X25519), DSA, Diffie-Hellman, legacy symmetric
+  (DES/3DES/AES-128), broken hashes (MD5/SHA-1), and RSA X.509 certs across 20+
+  file types. Scans a **local path** or shallow-clones a **public or private Git
+  repo** (GitHub/GitLab/Bitbucket; private via an access token sent as an auth
+  header, kept out of the URL and never logged).
+- **Risk scoring & prioritization** — a 5-factor weighted model (data sensitivity,
+  retention exposure, harvest-now-decrypt-later exposure, compliance impact,
+  business impact) yields a 0–100 score, a priority tier, a migration-effort
+  estimate, and a NIST PQC replacement recommendation (ML-KEM / ML-DSA / SLH-DSA).
+- **Migration tracking** — mark each asset `open → in progress → migrated →
+  accepted risk`. The dashboard shows live **migration progress** and the
+  **remaining** engineering effort, so the inventory becomes a worklist, not just
+  a report.
+- **Compliance automation** — maps findings to FISMA / CISA / FedRAMP controls
+  with pass/gap/fail status and remediation guidance; exports an auditor-ready
+  **JSON** (system of record) or **print-to-PDF HTML** report.
+- **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
+  scan, asset, and report is scoped to an organization. An unauthenticated demo
+  org is seeded so the dashboard is populated out of the box.
 
 ## Architecture
 
 ```
 web/      React 18 + TypeScript + Vite + Tailwind v4 + Recharts dashboard
 server/   Express + TypeScript API
-            discovery/   pattern DB + directory scanner   (the core engine)
+            discovery/   pattern DB, directory scanner, Git clone   (core engine)
             risk/        5-factor weighted risk scorer
-            compliance/  FISMA / CISA / FedRAMP report generator
-            store/       in-memory store (swap for Postgres/Elastic in prod)
-            sample-target/  bundled vulnerable fixtures, scanned on startup
+            compliance/  FISMA / CISA / FedRAMP report generator + HTML export
+            auth/        scrypt auth, sessions, org-scoping middleware
+            store/       SQLite persistence (node:sqlite — zero native deps)
+            sample-target/  bundled vulnerable fixtures, scanned on first boot
+.github/  CI/CD: build, unit tests, compose integration smoke-test, GHCR publish
 ```
 
-The store interface mirrors the production design (PostgreSQL + Elasticsearch +
-Redis per the blueprint); only the persistence layer needs swapping to scale.
+Persistence uses Node's built-in `node:sqlite`, so there are **no native
+dependencies** and no external database to run. The store layer is the only
+thing to swap to scale out (e.g. Postgres + Elasticsearch).
 
-## Run with Docker (one command)
+## Quick start — Docker (one command)
 
 ```bash
 # from quantumvault/
@@ -38,8 +60,18 @@ docker compose up --build
 # dashboard: http://localhost:8080   API: http://localhost:4000
 ```
 
-Data persists in the `qv-data` volume. The server image bundles `git` so repo
-scanning works inside the container.
+The web tier (nginx) proxies `/api` to the server on the compose network. Data
+persists in the `qv-data` volume. The server image bundles `git` so repo scanning
+works inside the container.
+
+### Pull pre-built images from GHCR
+
+Every push to `main` publishes images (tagged `latest` and the commit SHA):
+
+```
+ghcr.io/demigoddsk/quantumvault-server
+ghcr.io/demigoddsk/quantumvault-web
+```
 
 ## Run locally (dev)
 
@@ -54,24 +86,50 @@ npm run dev:server
 npm run dev:web
 ```
 
-Open the dashboard and **Run Scan** against either:
-
-- a **Git repo** — paste `owner/repo` or an https URL (public GitHub/GitLab/Bitbucket).
-  QuantumVault shallow-clones it to a temp dir, scans, and cleans up.
-- a **local path** — any absolute directory on the host.
-
-Example: scanning `rzcoder/node-rsa` reports ~29 quantum-vulnerable assets in ~25ms.
+Then **sign up** in the UI and **Run Scan** against either a Git repo
+(`owner/repo` or an https URL) or a local absolute path. Open any asset to see its
+risk breakdown and set its remediation status.
 
 ## API
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/api/health` | Service + pattern count |
-| GET | `/api/dashboard` | Aggregated posture for the latest scan |
-| GET | `/api/assets` | Discovered assets (`?family=`, `?priority=`, `?q=`) |
-| GET | `/api/assets/:id` | Single asset with risk breakdown |
-| POST | `/api/scans` | Scan a local path `{ "target": "/abs/path" }` |
-| POST | `/api/scans/git` | Scan a public repo `{ "url": "owner/repo" }` (GitHub/GitLab/Bitbucket) |
-| GET | `/api/scans` | Scan history |
-| GET | `/api/compliance` | Reports for all frameworks |
-| GET | `/api/compliance/:framework` | One framework report |
+Reads are open on the demo org; mutations require `Authorization: Bearer <token>`.
+
+| Method | Path | Auth | Description |
+| --- | --- | :---: | --- |
+| POST | `/api/auth/signup` | | Create an org + account, returns a token |
+| POST | `/api/auth/login` | | Log in, returns a token |
+| GET | `/api/auth/me` | ● | Current user/org |
+| GET | `/api/health` | | Service + pattern count |
+| GET | `/api/dashboard` | | Posture + migration progress for the latest scan |
+| GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
+| GET | `/api/assets/:id` | | Single asset with risk breakdown |
+| PATCH | `/api/assets/:id/status` | ● | Set remediation status (`open`/`in_progress`/`migrated`/`accepted`) |
+| POST | `/api/scans` | ● | Scan a local path `{ "target": "/abs/path" }` |
+| POST | `/api/scans/git` | ● | Scan a repo `{ "url": "owner/repo", "token?": "…" }` |
+| GET | `/api/scans` | | Scan history |
+| GET | `/api/compliance` | | Reports for all frameworks |
+| GET | `/api/compliance/:framework` | | One framework report |
+| GET | `/api/compliance/:framework/export.json` | | Download JSON report |
+| GET | `/api/compliance/:framework/export.html` | | Print-to-PDF HTML report |
+
+## Testing & CI/CD
+
+```bash
+npm --prefix server test     # node:test unit + store integration suite
+```
+
+GitHub Actions runs on every push/PR:
+
+1. **server** — type-check, build, unit tests
+2. **web** — type-check, build
+3. **docker** — `docker compose build` + integration smoke-test (SPA shell,
+   direct `/api/health`, and `/api/health` *through the nginx proxy*)
+4. **publish** — push both images to GHCR (on `main` only)
+
+## Notes & roadmap
+
+- Remediation status is tied to a scan's assets; re-scanning produces a fresh
+  inventory (status starts at `open`).
+- The risk model is a transparent, auditable weighted heuristic — not a black-box
+  ML model — by design.
+- Next up: GitHub OAuth onboarding and a hosted deployment.

@@ -29,6 +29,8 @@ export const getMe = () => http.get<{ user: AuthUser }>("/auth/me").then((r) => 
 
 export type Severity = "critical" | "high" | "medium" | "low";
 export type ComplianceStatus = "pass" | "gap" | "fail";
+export type AssetStatus = "open" | "in_progress" | "migrated" | "accepted";
+export const ASSET_STATUSES: AssetStatus[] = ["open", "in_progress", "migrated", "accepted"];
 
 export interface RiskScore {
   score: number;
@@ -57,6 +59,7 @@ export interface CryptoAsset {
   patternId: string;
   quantumVulnerable: boolean;
   pqcReplacement: string;
+  status: AssetStatus;
   risk?: RiskScore;
 }
 
@@ -65,7 +68,10 @@ export interface Dashboard {
   quantumVulnerable: number;
   byFamily: Record<string, number>;
   byPriority: Record<string, number>;
+  byStatus: Record<AssetStatus, number>;
+  migrationProgressPct: number;
   migrationEffortDays: number;
+  remainingEffortDays: number;
   avgCompliancePct: number;
   frameworks: { framework: string; scorePct: number; status: ComplianceStatus }[];
   lastScan: { id: string; filesScanned: number; durationMs: number; finishedAt: string } | null;
@@ -104,6 +110,8 @@ export interface ScanJob {
 export const getDashboard = () => http.get<Dashboard>("/dashboard").then((r) => r.data);
 export const getAssets = (params?: Record<string, string>) =>
   http.get<CryptoAsset[]>("/assets", { params }).then((r) => r.data);
+export const updateAssetStatus = (id: string, status: AssetStatus) =>
+  http.patch<CryptoAsset>(`/assets/${id}/status`, { status }).then((r) => r.data);
 export const getCompliance = () => http.get<ComplianceReport[]>("/compliance").then((r) => r.data);
 
 export async function downloadComplianceJson(framework: string) {

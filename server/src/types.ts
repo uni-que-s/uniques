@@ -8,6 +8,14 @@ export type CryptoFamily =
 
 export type Severity = "critical" | "high" | "medium" | "low";
 
+/** Remediation lifecycle for a discovered asset. */
+export type AssetStatus = "open" | "in_progress" | "migrated" | "accepted";
+
+export const ASSET_STATUSES: AssetStatus[] = ["open", "in_progress", "migrated", "accepted"];
+
+/** Statuses that count as "resolved" for migration-progress reporting. */
+export const RESOLVED_STATUSES: AssetStatus[] = ["migrated", "accepted"];
+
 export interface CryptoPattern {
   id: string;
   family: CryptoFamily;
@@ -39,6 +47,8 @@ export interface CryptoAsset {
   patternId: string;
   quantumVulnerable: boolean;
   pqcReplacement: string;
+  /** Remediation status, defaults to "open" when an asset is first discovered. */
+  status: AssetStatus;
   /** Filled in by the risk scoring service. */
   risk?: RiskScore;
 }

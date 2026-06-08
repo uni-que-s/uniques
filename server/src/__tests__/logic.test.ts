@@ -24,6 +24,7 @@ function asset(partial: Partial<CryptoAsset> & { family: CryptoFamily }): Crypto
     patternId: "p",
     quantumVulnerable: true,
     pqcReplacement: "ML-KEM (Kyber)",
+    status: "open",
     ...partial,
   };
 }

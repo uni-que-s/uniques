@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getDashboard, runScan, runGitScan, type Dashboard as DashboardData } from "../lib/api";
-import { Card, StatCard, StatusBadge, FAMILY_COLOR, SEVERITY_COLOR } from "../components/ui";
+import { getDashboard, runScan, runGitScan, type Dashboard as DashboardData, type AssetStatus } from "../lib/api";
+import { Card, StatCard, StatusBadge, ASSET_STATUS_META, FAMILY_COLOR, SEVERITY_COLOR } from "../components/ui";
 import { useAuth } from "../lib/auth";
 
 export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void }) {
@@ -137,8 +137,8 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
         />
         <StatCard
           label="Migration Effort"
-          value={`${data.migrationEffortDays}d`}
-          sub="estimated engineering days"
+          value={`${data.remainingEffortDays}d`}
+          sub={`remaining of ${data.migrationEffortDays}d total`}
           accent="#22d3ee"
         />
         <StatCard
@@ -148,6 +148,36 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
           accent={data.avgCompliancePct >= 60 ? "#34d399" : "#facc15"}
         />
       </div>
+
+      <Card className="p-5">
+        <div className="mb-3 flex items-end justify-between">
+          <h2 className="text-sm font-semibold text-slate-300">Migration Progress</h2>
+          <span className="text-sm font-semibold text-emerald-300">{data.migrationProgressPct}% resolved</span>
+        </div>
+        <div className="flex h-3 overflow-hidden rounded-full bg-slate-800">
+          {(["migrated", "accepted", "in_progress", "open"] as AssetStatus[]).map((s) => {
+            const count = data.byStatus?.[s] ?? 0;
+            const pct = data.totalAssets ? (count / data.totalAssets) * 100 : 0;
+            if (pct === 0) return null;
+            return (
+              <div
+                key={s}
+                style={{ width: `${pct}%`, background: ASSET_STATUS_META[s].color }}
+                title={`${ASSET_STATUS_META[s].label}: ${count}`}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-4">
+          {(["open", "in_progress", "migrated", "accepted"] as AssetStatus[]).map((s) => (
+            <span key={s} className="flex items-center gap-1.5 text-xs text-slate-400">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: ASSET_STATUS_META[s].color }} />
+              {ASSET_STATUS_META[s].label}
+              <span className="font-semibold text-slate-200">{data.byStatus?.[s] ?? 0}</span>
+            </span>
+          ))}
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="p-5">

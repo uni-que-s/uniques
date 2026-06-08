@@ -6,6 +6,7 @@ import { patternCount } from "../discovery/patterns.js";
 import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
 import { renderReportHtml } from "../compliance/export.js";
+import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
 
@@ -26,6 +27,17 @@ api.get("/assets/:id", (req, res) => {
   const asset = store.getAsset(req.params.id, req.orgId);
   if (!asset) return res.status(404).json({ error: "asset not found" });
   res.json(asset);
+});
+
+// Update an asset's remediation status — an operator action, so require auth.
+api.patch("/assets/:id/status", requireAuth, (req, res) => {
+  const status = (req.body?.status as string | undefined)?.trim();
+  if (!status || !ASSET_STATUSES.includes(status as AssetStatus)) {
+    return res.status(400).json({ error: `status must be one of: ${ASSET_STATUSES.join(", ")}` });
+  }
+  const updated = store.updateAssetStatus(req.params.id, status as AssetStatus, req.orgId);
+  if (!updated) return res.status(404).json({ error: "asset not found" });
+  res.json(updated);
 });
 
 api.get("/scans", (req, res) => {
