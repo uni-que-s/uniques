@@ -36,8 +36,9 @@ risk once a cryptographically-relevant quantum computer exists.
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
   inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
-  scan, asset, and report is scoped to an organization. An unauthenticated demo
-  org is seeded so the dashboard is populated out of the box.
+  scan, asset, and report is scoped to an organization; credential endpoints are
+  rate-limited per client IP to blunt brute-force. An unauthenticated demo org is
+  seeded so the dashboard is populated out of the box.
 
 ## Architecture
 

@@ -11,6 +11,9 @@ import { withAuth } from "./auth/middleware.js";
  */
 export function createApp(): Express {
   const app = express();
+  // Behind nginx in the container; trust the proxy so req.ip is the real client
+  // (used for rate limiting), via the X-Forwarded-For header nginx sets.
+  app.set("trust proxy", true);
   app.use(cors());
   app.use(express.json());
   app.use("/api", withAuth);

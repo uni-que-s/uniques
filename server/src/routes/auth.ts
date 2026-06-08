@@ -1,9 +1,15 @@
 import { Router } from "express";
 import { login, logout, signup } from "../auth/service.js";
+import { rateLimit } from "../auth/rateLimit.js";
 
 export const authRouter = Router();
 
-authRouter.post("/signup", (req, res) => {
+// Throttle credential endpoints per client IP to blunt brute-force / abuse.
+// Shared limiter so signup + login attempts count together. Generous enough for
+// real users (well above normal interactive use), tight enough to stop scripts.
+const credentialLimiter = rateLimit(10, 60_000);
+
+authRouter.post("/signup", credentialLimiter, (req, res) => {
   const { email, password, orgName } = req.body ?? {};
   try {
     const { token, ctx } = signup(String(email ?? ""), String(password ?? ""), orgName);
@@ -13,7 +19,7 @@ authRouter.post("/signup", (req, res) => {
   }
 });
 
-authRouter.post("/login", (req, res) => {
+authRouter.post("/login", credentialLimiter, (req, res) => {
   const { email, password } = req.body ?? {};
   try {
     const { token, ctx } = login(String(email ?? ""), String(password ?? ""));

@@ -9,6 +9,7 @@ import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
+import { RateLimiter } from "../auth/rateLimit.js";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
 
 /** Build a minimal valid CryptoAsset for scoring tests. */
@@ -120,6 +121,21 @@ test("csv: empty inventory still emits a header row", () => {
   const csv = assetsToCsv([]);
   assert.match(csv, /^file,line,family,/);
   assert.equal(csv.trim().split("\r\n").length, 1);
+});
+
+// ------------------------------------------------------------- rate limiter
+test("rateLimiter: allows up to max, blocks the overflow, recovers after the window", () => {
+  let now = 1000;
+  const rl = new RateLimiter(3, 1000, () => now);
+  assert.equal(rl.check("ip1"), true);
+  assert.equal(rl.check("ip1"), true);
+  assert.equal(rl.check("ip1"), true);
+  assert.equal(rl.check("ip1"), false, "4th within window is blocked");
+  // a different key is tracked independently
+  assert.equal(rl.check("ip2"), true);
+  // advance past the window -> the old hits expire and requests are allowed again
+  now += 1001;
+  assert.equal(rl.check("ip1"), true);
 });
 
 // ------------------------------------------------------------- repo normalizer (SSRF guard)
