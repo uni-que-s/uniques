@@ -8,6 +8,7 @@ import { requireAuth } from "../auth/middleware.js";
 import { rateLimit } from "../auth/rateLimit.js";
 import { renderReportHtml } from "../compliance/export.js";
 import { assetsToCsv } from "../discovery/csv.js";
+import { assetsToCbom } from "../discovery/cbom.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
@@ -39,6 +40,17 @@ api.get("/assets/export.csv", (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="quantumvault-assets.csv"`);
   res.send(assetsToCsv(assets));
+});
+
+// Cryptography Bill of Materials (CycloneDX 1.6) for the latest scan — the
+// standards-based interchange format for post-quantum migration inventories.
+api.get("/cbom.json", (req, res) => {
+  const assets = store.getAssets(undefined, req.orgId);
+  const latest = store.getScans(req.orgId)[0];
+  const cbom = assetsToCbom(assets, { target: latest?.target, generatedAt: latest?.finishedAt });
+  res.setHeader("Content-Type", "application/vnd.cyclonedx+json");
+  res.setHeader("Content-Disposition", `attachment; filename="quantumvault-cbom.json"`);
+  res.send(JSON.stringify(cbom, null, 2));
 });
 
 api.get("/assets/:id", (req, res) => {

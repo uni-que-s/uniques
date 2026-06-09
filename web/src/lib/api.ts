@@ -125,6 +125,17 @@ export async function downloadAssetsCsv(params?: Record<string, string>) {
   a.remove();
   URL.revokeObjectURL(url);
 }
+export async function downloadCbom() {
+  const res = await http.get("/cbom.json", { responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quantumvault-cbom.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 export const getCompliance = () => http.get<ComplianceReport[]>("/compliance").then((r) => r.data);
 
 export async function downloadComplianceJson(framework: string) {

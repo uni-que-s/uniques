@@ -3,6 +3,7 @@ import {
   getAssets,
   updateAssetStatus,
   downloadAssetsCsv,
+  downloadCbom,
   ASSET_STATUSES,
   type CryptoAsset,
   type Severity,
@@ -98,6 +99,13 @@ export default function Assets() {
           className="ml-auto rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-indigo-500 hover:text-white"
         >
           Export CSV
+        </button>
+        <button
+          onClick={() => downloadCbom()}
+          title="CycloneDX 1.6 Cryptography Bill of Materials"
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-indigo-500 hover:text-white"
+        >
+          Export CBOM
         </button>
       </div>
 

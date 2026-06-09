@@ -9,6 +9,7 @@ import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
+import { assetsToCbom } from "../discovery/cbom.js";
 import { RateLimiter, rateLimit } from "../auth/rateLimit.js";
 import type { Request, Response } from "express";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
@@ -148,6 +149,43 @@ test("csv: empty inventory still emits a header row", () => {
   const csv = assetsToCsv([]);
   assert.match(csv, /^file,line,family,/);
   assert.equal(csv.trim().split("\r\n").length, 1);
+});
+
+// ------------------------------------------------------------- CBOM (CycloneDX)
+test("cbom: emits a valid CycloneDX 1.6 cryptography bill of materials", () => {
+  const cbom = assetsToCbom(
+    [
+      asset({ family: "RSA", algorithm: "RSA", keyBits: 2048, file: "a.ts", line: 3, quantumVulnerable: true }),
+      asset({ family: "HashLegacy", algorithm: "MD5/SHA-1", file: "b.ts", line: 9, quantumVulnerable: true }),
+    ],
+    { target: "/repo" },
+  ) as any;
+
+  assert.equal(cbom.bomFormat, "CycloneDX");
+  assert.equal(cbom.specVersion, "1.6");
+  assert.match(cbom.serialNumber, /^urn:uuid:/);
+  assert.equal(cbom.metadata.component.name, "/repo");
+  assert.equal(cbom.components.length, 2);
+
+  const rsa = cbom.components[0];
+  assert.equal(rsa.type, "cryptographic-asset");
+  assert.equal(rsa.cryptoProperties.assetType, "algorithm");
+  assert.equal(rsa.cryptoProperties.algorithmProperties.primitive, "pke");
+  assert.equal(rsa.cryptoProperties.algorithmProperties.parameterSetIdentifier, "2048");
+  // quantum-vulnerable -> NIST quantum security level 0
+  assert.equal(rsa.cryptoProperties.algorithmProperties.nistQuantumSecurityLevel, 0);
+  assert.equal(rsa.evidence.occurrences[0].location, "a.ts");
+  assert.equal(rsa.evidence.occurrences[0].line, 3);
+
+  // hash family maps to the "hash" primitive
+  assert.equal(cbom.components[1].cryptoProperties.algorithmProperties.primitive, "hash");
+});
+
+test("cbom: empty inventory still produces a well-formed BOM with no components", () => {
+  const cbom = assetsToCbom([]) as any;
+  assert.equal(cbom.bomFormat, "CycloneDX");
+  assert.ok(Array.isArray(cbom.components));
+  assert.equal(cbom.components.length, 0);
 });
 
 // ------------------------------------------------------------- rate limiter

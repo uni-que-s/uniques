@@ -37,7 +37,10 @@ risk once a cryptographically-relevant quantum computer exists.
 - **Compliance automation** — maps findings to FISMA, CISA, FedRAMP, SOC 2, and
   PCI-DSS controls with pass/gap/fail status and remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
-  inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets.
+  inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets,
+  and the full inventory exports as a **CycloneDX 1.6 CBOM** (Cryptography Bill of
+  Materials) — the standards-based interchange format NIST/CISA reference for
+  post-quantum migration inventories.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
   scan, asset, and report is scoped to an organization; credential endpoints are
   rate-limited per client IP to blunt brute-force, and the expensive scan
@@ -133,6 +136,7 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | GET | `/api/dashboard` | | Posture + migration progress for the latest scan |
 | GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
 | GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |
+| GET | `/api/cbom.json` | | CycloneDX 1.6 Cryptography Bill of Materials for the latest scan |
 | GET | `/api/assets/:id` | | Single asset with risk breakdown |
 | PATCH | `/api/assets/:id/status` | ● | Set remediation status (`open`/`in_progress`/`migrated`/`accepted`) |
 | POST | `/api/scans` | ● | Scan a local path `{ "target": "/abs/path" }` |

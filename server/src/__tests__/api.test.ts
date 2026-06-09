@@ -107,6 +107,16 @@ test("scan → list → patch status → CSV export, all org-scoped", async () =
   assert.match(csv.headers.get("content-type") ?? "", /text\/csv/);
   assert.match(await csv.text(), /^file,line,family,/);
 
+  // CBOM export is a valid CycloneDX 1.6 document for org A's scan.
+  const cbom = await json("/api/cbom.json", authed(tokenA));
+  assert.equal(cbom.status, 200);
+  assert.match(cbom.headers.get("content-type") ?? "", /cyclonedx\+json/);
+  const cbomBody = await cbom.json();
+  assert.equal(cbomBody.bomFormat, "CycloneDX");
+  assert.equal(cbomBody.specVersion, "1.6");
+  assert.ok(cbomBody.components.length >= 2);
+  assert.equal(cbomBody.components[0].type, "cryptographic-asset");
+
   // Org B is isolated: sees no assets and cannot mutate org A's asset.
   const tokenB = await signup("b@beta.test", "Beta");
   const bAssets = await (await json("/api/assets", authed(tokenB))).json();
