@@ -54,7 +54,7 @@ test("health reports ok and the pattern count", async () => {
   assert.equal(r.status, 200);
   const body = await r.json();
   assert.equal(body.status, "ok");
-  assert.equal(body.patterns, 12);
+  assert.equal(body.patterns, 20);
 });
 
 test("auth is required for scanning and status changes", async () => {
