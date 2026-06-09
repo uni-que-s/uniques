@@ -3,6 +3,9 @@ services:
     build: ./server
     environment:
       - QV_DB_PATH=/app/data/quantumvault.db
+      # API is same-origin behind nginx, so allow-any is safe by default. If you
+      # expose port 4000 directly, lock it down to your dashboard origin(s):
+      # - QV_CORS_ORIGIN=https://app.quantumvault.example
     volumes:
       - qv-data:/app/data
     ports:

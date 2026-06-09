@@ -83,19 +83,30 @@ export async function cloneRepo(
   const dir = mkdtempSync(join(tmpdir(), "qv-scan-"));
 
   const host = label.split("/")[0];
-  const args: string[] = [];
+  const args = ["clone", "--depth", "1", "--single-branch", "--no-tags", cloneUrl, dir];
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: "0",
+    GIT_ASKPASS: "true",
+  };
   if (token) {
     const user = TOKEN_USER[host] ?? "x-access-token";
     const basic = Buffer.from(`${user}:${token}`).toString("base64");
-    args.push("-c", `http.extraHeader=Authorization: Basic ${basic}`);
+    // Pass the auth header through git's env-based config rather than `-c` on the
+    // command line: process args are world-readable (/proc/<pid>/cmdline, ps) on a
+    // shared host, but env is only readable by the same uid. Keeps the token out
+    // of the argv of every concurrent clone.
+    env.GIT_CONFIG_COUNT = "1";
+    env.GIT_CONFIG_KEY_0 = "http.extraHeader";
+    env.GIT_CONFIG_VALUE_0 = `Authorization: Basic ${basic}`;
   }
-  args.push("clone", "--depth", "1", "--single-branch", "--no-tags", cloneUrl, dir);
 
   try {
     await execFileAsync("git", args, {
       timeout: timeoutMs,
       maxBuffer: 10 * 1024 * 1024,
-      env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "true" },
+      env,
     });
   } catch (err: any) {
     rmSync(dir, { recursive: true, force: true });

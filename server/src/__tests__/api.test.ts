@@ -118,3 +118,31 @@ test("unknown asset id returns 404", async () => {
   const r = await json("/api/assets/does-not-exist");
   assert.equal(r.status, 404);
 });
+
+test("responses carry baseline security headers", async () => {
+  const r = await json("/api/health");
+  assert.equal(r.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(r.headers.get("x-frame-options"), "DENY");
+  assert.equal(r.headers.get("x-powered-by"), null);
+});
+
+test("CORS is enabled and reflects the default (allow-any) origin", async () => {
+  const r = await json("/api/health", { headers: { origin: "http://dashboard.test" } });
+  assert.equal(r.headers.get("access-control-allow-origin"), "*");
+});
+
+test("unmatched API routes return a JSON 404 envelope", async () => {
+  const r = await json("/api/nope/not/a/route");
+  assert.equal(r.status, 404);
+  assert.match(r.headers.get("content-type") ?? "", /application\/json/);
+  assert.equal((await r.json()).error, "not found");
+});
+
+test("malformed JSON bodies get a 400, not a 500", async () => {
+  const r = await json("/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{ not valid json",
+  });
+  assert.equal(r.status, 400);
+});
