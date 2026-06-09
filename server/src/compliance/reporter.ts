@@ -91,6 +91,73 @@ const CATALOGS: Record<Framework, ControlDef[]> = {
       remediation: "Sync this cryptographic inventory into the system component baseline.",
     },
   ],
+  SOC2: [
+    {
+      id: "CC6.1",
+      title: "Logical Access — Encryption of Data",
+      description:
+        "Logical access controls protect information assets with cryptography that must remain resistant to quantum attack.",
+      applies: (a) => ["RSA", "ECC", "DSA", "DH"].includes(a.family),
+      remediation:
+        "Replace quantum-vulnerable public-key algorithms guarding protected data with NIST PQC standards (ML-KEM, ML-DSA).",
+    },
+    {
+      id: "CC6.7",
+      title: "Transmission & Movement of Information",
+      description:
+        "Information in transit must be protected with strong, quantum-ready encryption channels.",
+      applies: (a) => a.patternId.includes("tls") || a.patternId.includes("cert") || a.family === "DH" || a.family === "ECC",
+      remediation:
+        "Deploy hybrid TLS (classical + ML-KEM) for transmitted data and re-issue certificates with PQC-ready signatures.",
+    },
+    {
+      id: "CC7.1",
+      title: "Detection of Vulnerable Configurations",
+      description:
+        "Monitoring must detect deprecated cryptographic primitives that weaken the control environment.",
+      applies: (a) => a.family === "HashLegacy" || a.family === "SymmetricLegacy" || a.family === "DSA",
+      remediation:
+        "Retire MD5/SHA-1, DES/3DES/AES-128, and DSA; standardize on SHA-256/SHA-3, AES-256-GCM, and ML-DSA.",
+    },
+  ],
+  "PCI-DSS": [
+    {
+      id: "3.5",
+      title: "Protect Stored Account Data with Strong Cryptography",
+      description:
+        "Stored cardholder data must be rendered unreadable using cryptography that withstands quantum-capable adversaries.",
+      applies: (a) => ["RSA", "ECC"].includes(a.family) || a.family === "SymmetricLegacy",
+      remediation:
+        "Migrate stored-data protection to AES-256-GCM and NIST PQC public-key schemes (ML-KEM/ML-DSA); retire legacy ciphers.",
+    },
+    {
+      id: "3.6",
+      title: "Cryptographic Key Management Procedures",
+      description:
+        "Keys protecting account data must be generated and managed with quantum-resistant key establishment.",
+      applies: (a) => a.family === "DH" || a.family === "ECC" || a.family === "RSA",
+      remediation:
+        "Adopt ML-KEM (Kyber) for key establishment and document a PQC key-rotation plan for all cardholder-data keys.",
+    },
+    {
+      id: "3.7",
+      title: "Key Lifecycle & Retirement of Weak Keys",
+      description:
+        "Cryptographic keys nearing the end of their secure life, including those broken by quantum attack, must be retired.",
+      applies: (a) => a.family === "DSA" || a.family === "HashLegacy" || (a.risk?.priority === "critical" || a.risk?.priority === "high"),
+      remediation:
+        "Retire DSA and legacy-hash keys and prioritize critical/high-risk keys for PQC re-keying within the migration window.",
+    },
+    {
+      id: "4.2.1",
+      title: "Strong Cryptography for Transmission",
+      description:
+        "PAN transmitted over open networks must use strong, quantum-ready cryptography and trusted certificates.",
+      applies: (a) => a.patternId.includes("tls") || a.patternId.includes("cert") || a.family === "DH",
+      remediation:
+        "Enforce hybrid TLS (classical + ML-KEM) on all transmission paths and re-issue certificates with PQC-ready signatures.",
+    },
+  ],
 };
 
 function statusFor(affected: number): ComplianceStatus {
@@ -147,4 +214,4 @@ export function generateReport(
   };
 }
 
-export const FRAMEWORKS: Framework[] = ["FISMA", "CISA", "FedRAMP"];
+export const FRAMEWORKS: Framework[] = ["FISMA", "CISA", "FedRAMP", "SOC2", "PCI-DSS"];

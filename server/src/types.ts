@@ -92,7 +92,7 @@ export interface ComplianceControl {
 }
 
 export interface ComplianceReport {
-  framework: "FISMA" | "CISA" | "FedRAMP";
+  framework: "FISMA" | "CISA" | "FedRAMP" | "SOC2" | "PCI-DSS";
   generatedAt: string;
   scanId: string;
   overallStatus: ComplianceStatus;
