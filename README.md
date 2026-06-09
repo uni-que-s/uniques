@@ -37,8 +37,9 @@ risk once a cryptographically-relevant quantum computer exists.
   inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
   scan, asset, and report is scoped to an organization; credential endpoints are
-  rate-limited per client IP to blunt brute-force. An unauthenticated demo org is
-  seeded so the dashboard is populated out of the box.
+  rate-limited per client IP to blunt brute-force, and the expensive scan
+  endpoints are throttled per organization. An unauthenticated demo org is seeded
+  so the dashboard is populated out of the box.
 
 ## Architecture
 
@@ -95,6 +96,26 @@ npm run dev:web
 Then **sign up** in the UI and **Run Scan** against either a Git repo
 (`owner/repo` or an https URL) or a local absolute path. Open any asset to see its
 risk breakdown and set its remediation status.
+
+## Configuration
+
+The server reads these environment variables (all optional):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `4000` | API listen port |
+| `QV_DB_PATH` | `./data/quantumvault.db` | SQLite database file path |
+| `QV_CORS_ORIGIN` | `*` | Comma-separated CORS allowlist; set to your dashboard origin(s) if the API port is exposed directly rather than proxied |
+| `QV_LOG` | on | Set to `off` to silence structured (JSON-per-line) access logs |
+| `QV_SEED` | | Set to `force` to re-run the sample-target seed scan on boot |
+
+**Hardening:** the API sends conservative security headers (`nosniff`,
+`X-Frame-Options: DENY`, `Referrer-Policy`, COOP), returns a JSON error envelope
+that never leaks 5xx internals, drains in-flight requests on `SIGTERM`/`SIGINT`
+before closing SQLite cleanly, and runs as a **non-root** user inside its
+container. Private-repo access tokens are used only for the clone (passed via
+git's env-based config, never on the command line) and are never persisted or
+logged.
 
 ## API
 
