@@ -1,0 +1,25 @@
+name: "QuantumVault Crypto Scan"
+description: "Scan a codebase for quantum-vulnerable cryptography; emit SARIF for code-scanning and optionally gate the build."
+branding:
+  icon: "shield"
+  color: "purple"
+inputs:
+  path:
+    description: "Path to scan (relative to the repository root)."
+    required: false
+    default: "."
+  fail-on:
+    description: "Fail the job if any finding is at or above this severity (critical | high | medium | low). Empty = never fail."
+    required: false
+    default: ""
+  sarif-file:
+    description: "Where to write the SARIF 2.1.0 result, relative to the workspace."
+    required: false
+    default: "quantumvault.sarif"
+runs:
+  using: "docker"
+  image: "action.Dockerfile"
+  args:
+    - ${{ inputs.path }}
+    - ${{ inputs.fail-on }}
+    - ${{ inputs.sarif-file }}

@@ -14,6 +14,9 @@ web/dist/
 *.db-shm
 data/
 
+# scan output
+*.sarif
+
 # logs & os cruft
 *.log
 .DS_Store

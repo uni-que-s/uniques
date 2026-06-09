@@ -125,6 +125,37 @@ code. In CI, run the scan with `--sarif`, upload the result to GitHub
 code-scanning, and add `--fail-on` to block merges on new quantum-vulnerable
 crypto.
 
+## GitHub Action
+
+Drop QuantumVault into any repository's CI to surface quantum-vulnerable crypto
+as code-scanning alerts and (optionally) gate pull requests:
+
+```yaml
+# .github/workflows/quantumvault.yml
+on: [pull_request]
+permissions:
+  contents: read
+  security-events: write   # to upload SARIF
+jobs:
+  crypto-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DemigodDSK/quantumvault@main
+        with:
+          path: .
+          fail-on: high          # optional: fail the PR on a high+ finding
+          sarif-file: quantumvault.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: quantumvault.sarif
+```
+
+Inputs: `path` (default `.`), `fail-on` (`critical|high|medium|low`, empty =
+never fail), `sarif-file` (default `quantumvault.sarif`). The action is a
+self-contained Docker action — no separate install. This repo dogfoods it via
+the **Self-scan** workflow.
+
 ## Configuration
 
 The server reads these environment variables (all optional):

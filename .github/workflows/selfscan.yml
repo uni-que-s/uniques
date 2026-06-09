@@ -1,0 +1,26 @@
+name: Self-scan
+
+# Dogfood the QuantumVault GitHub Action against the bundled sample target.
+# Isolated from the main CI workflow so it can never gate the build/publish
+# pipeline; proves the action builds and emits SARIF in real GitHub Actions.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run QuantumVault scan
+        uses: ./
+        with:
+          path: server/sample-target
+          sarif-file: quantumvault.sarif
+          # sample-target is intentionally vulnerable, so do not gate here.
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantumvault-sarif
+          path: quantumvault.sarif
