@@ -20,6 +20,7 @@ export default function Assets() {
   const [q, setQ] = useState("");
   const [family, setFamily] = useState("");
   const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState<AssetStatus | "">("");
   const [selected, setSelected] = useState<CryptoAsset | null>(null);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function Assets() {
     return assets.filter((a) => {
       if (family && a.family !== family) return false;
       if (priority && a.risk?.priority !== priority) return false;
+      if (status && a.status !== status) return false;
       if (q) {
         const s = q.toLowerCase();
         if (
@@ -47,7 +49,7 @@ export default function Assets() {
       }
       return true;
     });
-  }, [assets, q, family, priority]);
+  }, [assets, q, family, priority, status]);
 
   return (
     <div className="space-y-5">
@@ -73,6 +75,16 @@ export default function Assets() {
           <option value="">All priorities</option>
           {PRIORITIES.map((p) => (
             <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as AssetStatus | "")}
+          className={selectCls}
+        >
+          <option value="">All statuses</option>
+          {ASSET_STATUSES.map((s) => (
+            <option key={s} value={s}>{ASSET_STATUS_META[s].label}</option>
           ))}
         </select>
         <button
