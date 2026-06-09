@@ -41,6 +41,11 @@ risk once a cryptographically-relevant quantum computer exists.
   and the full inventory exports as a **CycloneDX 1.6 CBOM** (Cryptography Bill of
   Materials) — the standards-based interchange format NIST/CISA reference for
   post-quantum migration inventories.
+- **CI-native scanning** — a `quantumvault` CLI scans any path and emits a
+  human-readable summary or machine output: **JSON**, **SARIF 2.1.0** (for GitHub
+  code-scanning / PR annotations), **CSV**, or **CBOM**. `--fail-on <severity>`
+  returns a non-zero exit code so a pipeline can block PRs that introduce
+  quantum-vulnerable crypto. The same SARIF is served at `GET /api/sarif.json`.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
   scan, asset, and report is scoped to an organization; credential endpoints are
   rate-limited per client IP to blunt brute-force, and the expensive scan
@@ -103,6 +108,23 @@ Then **sign up** in the UI and **Run Scan** against either a Git repo
 (`owner/repo` or an https URL) or a local absolute path. Open any asset to see its
 risk breakdown and set its remediation status.
 
+## CLI
+
+The same engine ships as a CLI for CI pipelines and local checks:
+
+```bash
+# from quantumvault/server  (dev: npm run cli -- <args>;  built: quantumvault <args>)
+npm run cli -- ./path/to/repo                 # human-readable summary
+npm run cli -- ./path/to/repo --sarif > out.sarif   # GitHub code-scanning
+npm run cli -- . --fail-on high               # exit 1 if any finding is >= high
+```
+
+Output formats: default table, `--json`, `--sarif` (2.1.0), `--cbom` (CycloneDX
+1.6), `--csv`. `--fail-on <critical|high|medium|low>` gates a pipeline by exit
+code. In CI, run the scan with `--sarif`, upload the result to GitHub
+code-scanning, and add `--fail-on` to block merges on new quantum-vulnerable
+crypto.
+
 ## Configuration
 
 The server reads these environment variables (all optional):
@@ -137,6 +159,7 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
 | GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |
 | GET | `/api/cbom.json` | | CycloneDX 1.6 Cryptography Bill of Materials for the latest scan |
+| GET | `/api/sarif.json` | | SARIF 2.1.0 log of the latest scan (GitHub code-scanning) |
 | GET | `/api/assets/:id` | | Single asset with risk breakdown |
 | PATCH | `/api/assets/:id/status` | ● | Set remediation status (`open`/`in_progress`/`migrated`/`accepted`) |
 | POST | `/api/scans` | ● | Scan a local path `{ "target": "/abs/path" }` |

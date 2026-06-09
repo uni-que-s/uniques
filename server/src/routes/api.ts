@@ -9,6 +9,7 @@ import { rateLimit } from "../auth/rateLimit.js";
 import { renderReportHtml } from "../compliance/export.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
+import { assetsToSarif } from "../discovery/sarif.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
@@ -51,6 +52,14 @@ api.get("/cbom.json", (req, res) => {
   res.setHeader("Content-Type", "application/vnd.cyclonedx+json");
   res.setHeader("Content-Disposition", `attachment; filename="quantumvault-cbom.json"`);
   res.send(JSON.stringify(cbom, null, 2));
+});
+
+// SARIF 2.1.0 log for the latest scan — uploadable to GitHub code-scanning.
+api.get("/sarif.json", (req, res) => {
+  const assets = store.getAssets(undefined, req.orgId);
+  res.setHeader("Content-Type", "application/sarif+json");
+  res.setHeader("Content-Disposition", `attachment; filename="quantumvault.sarif"`);
+  res.send(JSON.stringify(assetsToSarif(assets), null, 2));
 });
 
 api.get("/assets/:id", (req, res) => {

@@ -1,0 +1,129 @@
+#!/usr/bin/env node
+import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import type { CryptoAsset, ScanJob, Severity } from "./types.js";
+import { scanDirectory } from "./discovery/scanner.js";
+import { scoreAssets } from "./risk/scorer.js";
+import { assetsToCbom } from "./discovery/cbom.js";
+import { assetsToSarif } from "./discovery/sarif.js";
+import { assetsToCsv } from "./discovery/csv.js";
+
+type Format = "table" | "json" | "sarif" | "cbom" | "csv";
+
+interface Args {
+  path?: string;
+  format: Format;
+  failOn?: string;
+  help: boolean;
+}
+
+const SEVERITY_RANK: Record<Severity, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+const HELP = `QuantumVault — quantum-safe cryptography scanner
+
+Usage: quantumvault <path> [options]
+
+Scans a directory for quantum-vulnerable cryptographic assets (RSA, ECC, DSA,
+Diffie-Hellman, legacy symmetric/hashes, key material) and reports risk-scored
+findings. Reuses the same engine as the QuantumVault platform.
+
+Options:
+  --json            Output findings as JSON
+  --sarif           Output SARIF 2.1.0 (for GitHub code-scanning)
+  --cbom            Output a CycloneDX 1.6 CBOM
+  --csv             Output a CSV inventory
+  --fail-on <sev>   Exit 1 if any finding is at or above <sev>
+                    (critical | high | medium | low) — for CI gating
+  -h, --help        Show this help
+
+Examples:
+  quantumvault ./src
+  quantumvault . --sarif > quantumvault.sarif
+  quantumvault . --fail-on high
+`;
+
+function parseArgs(argv: string[]): Args {
+  const args: Args = { format: "table", help: false };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--help" || a === "-h") args.help = true;
+    else if (a === "--json") args.format = "json";
+    else if (a === "--sarif") args.format = "sarif";
+    else if (a === "--cbom") args.format = "cbom";
+    else if (a === "--csv") args.format = "csv";
+    else if (a === "--fail-on") args.failOn = argv[++i];
+    else if (!a.startsWith("-")) args.path = a;
+  }
+  return args;
+}
+
+function printTable(job: ScanJob, assets: CryptoAsset[]): void {
+  const byPriority: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const a of assets) byPriority[a.risk?.priority ?? "low"] += 1;
+
+  process.stdout.write(
+    `\nQuantumVault — ${job.filesScanned} files scanned, ${assets.length} quantum-vulnerable assets (${job.durationMs}ms)\n`,
+  );
+  process.stdout.write(
+    `  critical ${byPriority.critical}   high ${byPriority.high}   medium ${byPriority.medium}   low ${byPriority.low}\n\n`,
+  );
+
+  const top = [...assets].sort((a, b) => (b.risk?.score ?? 0) - (a.risk?.score ?? 0)).slice(0, 25);
+  for (const a of top) {
+    const pri = (a.risk?.priority ?? "low").padEnd(8);
+    process.stdout.write(`  [${pri}] ${a.algorithm}  —  ${a.file}:${a.line}\n`);
+  }
+  if (assets.length > top.length) {
+    process.stdout.write(`  … and ${assets.length - top.length} more\n`);
+  }
+  process.stdout.write("\n");
+}
+
+function main(): void {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help || !args.path) {
+    process.stdout.write(HELP);
+    process.exit(args.help ? 0 : 2);
+  }
+
+  const target = resolve(args.path);
+  if (!existsSync(target)) {
+    process.stderr.write(`error: path does not exist: ${target}\n`);
+    process.exit(2);
+  }
+
+  const { job, assets } = scanDirectory(target, "cli");
+  scoreAssets(assets);
+
+  switch (args.format) {
+    case "json":
+      process.stdout.write(JSON.stringify({ job, assets }, null, 2) + "\n");
+      break;
+    case "sarif":
+      process.stdout.write(JSON.stringify(assetsToSarif(assets), null, 2) + "\n");
+      break;
+    case "cbom":
+      process.stdout.write(JSON.stringify(assetsToCbom(assets, { target }), null, 2) + "\n");
+      break;
+    case "csv":
+      process.stdout.write(assetsToCsv(assets));
+      break;
+    default:
+      printTable(job, assets);
+  }
+
+  if (args.failOn) {
+    const threshold = SEVERITY_RANK[args.failOn as Severity];
+    if (!threshold) {
+      process.stderr.write(`error: --fail-on must be one of critical | high | medium | low\n`);
+      process.exit(2);
+    }
+    const worst = Math.max(0, ...assets.map((a) => SEVERITY_RANK[a.risk?.priority ?? "low"]));
+    if (worst >= threshold) {
+      process.stderr.write(`FAIL: findings at or above "${args.failOn}" severity.\n`);
+      process.exit(1);
+    }
+  }
+}
+
+main();

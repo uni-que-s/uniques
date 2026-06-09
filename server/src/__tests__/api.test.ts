@@ -117,6 +117,15 @@ test("scan → list → patch status → CSV export, all org-scoped", async () =
   assert.ok(cbomBody.components.length >= 2);
   assert.equal(cbomBody.components[0].type, "cryptographic-asset");
 
+  // SARIF export is a valid 2.1.0 log for org A's scan.
+  const sarif = await json("/api/sarif.json", authed(tokenA));
+  assert.equal(sarif.status, 200);
+  assert.match(sarif.headers.get("content-type") ?? "", /sarif\+json/);
+  const sarifBody = await sarif.json();
+  assert.equal(sarifBody.version, "2.1.0");
+  assert.equal(sarifBody.runs[0].tool.driver.name, "QuantumVault");
+  assert.ok(sarifBody.runs[0].results.length >= 2);
+
   // Org B is isolated: sees no assets and cannot mutate org A's asset.
   const tokenB = await signup("b@beta.test", "Beta");
   const bAssets = await (await json("/api/assets", authed(tokenB))).json();

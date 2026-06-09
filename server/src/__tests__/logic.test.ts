@@ -10,6 +10,7 @@ import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
+import { assetsToSarif } from "../discovery/sarif.js";
 import { RateLimiter, rateLimit } from "../auth/rateLimit.js";
 import type { Request, Response } from "express";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
@@ -186,6 +187,35 @@ test("cbom: empty inventory still produces a well-formed BOM with no components"
   assert.equal(cbom.bomFormat, "CycloneDX");
   assert.ok(Array.isArray(cbom.components));
   assert.equal(cbom.components.length, 0);
+});
+
+// ------------------------------------------------------------- SARIF
+test("sarif: emits a valid SARIF 2.1.0 log with rules, results, and levels", () => {
+  const rsa = scoreAsset(asset({ family: "RSA", patternId: "rsa-pem-header", file: "auth/key.pem", algorithm: "RSA", line: 2 }));
+  const a1 = asset({ family: "RSA", patternId: "rsa-pem-header", file: "auth/key.pem", algorithm: "RSA", line: 2 });
+  a1.risk = rsa;
+  const sarif = assetsToSarif([a1]) as any;
+
+  assert.equal(sarif.version, "2.1.0");
+  const driver = sarif.runs[0].tool.driver;
+  assert.equal(driver.name, "QuantumVault");
+  assert.ok(driver.rules.some((r: any) => r.id === "rsa-pem-header"));
+
+  const result = sarif.runs[0].results[0];
+  assert.equal(result.ruleId, "rsa-pem-header");
+  assert.ok(["error", "warning", "note"].includes(result.level));
+  assert.equal(result.locations[0].physicalLocation.artifactLocation.uri, "auth/key.pem");
+  assert.equal(result.locations[0].physicalLocation.region.startLine, 2);
+  // GitHub security-severity is a 0–10 string derived from the risk score
+  assert.match(result.properties["security-severity"], /^\d+(\.\d)?$/);
+});
+
+test("sarif: critical/high map to error level", () => {
+  const a = asset({ family: "RSA", file: "services/auth/payment/k.pem", patternId: "rsa-pem-header", algorithm: "RSA" });
+  a.risk = scoreAsset(a);
+  const sarif = assetsToSarif([a]) as any;
+  // a payment/auth RSA key scores critical -> error
+  assert.equal(sarif.runs[0].results[0].level, "error");
 });
 
 // ------------------------------------------------------------- rate limiter
