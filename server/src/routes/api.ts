@@ -10,6 +10,7 @@ import { renderReportHtml } from "../compliance/export.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
 import { assetsToSarif } from "../discovery/sarif.js";
+import { openApiDocument } from "../openapi.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
@@ -21,6 +22,12 @@ const scanLimiter = rateLimit(30, 5 * 60_000, (req) => req.orgId);
 
 api.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "quantumvault", patterns: patternCount() });
+});
+
+// Machine-readable API contract for integrators / SDK generation.
+api.get("/openapi.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(JSON.stringify(openApiDocument(), null, 2));
 });
 
 api.get("/dashboard", (req, res) => {

@@ -11,6 +11,7 @@ import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
 import { assetsToSarif } from "../discovery/sarif.js";
+import { openApiDocument } from "../openapi.js";
 import { RateLimiter, rateLimit } from "../auth/rateLimit.js";
 import type { Request, Response } from "express";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
@@ -216,6 +217,21 @@ test("sarif: critical/high map to error level", () => {
   const sarif = assetsToSarif([a]) as any;
   // a payment/auth RSA key scores critical -> error
   assert.equal(sarif.runs[0].results[0].level, "error");
+});
+
+// ------------------------------------------------------------- OpenAPI
+test("openapi: emits a valid 3.1 document covering the key endpoints", () => {
+  const doc = openApiDocument() as any;
+  assert.equal(doc.openapi, "3.1.0");
+  assert.equal(doc.info.title, "QuantumVault API");
+  assert.equal(doc.servers[0].url, "/api");
+  assert.ok(doc.components.securitySchemes.bearerAuth);
+  // representative endpoints across the surface are described
+  for (const p of ["/health", "/scans", "/scans/git", "/cbom.json", "/sarif.json", "/compliance/{framework}", "/assets/{id}/status"]) {
+    assert.ok(doc.paths[p], `missing path: ${p}`);
+  }
+  // a mutating endpoint requires bearer auth
+  assert.deepEqual(doc.paths["/scans"].post.security, [{ bearerAuth: [] }]);
 });
 
 // ------------------------------------------------------------- rate limiter

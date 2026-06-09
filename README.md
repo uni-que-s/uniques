@@ -155,6 +155,7 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | POST | `/api/auth/login` | | Log in, returns a token |
 | GET | `/api/auth/me` | ● | Current user/org |
 | GET | `/api/health` | | Service + pattern count |
+| GET | `/api/openapi.json` | | OpenAPI 3.1 description of this API |
 | GET | `/api/dashboard` | | Posture + migration progress for the latest scan |
 | GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
 | GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |

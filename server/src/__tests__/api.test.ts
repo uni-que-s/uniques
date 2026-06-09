@@ -58,6 +58,15 @@ test("health reports ok and the pattern count", async () => {
   assert.equal(body.patterns, 28);
 });
 
+test("openapi.json is served and well-formed", async () => {
+  const r = await json("/api/openapi.json");
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("content-type") ?? "", /application\/json/);
+  const doc = await r.json();
+  assert.equal(doc.openapi, "3.1.0");
+  assert.ok(doc.paths["/scans"]);
+});
+
 test("auth is required for scanning and status changes", async () => {
   const noTok = await json("/api/scans", {
     method: "POST",
