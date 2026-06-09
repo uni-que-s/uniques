@@ -239,3 +239,91 @@ test("scanner: discovers crypto assets in a temp source tree and skips junk dirs
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("scanner: new multi-language patterns fire on real constructs but not on bait text", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-test-multi-"));
+  try {
+    // --- Real quantum-vulnerable constructs across languages ---
+    writeFileSync(
+      join(dir, "signer.rb"),
+      [
+        "key = OpenSSL::PKey::RSA.new(2048)",
+        "legacy = OpenSSL::PKey::DSA.new(1024)",
+        'curve = OpenSSL::PKey::EC.new("prime256v1")',
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(dir, "Token.java"),
+      'KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");',
+    );
+    writeFileSync(
+      join(dir, "batch.java"),
+      'KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");',
+    );
+    writeFileSync(
+      join(dir, "onboard.php"),
+      "$k = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_RSA]);",
+    );
+    writeFileSync(
+      join(dir, "vault.rs"),
+      "let master = RsaPrivateKey::new(&mut rng, 3072).unwrap();",
+    );
+    writeFileSync(
+      join(dir, "backup.key"),
+      "-----BEGIN PGP PRIVATE KEY BLOCK-----\nzZZZ\n-----END PGP PRIVATE KEY BLOCK-----\n",
+    );
+
+    // --- Bait files: superficially crypto-ish text that must NOT match ---
+    // Ruby bait: mentions classes/identifiers but never the exact constructors.
+    writeFileSync(
+      join(dir, "bait.rb"),
+      [
+        "# notes mentioning AES256 and WINDOWS256 and ordinary identifiers",
+        "MyRSAHelper = Object.new # a custom helper, not the OpenSSL constructor",
+        "describe_rsa_options('docs about RSA but no construction')",
+        "OpenSSL::PKey::RSA.generate(2048) # generate, not .new",
+        "RsaPrivateKeyDocs = 'identifier mention only, no :: accessor'",
+      ].join("\n"),
+    );
+    // PHP/Java/Rust bait: near-miss tokens in their own languages.
+    writeFileSync(
+      join(dir, "bait.php"),
+      [
+        "<?php",
+        "openssl_pkey_export_to_file($x, 'out.pem'); // different fn, no KEYTYPE_RSA",
+        "$type = 'OPENSSL_KEYTYPE_RSA'; // a string constant, no openssl_pkey_new call",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(dir, "bait.java"),
+      [
+        "int ekgPairGenerator = 1; // not a real KeyPairGenerator",
+        'String alg = "RSA"; // a literal, no getInstance call',
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(dir, "bait.txt"),
+      "BEGIN PGP PUBLIC KEY BLOCK is a different, non-private header\n",
+    );
+
+    const { assets } = scanDirectory(dir, "scan-multi");
+    const idsByFile = (f: string) =>
+      new Set(assets.filter((a) => a.file === f).map((a) => a.patternId));
+
+    // Each new construct fires exactly its intended pattern.
+    assert.ok(idsByFile("signer.rb").has("rsa-ruby-openssl"));
+    assert.ok(idsByFile("signer.rb").has("dsa-ruby-openssl"));
+    assert.ok(idsByFile("signer.rb").has("ecc-ruby-openssl"));
+    assert.ok(idsByFile("Token.java").has("rsa-java-keypairgen"));
+    assert.ok(idsByFile("batch.java").has("dsa-java-keypairgen"));
+    assert.ok(idsByFile("onboard.php").has("rsa-php-openssl"));
+    assert.ok(idsByFile("vault.rs").has("rsa-rust-crate"));
+    assert.ok(idsByFile("backup.key").has("rsa-pgp-private-block"));
+
+    // ZERO findings on any bait file — the zero-false-positive guarantee.
+    const baitFindings = assets.filter((a) => a.file.startsWith("bait."));
+    assert.equal(baitFindings.length, 0, `bait produced findings: ${JSON.stringify(baitFindings.map((a) => `${a.file}:${a.patternId}`))}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
