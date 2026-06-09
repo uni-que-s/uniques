@@ -78,9 +78,9 @@ test("risk: scoreAssets mutates the batch in place and attaches risk", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (20)", () => {
+test("patterns: patternCount matches the database length and health endpoint (28)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 20);
+  assert.equal(patternCount(), 28);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
