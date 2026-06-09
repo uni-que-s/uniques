@@ -13,12 +13,14 @@ risk once a cryptographically-relevant quantum computer exists.
 
 ## Features
 
-- **Cryptographic asset discovery** — a 12-pattern, language-agnostic scanner
+- **Cryptographic asset discovery** — a 20-pattern, language-agnostic scanner
   detects RSA, ECC (incl. Ed25519/X25519), DSA, Diffie-Hellman, legacy symmetric
-  (DES/3DES/AES-128), broken hashes (MD5/SHA-1), and RSA X.509 certs across 20+
-  file types. Scans a **local path** or shallow-clones a **public or private Git
-  repo** (GitHub/GitLab/Bitbucket; private via an access token sent as an auth
-  header, kept out of the URL and never logged).
+  (DES/3DES/AES-128), broken hashes (MD5/SHA-1), RSA/EC/DSA private-key PEMs,
+  JWT/JOSE signing algorithms (RS/ES/PS), Web Crypto RSA, SSH key types in IaC,
+  and RSA X.509 certs across 20+ file types. Scans a **local path** or
+  shallow-clones a **public or private Git repo** (GitHub/GitLab/Bitbucket;
+  private via an access token sent as an auth header, kept out of the URL and
+  never logged).
 - **Risk scoring & prioritization** — a 5-factor weighted model (data sensitivity,
   retention exposure, harvest-now-decrypt-later exposure, compliance impact,
   business impact) yields a 0–100 score, a priority tier, a migration-effort

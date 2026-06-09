@@ -154,6 +154,102 @@ export const PATTERNS: CryptoPattern[] = [
     languages: ["config", "nginx", "yaml", "pem"],
     pqcReplacement: "Hybrid X.509 (ML-DSA + classical) per NIST PQC migration",
   },
+
+  // ---------------------------------------------- additional high-confidence
+  // Asymmetric private-key PEM blocks (siblings of rsa-pem-header).
+  {
+    id: "ecc-pem-header",
+    family: "ECC",
+    algorithm: "ECDSA/ECDH (EC key)",
+    description: "Elliptic-curve private key PEM block",
+    regex: /-----BEGIN EC PRIVATE KEY-----/,
+    quantumVulnerable: true,
+    baseSeverity: "critical",
+    languages: ["pem", "config", "any"],
+    pqcReplacement: "Re-issue as ML-DSA (Dilithium) signing key",
+  },
+  {
+    id: "dsa-pem-header",
+    family: "DSA",
+    algorithm: "DSA",
+    description: "DSA private key PEM block",
+    regex: /-----BEGIN DSA PRIVATE KEY-----/,
+    quantumVulnerable: true,
+    baseSeverity: "critical",
+    languages: ["pem", "config", "any"],
+    pqcReplacement: "ML-DSA (Dilithium)",
+  },
+  // JOSE/JWT signing algorithms imply RSA (RS*/PS*) or ECDSA (ES*) keys.
+  // Case-sensitive and bounded so AES256 / arbitrary IDs don't false-match.
+  {
+    id: "jwt-rsa-alg",
+    family: "RSA",
+    algorithm: "RSA (JWT RS/PS)",
+    description: "JWT/JOSE RSA signing algorithm (RS/PS 256/384/512)",
+    regex: /\b(?:RS|PS)(?:256|384|512)\b/,
+    quantumVulnerable: true,
+    baseSeverity: "medium",
+    languages: ["javascript", "typescript", "python", "go", "java", "csharp", "json", "yaml"],
+    pqcReplacement: "ML-DSA (Dilithium) signatures",
+  },
+  {
+    id: "jwt-ecdsa-alg",
+    family: "ECC",
+    algorithm: "ECDSA (JWT ES)",
+    description: "JWT/JOSE ECDSA signing algorithm (ES 256/384/512)",
+    regex: /\bES(?:256|384|512)\b/,
+    quantumVulnerable: true,
+    baseSeverity: "medium",
+    languages: ["javascript", "typescript", "python", "go", "java", "csharp", "json", "yaml"],
+    pqcReplacement: "ML-DSA (Dilithium) signatures",
+  },
+  // Web Crypto API asymmetric algorithm identifiers.
+  {
+    id: "rsa-webcrypto",
+    family: "RSA",
+    algorithm: "RSA (Web Crypto)",
+    description: "Web Crypto RSA algorithm identifier",
+    regex: /\bRSA-(?:OAEP|PSS)\b|\bRSASSA-PKCS1-v1_5\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["javascript", "typescript"],
+    pqcReplacement: "ML-KEM (Kyber) for encryption, ML-DSA (Dilithium) for signatures",
+  },
+  // SSH public-key key types embedded in IaC / config.
+  {
+    id: "ssh-rsa-key",
+    family: "RSA",
+    algorithm: "RSA (SSH)",
+    description: "SSH RSA public key type",
+    regex: /\bssh-rsa\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["config", "yaml", "terraform", "json", "any"],
+    pqcReplacement: "Rotate to a PQC-capable SSH key (ML-DSA) once standardized",
+  },
+  {
+    id: "ssh-ecdsa-key",
+    family: "ECC",
+    algorithm: "ECDSA (SSH)",
+    description: "SSH ECDSA public key type",
+    regex: /\becdsa-sha2-nistp(?:256|384|521)\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["config", "yaml", "terraform", "json", "any"],
+    pqcReplacement: "Rotate to a PQC-capable SSH key (ML-DSA) once standardized",
+  },
+  // Go standard-library asymmetric crypto.
+  {
+    id: "go-crypto-rsa",
+    family: "RSA",
+    algorithm: "RSA (Go crypto)",
+    description: "Go crypto/rsa import or key generation",
+    regex: /\bcrypto\/rsa\b|\brsa\.GenerateKey\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["go"],
+    pqcReplacement: "ML-KEM (Kyber) / ML-DSA (Dilithium)",
+  },
 ];
 
 const KEY_BITS_RE = /\b(512|768|1024|2048|3072|4096|256|384|521|128)\b/;

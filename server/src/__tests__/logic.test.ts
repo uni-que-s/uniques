@@ -78,9 +78,9 @@ test("risk: scoreAssets mutates the batch in place and attaches risk", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (12)", () => {
+test("patterns: patternCount matches the database length and health endpoint (20)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 12);
+  assert.equal(patternCount(), 20);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
@@ -89,6 +89,32 @@ test("patterns: every pattern has a non-empty PQC replacement and a unique id", 
     assert.ok(p.pqcReplacement.length > 0, `${p.id} missing pqcReplacement`);
     assert.ok(!ids.has(p.id), `duplicate pattern id: ${p.id}`);
     ids.add(p.id);
+  }
+});
+
+test("patterns: extended detectors fire and resist common false positives", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-ext-"));
+  try {
+    writeFileSync(join(dir, "jwt.ts"), 'const opts = { algorithm: "RS256" };\nconst v = { alg: "ES256" };\n');
+    writeFileSync(join(dir, "key.pem"), "-----BEGIN EC PRIVATE KEY-----\nabc\n-----END EC PRIVATE KEY-----\n");
+    writeFileSync(join(dir, "main.go"), 'import "crypto/rsa"\n');
+    writeFileSync(join(dir, "infra.tf"), 'key = "ecdsa-sha2-nistp256 AAAA"\n');
+    // False-positive bait: AES-256 is quantum-OK and must NOT trigger the ES256
+    // matcher; neither should arbitrary identifiers ending in 256.
+    writeFileSync(join(dir, "clean.ts"), 'const c = "aes-256-gcm";\nconst k = "AES256KEY";\nconst n = WINDOWS256;\n');
+
+    const { assets } = scanDirectory(dir, "ext-test");
+    const ids = new Set(assets.map((a) => a.patternId));
+    assert.ok(ids.has("jwt-rsa-alg"), "RS256 detected");
+    assert.ok(ids.has("jwt-ecdsa-alg"), "ES256 detected");
+    assert.ok(ids.has("ecc-pem-header"), "EC private-key PEM detected");
+    assert.ok(ids.has("go-crypto-rsa"), "crypto/rsa import detected");
+    assert.ok(ids.has("ssh-ecdsa-key"), "ssh ecdsa key type detected");
+
+    const cleanHits = assets.filter((a) => a.file === "clean.ts").map((a) => a.patternId);
+    assert.equal(cleanHits.length, 0, `clean.ts should yield no findings, got: ${cleanHits.join(", ")}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
