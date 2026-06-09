@@ -4,8 +4,8 @@
 
 **Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
 cryptographic assets across a codebase, scores them for post-quantum migration
-priority, tracks remediation to completion, and auto-generates FISMA / CISA /
-FedRAMP compliance reports.
+priority, tracks remediation to completion, and auto-generates FISMA, CISA,
+FedRAMP, SOC 2, and PCI-DSS compliance reports.
 
 It closes the full loop — **discover → prioritize → track → prove compliance** —
 for the "harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at
@@ -13,11 +13,12 @@ risk once a cryptographically-relevant quantum computer exists.
 
 ## Features
 
-- **Cryptographic asset discovery** — a 20-pattern, language-agnostic scanner
+- **Cryptographic asset discovery** — a 28-pattern, language-agnostic scanner
   detects RSA, ECC (incl. Ed25519/X25519), DSA, Diffie-Hellman, legacy symmetric
-  (DES/3DES/AES-128), broken hashes (MD5/SHA-1), RSA/EC/DSA private-key PEMs,
-  JWT/JOSE signing algorithms (RS/ES/PS), Web Crypto RSA, SSH key types in IaC,
-  and RSA X.509 certs across 20+ file types. Scans a **local path** or
+  (DES/3DES/AES-128), broken hashes (MD5/SHA-1), RSA/EC/DSA private-key PEMs (incl.
+  PGP key blocks), JWT/JOSE signing algorithms (RS/ES/PS), Web Crypto RSA, SSH key
+  types in IaC, language-specific key APIs (Java, Ruby, PHP, Rust, Go, Python),
+  and RSA X.509 certs across 25+ file types. Scans a **local path** or
   shallow-clones a **public or private Git repo** (GitHub/GitLab/Bitbucket;
   private via an access token sent as an auth header, kept out of the URL and
   never logged).
@@ -33,8 +34,8 @@ risk once a cryptographically-relevant quantum computer exists.
 - **Drift detection** — each scan is diffed against the previous one, so the
   dashboard flags **new findings introduced** and **findings removed** since last
   time — catching, e.g., a PR that adds a fresh RSA usage.
-- **Compliance automation** — maps findings to FISMA / CISA / FedRAMP controls
-  with pass/gap/fail status and remediation guidance; exports an auditor-ready
+- **Compliance automation** — maps findings to FISMA, CISA, FedRAMP, SOC 2, and
+  PCI-DSS controls with pass/gap/fail status and remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
   inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets.
 - **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
@@ -50,7 +51,7 @@ web/      React 18 + TypeScript + Vite + Tailwind v4 + Recharts dashboard
 server/   Express + TypeScript API
             discovery/   pattern DB, directory scanner, Git clone   (core engine)
             risk/        5-factor weighted risk scorer
-            compliance/  FISMA / CISA / FedRAMP report generator + HTML export
+            compliance/  FISMA/CISA/FedRAMP/SOC2/PCI-DSS report generator + HTML export
             auth/        scrypt auth, sessions, org-scoping middleware
             store/       SQLite persistence (node:sqlite — zero native deps)
             sample-target/  bundled vulnerable fixtures, scanned on first boot
