@@ -5,11 +5,17 @@ import { store } from "../store/store.js";
 import { patternCount } from "../discovery/patterns.js";
 import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
+import { rateLimit } from "../auth/rateLimit.js";
 import { renderReportHtml } from "../compliance/export.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
+
+// Scanning clones/walks a whole codebase, so it's far more costly than a normal
+// request. Throttle per org (not per IP) so one tenant's bulk scanning can't
+// starve others, while corporate NATs sharing an IP aren't lumped together.
+const scanLimiter = rateLimit(30, 5 * 60_000, (req) => req.orgId);
 
 api.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "quantumvault", patterns: patternCount() });
@@ -57,7 +63,7 @@ api.get("/scans", (req, res) => {
 });
 
 // Scanning a local path is an operator action — require an authenticated account.
-api.post("/scans", requireAuth, (req, res) => {
+api.post("/scans", requireAuth, scanLimiter, (req, res) => {
   const target = (req.body?.target as string | undefined)?.trim();
   if (!target) return res.status(400).json({ error: "target path is required" });
   const abs = resolve(target);
@@ -66,7 +72,7 @@ api.post("/scans", requireAuth, (req, res) => {
   res.status(201).json(result);
 });
 
-api.post("/scans/git", requireAuth, async (req, res) => {
+api.post("/scans/git", requireAuth, scanLimiter, async (req, res) => {
   const url = (req.body?.url as string | undefined)?.trim();
   const token = (req.body?.token as string | undefined)?.trim() || undefined;
   if (!url) return res.status(400).json({ error: "repository url is required" });

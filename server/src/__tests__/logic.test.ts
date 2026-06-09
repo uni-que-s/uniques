@@ -9,7 +9,8 @@ import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
-import { RateLimiter } from "../auth/rateLimit.js";
+import { RateLimiter, rateLimit } from "../auth/rateLimit.js";
+import type { Request, Response } from "express";
 import type { CryptoAsset, CryptoFamily } from "../types.js";
 
 /** Build a minimal valid CryptoAsset for scoring tests. */
@@ -136,6 +137,36 @@ test("rateLimiter: allows up to max, blocks the overflow, recovers after the win
   // advance past the window -> the old hits expire and requests are allowed again
   now += 1001;
   assert.equal(rl.check("ip1"), true);
+});
+
+test("rateLimit middleware blocks after max per key and isolates keys", () => {
+  const mw = rateLimit(2, 1000, (req) => req.orgId);
+  const run = (org: string) => {
+    const req = { orgId: org, ip: "1.1.1.1" } as unknown as Request;
+    let statusCode = 0;
+    let nexted = false;
+    const res = {
+      status(c: number) {
+        statusCode = c;
+        return res;
+      },
+      json() {
+        return res;
+      },
+    } as unknown as Response;
+    mw(req, res, () => {
+      nexted = true;
+    });
+    return { nexted, statusCode };
+  };
+
+  assert.equal(run("orgA").nexted, true);
+  assert.equal(run("orgA").nexted, true);
+  const third = run("orgA");
+  assert.equal(third.nexted, false, "3rd request for orgA is blocked");
+  assert.equal(third.statusCode, 429);
+  // a different org is tracked independently and still allowed
+  assert.equal(run("orgB").nexted, true);
 });
 
 // ------------------------------------------------------------- repo normalizer (SSRF guard)

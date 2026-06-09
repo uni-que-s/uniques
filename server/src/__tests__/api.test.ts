@@ -10,6 +10,7 @@ import { join } from "node:path";
 // Isolate the database before importing the app (which transitively opens it).
 const dbDir = mkdtempSync(join(tmpdir(), "qv-api-db-"));
 process.env.QV_DB_PATH = join(dbDir, "test.db");
+process.env.QV_LOG = "off"; // keep test output clean of access logs
 
 const { createApp } = await import("../app.js");
 

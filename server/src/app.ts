@@ -4,6 +4,7 @@ import { api } from "./routes/api.js";
 import { authRouter } from "./routes/auth.js";
 import { withAuth } from "./auth/middleware.js";
 import { corsOptions, securityHeaders } from "./security.js";
+import { requestLogger } from "./logging.js";
 
 /**
  * Build the Express app (middleware + routes) without starting a listener or
@@ -17,6 +18,7 @@ export function createApp(): Express {
   app.set("trust proxy", true);
   app.disable("x-powered-by");
   app.use(securityHeaders);
+  app.use(requestLogger);
   app.use(cors(corsOptions()));
   app.use(express.json());
   app.use("/api", withAuth);

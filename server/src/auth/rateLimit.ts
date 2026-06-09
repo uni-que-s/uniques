@@ -28,12 +28,19 @@ export class RateLimiter {
   }
 }
 
-/** Express middleware: limit requests per client IP. */
-export function rateLimit(max: number, windowMs: number) {
+/**
+ * Express middleware: limit requests per key within a window. Defaults to keying
+ * by client IP; pass `keyFn` to scope differently (e.g. by org for per-tenant
+ * fairness on expensive endpoints).
+ */
+export function rateLimit(
+  max: number,
+  windowMs: number,
+  keyFn: (req: Request) => string = (req) => req.ip ?? "unknown",
+) {
   const limiter = new RateLimiter(max, windowMs);
   return (req: Request, res: Response, next: NextFunction): void => {
-    const key = req.ip ?? "unknown";
-    if (!limiter.check(key)) {
+    if (!limiter.check(keyFn(req))) {
       res.status(429).json({ error: "too many requests — please slow down and try again shortly" });
       return;
     }
