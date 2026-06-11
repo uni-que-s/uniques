@@ -140,6 +140,14 @@
   .access h3{margin:0 0 6px;font-size:21px}
   .access p{color:var(--muted);max-width:580px;margin:0 auto 22px}
   .access .priv{display:block;margin-top:14px;font-size:13px;color:var(--faint)}
+  .access-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px}
+  @media(max-width:680px){.access-grid{grid-template-columns:1fr}}
+  .access-card{border:1px solid var(--line);border-radius:16px;padding:30px 26px;text-align:center;background:var(--panel)}
+  .access-card.buy{border-color:var(--accent);
+    background:radial-gradient(90% 130% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel)}
+  .access-card h3{margin:0 0 6px;font-size:19px}
+  .access-card p{color:var(--muted);font-size:14px;margin:0 auto 16px;max-width:340px}
+  .access-card .price{font-family:var(--mono);color:var(--accent-ink);font-size:13px;margin-bottom:16px}
 
   /* final cta */
   .final{background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel);
@@ -362,14 +370,24 @@ docker compose up --build
           </ul>
         </div>
       </div>
-      <div class="access">
-        <h3>Become a design partner</h3>
-        <p>We're working with a small number of regulated teams to shape the
-          platform — early access, roadmap influence, and locked-in pricing in
-          exchange for honest feedback.</p>
-        <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Early+access+%2F+design+partner+request&body=Company%3A%0AYour+role%3A%0AApprox+engineers%3A%0AWhat%27s+driving+your+PQC+timeline+%28mandate%2Faudit%2Fother%29%3A%0AAnything+else%3A">Apply for early access</a>
-        <span class="priv">Prefer to talk privately? Email <a href="mailto:REPLACE-WITH-YOUR-EMAIL@example.com?subject=QuantumVault%20early%20access">your founder address</a> (swap this in).</span>
+      <div class="access-grid">
+        <div class="access-card buy">
+          <h3>Get a Quantum Readiness Assessment</h3>
+          <p>A fixed-fee engagement: we inventory your cryptography, rank it for
+            post-quantum migration, and deliver an auditor-ready report + CBOM.</p>
+          <div class="price">from $2,500 · delivered in days</div>
+          <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Quantum+Readiness+Assessment+request&body=Company%3A%0AContact+email%3A%0AApprox+repos+%2F+estate+size%3A%0ACompliance+drivers+%28FISMA%2FFedRAMP%2FPCI%2FDORA%2Fother%29%3A%0APreferred+tier+%28Starter+%242.5k+%2F+Standard+%247.5k+%2F+Enterprise%29%3A">Book an assessment</a>
+        </div>
+        <div class="access-card">
+          <h3>Become a design partner</h3>
+          <p>Shaping the platform with a few regulated teams — early access, roadmap
+            influence, and locked-in pricing in exchange for honest feedback.</p>
+          <div class="price">free · limited spots</div>
+          <a class="btn" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Early+access+%2F+design+partner+request&body=Company%3A%0AYour+role%3A%0AApprox+engineers%3A%0AWhat%27s+driving+your+PQC+timeline+%28mandate%2Faudit%2Fother%29%3A%0AAnything+else%3A">Apply for early access</a>
+        </div>
       </div>
+      <p class="priv" style="text-align:center">Prefer to talk privately? Email
+        <a href="mailto:REPLACE-WITH-YOUR-EMAIL@example.com?subject=QuantumVault%20inquiry">your founder address</a> (swap this in).</p>
     </div>
   </section>
 
