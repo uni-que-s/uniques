@@ -153,7 +153,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DemigodDSK/quantumvault@main
+      - uses: DemigodDSK/quantumvault@v0.1.0   # pin to a release tag (or a commit SHA)
         with:
           path: .
           fail-on: high          # optional: fail the PR on a high+ finding

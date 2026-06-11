@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QuantumVault — Find the cryptography quantum computers will break</title>
+<meta name="description" content="QuantumVault discovers quantum-vulnerable cryptography across your codebase, scores it for post-quantum migration priority, tracks remediation, and proves compliance — closing the loop on the harvest-now, decrypt-later threat." />
+<meta name="theme-color" content="#7c3aed" />
+<meta property="og:title" content="QuantumVault — Quantum-safe cryptography platform" />
+<meta property="og:description" content="Discover → prioritize → track → prove compliance for the harvest-now, decrypt-later threat to RSA/ECC." />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --bg:#0a0a0f; --panel:#12121b; --panel2:#171723; --line:#262638;
+    --ink:#e9e9f1; --muted:#a0a0b8; --faint:#6f6f88;
+    --accent:#a78bfa; --accent2:#7c3aed; --accent-ink:#ede9fe;
+    --ok:#34d399; --warn:#fbbf24; --crit:#fb7185;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono)}
+
+  /* top bar */
+  header{position:sticky;top:0;z-index:10;background:rgba(10,10,15,.82);
+    backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;gap:18px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+  .brand .dot{width:22px;height:22px;border-radius:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 0 18px rgba(124,58,237,.55)}
+  .nav .spacer{flex:1}
+  .nav a.navlink{color:var(--muted);font-size:14px}
+  .nav a.navlink:hover{color:var(--ink);text-decoration:none}
+  .btn{display:inline-block;padding:9px 16px;border-radius:9px;font-weight:600;font-size:14px;
+    border:1px solid var(--line);color:var(--ink)}
+  .btn:hover{text-decoration:none;border-color:var(--accent)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent2),#6d28d9);border-color:transparent;
+    color:#fff;box-shadow:0 6px 24px rgba(124,58,237,.35)}
+  @media(max-width:680px){.nav a.navlink{display:none}}
+
+  /* hero */
+  .hero{padding:84px 0 56px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:-40% -10% auto -10%;height:480px;
+    background:radial-gradient(60% 60% at 50% 0%,rgba(124,58,237,.22),transparent 70%);
+    pointer-events:none}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--line);
+    background:var(--panel);padding:6px 12px;border-radius:999px}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 0 rgba(167,139,250,.6);animation:p 2.2s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(167,139,250,.5)}70%{box-shadow:0 0 0 9px rgba(167,139,250,0)}100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}}
+  h1{font-size:clamp(34px,5.4vw,58px);line-height:1.05;margin:22px 0 0;letter-spacing:-.02em;font-weight:800}
+  h1 .grad{background:linear-gradient(110deg,#c4b5fd,#7c3aed 60%,#a78bfa);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:clamp(16px,2vw,20px);color:var(--muted);max-width:680px;margin:20px 0 0}
+  .cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:32px}
+  .loop{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px;align-items:center;color:var(--faint);
+    font-family:var(--mono);font-size:13.5px}
+  .loop b{color:var(--accent-ink);font-weight:600}
+  .loop .arw{color:var(--accent)}
+
+  /* sections */
+  section{padding:62px 0;border-top:1px solid var(--line)}
+  .kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h2{font-size:clamp(24px,3.4vw,34px);margin:10px 0 6px;letter-spacing:-.01em;font-weight:750}
+  .lead{color:var(--muted);max-width:720px;font-size:17px}
+
+  /* threat callout */
+  .threat{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:16px;padding:30px;display:grid;grid-template-columns:1.3fr 1fr;gap:26px}
+  .threat p{margin:0 0 12px;color:var(--muted)}
+  .threat .big{font-size:19px;color:var(--ink)}
+  .timeline{border-left:2px solid var(--line);padding-left:18px;display:flex;flex-direction:column;gap:16px}
+  .tl{position:relative}
+  .tl::before{content:"";position:absolute;left:-25px;top:4px;width:10px;height:10px;border-radius:50%;
+    background:var(--accent2);box-shadow:0 0 12px rgba(124,58,237,.6)}
+  .tl b{display:block;color:var(--ink);font-size:14px}
+  .tl span{color:var(--faint);font-size:13px}
+  @media(max-width:760px){.threat{grid-template-columns:1fr}}
+
+  /* feature grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}
+  @media(max-width:880px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;
+    transition:border-color .2s,transform .2s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .card h3{margin:0 0 8px;font-size:16.5px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .card .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:14px;
+    background:rgba(124,58,237,.14);border:1px solid var(--line);color:var(--accent);font-family:var(--mono);
+    font-weight:700;font-size:15px}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+  @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center}
+  .stat .n{font-size:30px;font-weight:800;color:var(--accent-ink);font-family:var(--mono)}
+  .stat .l{color:var(--muted);font-size:13.5px;margin-top:4px}
+
+  /* code */
+  pre{background:#0c0c14;border:1px solid var(--line);border-radius:12px;padding:18px 20px;overflow:auto;
+    font-family:var(--mono);font-size:13.5px;line-height:1.7;color:#d6d6e7;margin:14px 0 0}
+  pre .c{color:var(--faint)}
+  pre .k{color:var(--accent)}
+  pre .s{color:#7ee0c0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .two>div{min-width:0}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .two h3{font-size:15px;margin:0 0 2px;color:var(--ink)}
+  .two .hint{color:var(--faint);font-size:13.5px;margin:0}
+
+  /* standards chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 15px;
+    font-size:13.5px;color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+
+  /* final cta */
+  .final{background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel);
+    border:1px solid var(--line);border-radius:18px;padding:46px 30px;text-align:center}
+  .final h2{margin:0 0 8px}
+  .final p{color:var(--muted);max-width:560px;margin:0 auto 24px}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 56px;color:var(--faint);font-size:14px}
+  .frow{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  footer .spacer{flex:1}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <span class="brand"><span class="dot"></span> QuantumVault</span>
+    <span class="spacer"></span>
+    <a class="navlink" href="#threat">The threat</a>
+    <a class="navlink" href="#features">What it does</a>
+    <a class="navlink" href="#adopt">Adopt</a>
+    <a class="navlink" href="#standards">Standards</a>
+    <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">View on GitHub</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" style="border-top:none">
+    <div class="wrap">
+      <span class="eyebrow"><span class="pulse"></span> Post-quantum readiness</span>
+      <h1>Find the cryptography<br><span class="grad">quantum computers will break.</span></h1>
+      <p class="sub">QuantumVault discovers quantum-vulnerable cryptographic assets across your
+        codebase, scores them for migration priority, tracks remediation to completion, and
+        generates auditor-ready compliance reports — so the inventory becomes a worklist, not a worry.</p>
+      <div class="cta">
+        <a class="btn primary" href="#adopt">Scan a repo in one command</a>
+        <a class="btn" href="https://github.com/DemigodDSK/quantumvault">Read the docs</a>
+      </div>
+      <div class="loop">
+        <b>Discover</b> <span class="arw">→</span> <b>Prioritize</b> <span class="arw">→</span>
+        <b>Track</b> <span class="arw">→</span> <b>Prove compliance</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREAT -->
+  <section id="threat">
+    <div class="wrap">
+      <span class="kicker">Harvest now, decrypt later</span>
+      <h2>The data you encrypt today can be stolen today — and read tomorrow.</h2>
+      <p class="lead" style="margin-bottom:26px">Adversaries are already capturing encrypted
+        traffic and archives, betting on a future quantum computer to decrypt them. RSA and
+        elliptic-curve cryptography — the backbone of TLS, signing, and key exchange — fall to
+        Shor's algorithm. The migration to post-quantum cryptography starts with knowing what
+        you have.</p>
+      <div class="threat">
+        <div>
+          <p class="big">You can't migrate what you can't see. Most organizations have no
+            inventory of where RSA, ECC, and legacy crypto live across their code, configs,
+            certs, and keys.</p>
+          <p>QuantumVault builds that inventory automatically — across 25+ file types and a
+            34-pattern detection engine — then turns it into a prioritized, trackable migration
+            plan mapped to the compliance frameworks auditors actually ask about.</p>
+        </div>
+        <div class="timeline">
+          <div class="tl"><b>Today</b><span>Encrypted data is captured and stored by adversaries.</span></div>
+          <div class="tl"><b>Now → migration</b><span>NIST has standardized ML-KEM, ML-DSA, SLH-DSA. Federal mandates are landing.</span></div>
+          <div class="tl"><b>Q-Day</b><span>A cryptographically-relevant quantum computer retroactively decrypts the harvest.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section>
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat"><div class="n">34</div><div class="l">detection patterns</div></div>
+        <div class="stat"><div class="n">5</div><div class="l">compliance frameworks</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">native dependencies</div></div>
+        <div class="stat"><div class="n">1</div><div class="l">command to run it all</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <span class="kicker">What it does</span>
+      <h2>A complete post-quantum migration loop.</h2>
+      <p class="lead">Not just a scanner — an inventory, a risk model, a worklist, and an audit trail.</p>
+      <div class="grid">
+        <div class="card"><div class="ic">01</div><h3>Cryptographic discovery</h3>
+          <p>A 34-pattern, language-agnostic scanner finds RSA, ECC (incl. Ed25519/X25519), DSA,
+            Diffie-Hellman, legacy symmetric (DES/3DES/AES-128), broken hashes (MD5/SHA-1),
+            private-key PEMs, JWT/JOSE algorithms, and X.509 certs across 25+ file types.</p></div>
+        <div class="card"><div class="ic">02</div><h3>Risk scoring</h3>
+          <p>A transparent 5-factor weighted model yields a 0–100 score, a priority tier, a
+            migration-effort estimate, and a NIST PQC replacement (ML-KEM / ML-DSA / SLH-DSA).
+            Weights are tunable per deployment.</p></div>
+        <div class="card"><div class="ic">03</div><h3>Migration tracking</h3>
+          <p>Mark each asset open → in progress → migrated → accepted. Status <b>persists across
+            re-scans</b>, so the dashboard shows live progress and remaining effort instead of a
+            stale report.</p></div>
+        <div class="card"><div class="ic">04</div><h3>Drift detection</h3>
+          <p>Every scan is diffed against the last one, flagging findings introduced and removed —
+            catching, e.g., a PR that adds a fresh RSA usage before it merges.</p></div>
+        <div class="card"><div class="ic">05</div><h3>Compliance automation</h3>
+          <p>Maps findings to FISMA, CISA, FedRAMP, SOC 2, and PCI-DSS controls with pass/gap/fail
+            status, then exports auditor-ready JSON and print-to-PDF HTML reports.</p></div>
+        <div class="card"><div class="ic">06</div><h3>Standards-based exports</h3>
+          <p>SARIF 2.1.0 for GitHub code-scanning, a CycloneDX 1.6 CBOM (Cryptography Bill of
+            Materials), and filtered CSV for SIEM, spreadsheets, or tickets.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADOPT -->
+  <section id="adopt">
+    <div class="wrap">
+      <span class="kicker">Adopt in minutes</span>
+      <h2>Run the platform, or gate every pull request.</h2>
+      <div class="two" style="margin-top:24px">
+        <div>
+          <h3>Run the full platform</h3>
+          <p class="hint">Dashboard + API, one command. No external database.</p>
+<pre><span class="c"># from quantumvault/</span>
+docker compose up --build
+<span class="c"># dashboard → http://localhost:8080</span>
+<span class="c"># API       → http://localhost:4000</span></pre>
+        </div>
+        <div>
+          <h3>Gate PRs with the GitHub Action</h3>
+          <p class="hint">Surface findings as code-scanning alerts; fail on high+.</p>
+<pre><span class="k">- uses:</span> DemigodDSK/quantumvault@v0.1.0
+  <span class="k">with:</span>
+    <span class="k">path:</span> .
+    <span class="k">fail-on:</span> high
+    <span class="k">sarif-file:</span> quantumvault.sarif
+<span class="k">- uses:</span> github/codeql-action/upload-sarif@v3
+  <span class="k">with:</span>
+    <span class="k">sarif_file:</span> quantumvault.sarif</pre>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:18px">Prefer the command line? The same engine ships as a
+        <span class="mono">quantumvault</span> CLI with <span class="mono">--json</span>,
+        <span class="mono">--sarif</span>, <span class="mono">--cbom</span>, and
+        <span class="mono">--csv</span> output, plus <span class="mono">--fail-on &lt;severity&gt;</span>
+        to gate any pipeline by exit code.</p>
+    </div>
+  </section>
+
+  <!-- STANDARDS -->
+  <section id="standards">
+    <div class="wrap">
+      <span class="kicker">Built on the standards auditors cite</span>
+      <h2>Speaks the language of post-quantum compliance.</h2>
+      <div class="chips">
+        <span class="chip"><b>NIST PQC</b> — ML-KEM · ML-DSA · SLH-DSA</span>
+        <span class="chip"><b>CycloneDX 1.6</b> — CBOM</span>
+        <span class="chip"><b>SARIF 2.1.0</b> — code-scanning</span>
+        <span class="chip"><b>FISMA</b></span>
+        <span class="chip"><b>CISA</b></span>
+        <span class="chip"><b>FedRAMP</b></span>
+        <span class="chip"><b>SOC 2</b></span>
+        <span class="chip"><b>PCI-DSS</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section>
+    <div class="wrap">
+      <div class="final">
+        <h2>Know your quantum exposure today.</h2>
+        <p>QuantumVault is open source under the MIT license. Clone it, scan a repo, and see your
+          posture grade in minutes.</p>
+        <div class="cta" style="justify-content:center">
+          <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">Get started on GitHub</a>
+          <a class="btn" href="https://github.com/DemigodDSK/quantumvault/blob/main/SECURITY.md">Security policy</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap frow">
+    <span class="brand"><span class="dot"></span> QuantumVault</span>
+    <span class="spacer"></span>
+    <a href="https://github.com/DemigodDSK/quantumvault">GitHub</a>
+    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/LICENSE">MIT License</a>
+  </div>
+  <div class="wrap" style="margin-top:14px;color:var(--faint);font-size:13px">
+    Discover → prioritize → track → prove compliance — for the harvest-now, decrypt-later threat.
+  </div>
+</footer>
+</body>
+</html>
