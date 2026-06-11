@@ -45,7 +45,8 @@ db.exec(`
     duration_ms   INTEGER NOT NULL,
     asset_count   INTEGER NOT NULL,
     status        TEXT NOT NULL,
-    is_latest     INTEGER NOT NULL DEFAULT 0
+    is_latest     INTEGER NOT NULL DEFAULT 0,
+    monitor_id    TEXT
   );
 
   CREATE TABLE IF NOT EXISTS assets (
@@ -80,21 +81,45 @@ db.exec(`
     PRIMARY KEY (framework, scan_id)
   );
 
+  CREATE TABLE IF NOT EXISTS monitors (
+    id               TEXT PRIMARY KEY,
+    org_id           TEXT NOT NULL,
+    name             TEXT NOT NULL,
+    kind             TEXT NOT NULL,
+    target           TEXT NOT NULL,
+    interval_minutes INTEGER NOT NULL,
+    enabled          INTEGER NOT NULL DEFAULT 1,
+    created_at       TEXT NOT NULL,
+    last_run_at      TEXT,
+    next_run_at      TEXT NOT NULL,
+    last_scan_id     TEXT,
+    last_status      TEXT,
+    last_error       TEXT,
+    run_count        INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE INDEX IF NOT EXISTS idx_assets_scan ON assets(scan_id);
   CREATE INDEX IF NOT EXISTS idx_assets_org ON assets(org_id);
   CREATE INDEX IF NOT EXISTS idx_scans_org ON scans(org_id);
+  CREATE INDEX IF NOT EXISTS idx_monitors_org ON monitors(org_id);
 `);
 
 // Lightweight, idempotent migrations for databases created before a column
 // existed. CREATE TABLE IF NOT EXISTS does not alter existing tables, so add
 // new columns here; the ALTER throws (and is ignored) once the column exists.
-for (const stmt of [`ALTER TABLE assets ADD COLUMN status TEXT NOT NULL DEFAULT 'open'`]) {
+for (const stmt of [
+  `ALTER TABLE assets ADD COLUMN status TEXT NOT NULL DEFAULT 'open'`,
+  `ALTER TABLE scans ADD COLUMN monitor_id TEXT`,
+]) {
   try {
     db.exec(stmt);
   } catch {
     /* column already present — nothing to do */
   }
 }
+
+// Created after the migration so the column is guaranteed to exist on old DBs.
+db.exec(`CREATE INDEX IF NOT EXISTS idx_scans_monitor ON scans(monitor_id)`);
 
 export const DEFAULT_ORG_ID = "org_default";
 

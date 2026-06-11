@@ -11,6 +11,7 @@ const dbDir = mkdtempSync(join(tmpdir(), "qv-store-db-"));
 process.env.QV_DB_PATH = join(dbDir, "test.db");
 
 const { store } = await import("../store/store.js");
+const { runDueMonitors, runMonitorOnce } = await import("../monitor/scheduler.js");
 
 test("store: status updates drive migration progress and are org-scoped", () => {
   const org = "org_test";
@@ -121,6 +122,88 @@ test("store: scan delta reports new and removed findings vs the previous scan", 
   } finally {
     rmSync(src, { recursive: true, force: true });
   }
+});
+
+// ---------------------------------------------------------------- continuous monitoring
+test("monitor: create exposes defaults and is due immediately", () => {
+  const org = "org_mon1";
+  const m = store.createMonitor({ name: "demo", kind: "path", target: "/tmp/qv-nope", intervalMinutes: 30 }, org);
+  assert.equal(m.enabled, true);
+  assert.equal(m.runCount, 0);
+  assert.equal(m.intervalMinutes, 30);
+  assert.ok(store.dueMonitors(new Date(Date.now() + 1000)).some((d) => d.id === m.id), "new monitor is due");
+  assert.ok(store.listMonitors(org).some((x) => x.id === m.id));
+  assert.equal(store.getMonitor(m.id, org)?.kind, "path");
+});
+
+test("monitor: scheduler runs a due path monitor and records a tagged scan", async () => {
+  const org = "org_mon2";
+  const src = mkdtempSync(join(tmpdir(), "qv-mon-src-"));
+  try {
+    writeFileSync(join(src, "app.ts"), "const k = generateKeyPairSync('rsa', { modulusLength: 2048 });\n");
+    const m = store.createMonitor({ name: "repo", kind: "path", target: src, intervalMinutes: 60 }, org);
+
+    const ran = await runDueMonitors(new Date(Date.now() + 1000));
+    assert.ok(ran >= 1, "at least one monitor ran");
+    const fresh = store.getMonitor(m.id, org)!;
+    assert.equal(fresh.lastStatus, "ok");
+    assert.equal(fresh.runCount, 1);
+    assert.ok(fresh.lastScanId, "a scan id was recorded");
+    assert.ok(new Date(fresh.nextRunAt).getTime() > Date.now(), "next run scheduled in the future");
+    assert.equal(store.monitorScans(m.id, org).length, 1, "exactly one scan tagged to the monitor");
+    assert.equal(store.monitorDrift(m.id, org).hasPrevious, false);
+  } finally {
+    rmSync(src, { recursive: true, force: true });
+  }
+});
+
+test("monitor: a second run surfaces drift between the monitor's scans", async () => {
+  const org = "org_mon_drift";
+  const src = mkdtempSync(join(tmpdir(), "qv-mon-drift-"));
+  try {
+    writeFileSync(join(src, "app.ts"), "const k = generateKeyPairSync('rsa', { modulusLength: 2048 });\n");
+    const m = store.createMonitor({ name: "drift", kind: "path", target: src, intervalMinutes: 60 }, org);
+    await runMonitorOnce(store.getMonitor(m.id, org)!);
+
+    // Replace the RSA usage with a legacy cipher -> 1 new, 1 removed.
+    writeFileSync(join(src, "app.ts"), "const c = createCipheriv('des-ede3', k, iv);\n");
+    await runMonitorOnce(store.getMonitor(m.id, org)!);
+
+    assert.ok(store.monitorScans(m.id, org).length >= 2, "two monitor scans recorded");
+    const drift = store.monitorDrift(m.id, org);
+    assert.equal(drift.hasPrevious, true);
+    assert.ok(drift.newFindings >= 1, `expected new findings, got ${drift.newFindings}`);
+    assert.ok(drift.removedFindings >= 1, `expected removed findings, got ${drift.removedFindings}`);
+  } finally {
+    rmSync(src, { recursive: true, force: true });
+  }
+});
+
+test("monitor: a failed run is recorded without throwing", async () => {
+  const org = "org_mon_fail";
+  const m = store.createMonitor({ name: "bad", kind: "path", target: "/tmp/qv-does-not-exist-xyz", intervalMinutes: 60 }, org);
+  await runMonitorOnce(store.getMonitor(m.id, org)!);
+  const fresh = store.getMonitor(m.id, org)!;
+  assert.equal(fresh.lastStatus, "failed");
+  assert.ok(fresh.lastError && fresh.lastError.length > 0, "error message captured");
+  assert.equal(fresh.lastScanId, null);
+});
+
+test("monitor: disabled monitors are not due; recordRun schedules by interval; delete works", () => {
+  const org = "org_mon5";
+  const m = store.createMonitor({ name: "iv", kind: "path", target: "/tmp/qv-z", intervalMinutes: 15 }, org);
+
+  store.setMonitorEnabled(m.id, false, org);
+  assert.ok(!store.dueMonitors(new Date(Date.now() + 60_000)).some((d) => d.id === m.id), "disabled is not due");
+
+  store.setMonitorEnabled(m.id, true, org);
+  store.recordMonitorRun(m.id, { scanId: "scan_x", status: "ok", ranAt: new Date("2030-01-01T00:00:00.000Z") });
+  const fresh = store.getMonitor(m.id, org)!;
+  assert.equal(new Date(fresh.nextRunAt).toISOString(), "2030-01-01T00:15:00.000Z", "next run = ranAt + interval");
+  assert.ok(!store.dueMonitors(new Date()).some((d) => d.id === m.id), "not due until 2030");
+
+  assert.equal(store.deleteMonitor(m.id, org), true);
+  assert.equal(store.getMonitor(m.id, org), undefined);
 });
 
 test.after(() => rmSync(dbDir, { recursive: true, force: true }));

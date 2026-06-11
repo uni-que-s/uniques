@@ -138,6 +138,57 @@ api.post("/scans/git", requireAuth, scanLimiter, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------- continuous monitoring
+// List configured monitors for the org (read — open, scoped to the tenant).
+api.get("/monitors", (req, res) => {
+  res.json(store.listMonitors(req.orgId));
+});
+
+// A monitor's current state plus its drift and recent scan history.
+api.get("/monitors/:id", (req, res) => {
+  const monitor = store.getMonitor(req.params.id, req.orgId);
+  if (!monitor) return res.status(404).json({ error: "monitor not found" });
+  res.json({
+    monitor,
+    drift: store.monitorDrift(monitor.id, req.orgId),
+    scans: store.monitorScans(monitor.id, req.orgId).slice(0, 20),
+  });
+});
+
+// Create a monitor — an operator action that schedules recurring scans.
+api.post("/monitors", requireAuth, (req, res) => {
+  const name = (req.body?.name as string | undefined)?.trim();
+  const kind = (req.body?.kind as string | undefined)?.trim();
+  const target = (req.body?.target as string | undefined)?.trim();
+  const intervalMinutes = Number(req.body?.intervalMinutes ?? 60);
+  if (!name) return res.status(400).json({ error: "name is required" });
+  if (kind !== "git" && kind !== "path") {
+    return res.status(400).json({ error: 'kind must be "git" or "path"' });
+  }
+  if (!target) return res.status(400).json({ error: "target is required" });
+  if (!Number.isFinite(intervalMinutes) || intervalMinutes < 1) {
+    return res.status(400).json({ error: "intervalMinutes must be a number >= 1" });
+  }
+  const monitor = store.createMonitor({ name, kind, target, intervalMinutes }, req.orgId);
+  res.status(201).json(monitor);
+});
+
+// Enable / disable a monitor without deleting its history.
+api.patch("/monitors/:id", requireAuth, (req, res) => {
+  if (typeof req.body?.enabled !== "boolean") {
+    return res.status(400).json({ error: "enabled (boolean) is required" });
+  }
+  const updated = store.setMonitorEnabled(req.params.id, req.body.enabled, req.orgId);
+  if (!updated) return res.status(404).json({ error: "monitor not found" });
+  res.json(updated);
+});
+
+api.delete("/monitors/:id", requireAuth, (req, res) => {
+  const removed = store.deleteMonitor(req.params.id, req.orgId);
+  if (!removed) return res.status(404).json({ error: "monitor not found" });
+  res.status(204).end();
+});
+
 api.get("/compliance", (req, res) => {
   res.json(store.getReports(undefined, req.orgId));
 });

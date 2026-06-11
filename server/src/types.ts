@@ -89,6 +89,26 @@ export interface ScanJob {
   status: "completed" | "running" | "failed";
 }
 
+/** A target that QuantumVault re-scans automatically on a schedule — the core
+ *  of continuous monitoring / "crypto-agility as a standing capability". */
+export interface MonitorTarget {
+  id: string;
+  orgId: string;
+  name: string;
+  /** "git" clones a repo URL each run; "path" re-scans a local directory. */
+  kind: "git" | "path";
+  target: string;
+  intervalMinutes: number;
+  enabled: boolean;
+  createdAt: string;
+  lastRunAt: string | null;
+  nextRunAt: string;
+  lastScanId: string | null;
+  lastStatus: "ok" | "failed" | null;
+  lastError: string | null;
+  runCount: number;
+}
+
 export type ComplianceStatus = "pass" | "gap" | "fail";
 
 export interface ComplianceControl {

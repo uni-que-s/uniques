@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { createApp } from "./app.js";
 import { store } from "./store/store.js";
 import { db } from "./store/db.js";
+import { startScheduler, stopScheduler } from "./monitor/scheduler.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
@@ -26,6 +27,12 @@ const server = app.listen(PORT, () => {
   console.log(`QuantumVault API listening on http://localhost:${PORT}`);
 });
 
+// Continuous monitoring: re-scan configured targets on a schedule. Tick interval
+// is tunable (default 60s); set QV_MONITOR_DISABLED=1 to turn it off.
+if (process.env.QV_MONITOR_DISABLED !== "1") {
+  startScheduler(Number(process.env.QV_MONITOR_TICK_MS ?? 60_000));
+}
+
 // Graceful shutdown: stop accepting connections, let in-flight requests finish,
 // then close the SQLite handle so WAL is checkpointed cleanly. Containers send
 // SIGTERM on stop; a hung drain is force-exited after 10s.
@@ -34,6 +41,7 @@ function shutdown(signal: string): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`[shutdown] ${signal} received — draining connections`);
+  stopScheduler();
   server.close(() => {
     try {
       db.close();
