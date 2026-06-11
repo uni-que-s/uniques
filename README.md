@@ -26,6 +26,9 @@ risk once a cryptographically-relevant quantum computer exists.
   retention exposure, harvest-now-decrypt-later exposure, compliance impact,
   business impact) yields a 0–100 score, a priority tier, a migration-effort
   estimate, and a NIST PQC replacement recommendation (ML-KEM / ML-DSA / SLH-DSA).
+  Scores are calibrated by **deployment context** — findings in test/example code
+  or vendored dependencies are de-prioritized (they protect no production data),
+  so the result is a ranked worklist rather than a wall of equally-urgent alerts.
 - **Migration tracking** — mark each asset `open → in progress → migrated →
   accepted risk`. The dashboard shows live **migration progress** and the
   **remaining** engineering effort, so the inventory becomes a worklist, not just
