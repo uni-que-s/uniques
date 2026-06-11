@@ -68,6 +68,29 @@ export function getRiskWeights(): RiskWeights {
 const SENSITIVE_HINTS = ["auth", "payment", "billing", "key", "secret", "token", "settlement", "card", "ssn", "pii"];
 const PARTNER_HINTS = ["partner", "gateway", "transport", "vpn", "tls", "edge", "external", "exchange"];
 
+// Vendored / third-party dependency code — not the first thing *you* migrate.
+const VENDOR_PATH =
+  /(^|\/)(node_modules|vendor|third[_-]?party|site-packages|\.venv|venv|bower_components|\.tox|dist|build|target)(\/|$)/;
+// Test / fixture / example / sample code — protects no production data.
+const TEST_PATH = /(^|\/)(tests?|__tests__|testdata|specs?|fixtures?|mocks?|examples?|samples?|e2e|demos?|benchmarks?)(\/|$)/;
+// Test FILE conventions: foo.test.ts, foo.spec.js, foo_test.go, test_foo.py
+const TEST_FILE = /(?:[._-](?:test|tests|spec)\.[a-z0-9]+|_test\.[a-z0-9]+|(?:^|\/)test_[^/]*\.[a-z0-9]+)$/;
+
+/**
+ * Deployment context inferred from an asset's path. Test/example and vendored
+ * code is de-prioritized for migration because it doesn't protect production
+ * data — without this, every asymmetric finding floors at "high" and the
+ * inventory becomes a wall of alerts instead of a worklist. Returns a multiplier
+ * applied uniformly to the factor scores (so `score` stays the weighted sum of
+ * the reported factors) plus a human label for auditability.
+ */
+function deploymentContext(file: string): { multiplier: number; label: string } {
+  const f = file.toLowerCase();
+  if (VENDOR_PATH.test(f)) return { multiplier: 0.4, label: "vendored dependency" };
+  if (TEST_PATH.test(f) || TEST_FILE.test(f)) return { multiplier: 0.55, label: "test/example code" };
+  return { multiplier: 1, label: "production code" };
+}
+
 function pathSignal(file: string, hints: string[]): number {
   const lower = file.toLowerCase();
   let hits = 0;
@@ -149,12 +172,15 @@ function recommendationFor(asset: CryptoAsset, priority: Severity): string {
 }
 
 export function scoreAsset(asset: CryptoAsset): RiskScore {
+  const ctx = deploymentContext(asset.file);
+  // Apply the deployment-context discount to each factor so the reported
+  // factors remain consistent with the final score (score = weighted sum).
   const factors: RiskFactorBreakdown = {
-    dataSensitivity: dataSensitivityScore(asset),
-    retentionExposure: retentionScore(asset),
-    hndlExposure: hndlScore(asset),
-    complianceImpact: complianceScore(asset),
-    businessImpact: businessImpactScore(asset),
+    dataSensitivity: clamp(dataSensitivityScore(asset) * ctx.multiplier),
+    retentionExposure: clamp(retentionScore(asset) * ctx.multiplier),
+    hndlExposure: clamp(hndlScore(asset) * ctx.multiplier),
+    complianceImpact: clamp(complianceScore(asset) * ctx.multiplier),
+    businessImpact: clamp(businessImpactScore(asset) * ctx.multiplier),
   };
 
   const W = getRiskWeights();
@@ -167,12 +193,15 @@ export function scoreAsset(asset: CryptoAsset): RiskScore {
   );
 
   const priority = priorityFor(score);
+  const baseRec = recommendationFor(asset, priority);
   return {
     score,
     priority,
     factors,
-    recommendation: recommendationFor(asset, priority),
+    recommendation: ctx.multiplier < 1 ? `${baseRec} (de-prioritized — ${ctx.label})` : baseRec,
     migrationEffortDays: effortFor(asset, priority),
+    contextMultiplier: ctx.multiplier,
+    deploymentContext: ctx.label,
   };
 }
 

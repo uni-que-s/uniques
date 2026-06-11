@@ -71,6 +71,11 @@ export interface RiskScore {
   factors: RiskFactorBreakdown;
   recommendation: string;
   migrationEffortDays: number;
+  /** Deployment-context discount applied to the factors (1.0 = production code,
+   *  <1.0 = test/example or vendored code that protects no production data). */
+  contextMultiplier?: number;
+  /** Human label for the deployment context, e.g. "production code". */
+  deploymentContext?: string;
 }
 
 export interface ScanJob {

@@ -67,6 +67,32 @@ test("risk: all five factors stay within 0..100 and weights yield a bounded scor
   }
 });
 
+test("risk: deployment context de-prioritizes test/vendor findings vs production", () => {
+  const mk = (file: string) => scoreAsset(asset({ family: "ECC", patternId: "ecc-pem-header", algorithm: "ECDSA", file }));
+  const prod = mk("src/services/auth/signing-ec.key");
+  const test = mk("tests/fixtures/signing-ec.key");
+  const vendor = mk("node_modules/jose/signing-ec.key");
+
+  // Same key, different context — production must outrank test and vendor.
+  assert.ok(prod.score > test.score, `prod ${prod.score} should beat test ${test.score}`);
+  assert.ok(test.score > vendor.score, `test ${test.score} should beat vendor ${vendor.score}`);
+  assert.equal(prod.contextMultiplier, 1);
+  assert.equal(test.deploymentContext, "test/example code");
+  assert.equal(vendor.deploymentContext, "vendored dependency");
+  // The "wall of alerts" fix: a test fixture must not be high/critical.
+  assert.ok(["low", "medium"].includes(test.priority), `test fixture should not be ${test.priority}`);
+  assert.match(test.recommendation, /de-prioritized/);
+  // score must stay the weighted sum of the (discounted) factors it reports.
+  const W = getRiskWeights();
+  const expected =
+    test.factors.dataSensitivity * W.dataSensitivity +
+    test.factors.retentionExposure * W.retentionExposure +
+    test.factors.hndlExposure * W.hndlExposure +
+    test.factors.complianceImpact * W.complianceImpact +
+    test.factors.businessImpact * W.businessImpact;
+  assert.ok(Math.abs(test.score - Math.round(expected)) <= 1, "score should equal weighted sum of reported factors");
+});
+
 test("risk: Shor-broken asymmetric crypto gets a higher HNDL factor than symmetric", () => {
   const ecc = scoreAsset(asset({ family: "ECC", file: "transport/vpn/tls.ts" }));
   const sym = scoreAsset(asset({ family: "SymmetricLegacy", file: "transport/vpn/tls.ts" }));
