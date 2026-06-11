@@ -123,6 +123,24 @@
     font-size:13.5px;color:var(--muted)}
   .chip b{color:var(--ink);font-weight:600}
 
+  /* tiers / access */
+  .tiers{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.tiers{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.tiers{grid-template-columns:1fr}}
+  .tier-name{font-size:17px;font-weight:700;color:var(--ink)}
+  .tier-tag{font-size:12.5px;color:var(--accent);margin:4px 0 14px;font-family:var(--mono)}
+  .card.featured{border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent2),0 12px 40px rgba(124,58,237,.20)}
+  .tiers ul{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:8px}
+  .tiers li{color:var(--muted);font-size:13.5px;padding-left:18px;position:relative}
+  .tiers li::before{content:"→";position:absolute;left:0;color:var(--accent)}
+  .tiers code{font-family:var(--mono);font-size:12.5px;color:var(--accent-ink)}
+  .access{margin-top:28px;text-align:center;border:1px solid var(--line);border-radius:16px;
+    padding:34px 28px;background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.16),transparent 70%),var(--panel)}
+  .access h3{margin:0 0 6px;font-size:21px}
+  .access p{color:var(--muted);max-width:580px;margin:0 auto 22px}
+  .access .priv{display:block;margin-top:14px;font-size:13px;color:var(--faint)}
+
   /* final cta */
   .final{background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel);
     border:1px solid var(--line);border-radius:18px;padding:46px 30px;text-align:center}
@@ -144,6 +162,7 @@
     <a class="navlink" href="#features">What it does</a>
     <a class="navlink" href="#adopt">Adopt</a>
     <a class="navlink" href="#standards">Standards</a>
+    <a class="navlink" href="#access">Pricing</a>
     <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">View on GitHub</a>
   </div>
 </header>
@@ -289,6 +308,67 @@ docker compose up --build
         <span class="chip"><b>FedRAMP</b></span>
         <span class="chip"><b>SOC 2</b></span>
         <span class="chip"><b>PCI-DSS</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIERS / ACCESS -->
+  <section id="access">
+    <div class="wrap">
+      <span class="kicker">From open source to enterprise</span>
+      <h2>Start free. Scale to org-wide assurance.</h2>
+      <p class="lead">The scanner is free and MIT-licensed — forever. The platform
+        adds continuous, organization-wide monitoring and auditor-ready compliance
+        evidence for teams under a post-quantum mandate (DORA, PCI-DSS 4.0, NIS2,
+        FedRAMP).</p>
+      <div class="grid tiers">
+        <div class="card">
+          <div class="tier-name">Open Source</div>
+          <div class="tier-tag">Free · MIT · available now</div>
+          <ul>
+            <li>34-pattern scanner, CLI &amp; GitHub Action</li>
+            <li>Risk-scored findings &amp; posture grade</li>
+            <li>SARIF, CBOM &amp; CSV export</li>
+            <li><code>--fail-on</code> CI gating</li>
+          </ul>
+          <a class="btn" href="https://github.com/DemigodDSK/quantumvault">Use it now</a>
+        </div>
+        <div class="card">
+          <div class="tier-name">Team</div>
+          <div class="tier-tag">Early access</div>
+          <ul>
+            <li>Continuous, scheduled multi-repo scans</li>
+            <li>Central CBOM inventory + drift over time</li>
+            <li>Migration tracking across teams</li>
+          </ul>
+        </div>
+        <div class="card featured">
+          <div class="tier-name">Business</div>
+          <div class="tier-tag">Early access</div>
+          <ul>
+            <li>Everything in Team, plus:</li>
+            <li>Auditor-ready compliance evidence packs</li>
+            <li>Org-wide policy gates &amp; PR enforcement</li>
+            <li>SSO / RBAC · Jira / SIEM / Slack</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="tier-name">Enterprise &amp; Gov</div>
+          <div class="tier-tag">Early access</div>
+          <ul>
+            <li>Self-hosted / FedRAMP-ready deployment</li>
+            <li>SLAs &amp; audit support</li>
+            <li>Custom compliance frameworks</li>
+          </ul>
+        </div>
+      </div>
+      <div class="access">
+        <h3>Become a design partner</h3>
+        <p>We're working with a small number of regulated teams to shape the
+          platform — early access, roadmap influence, and locked-in pricing in
+          exchange for honest feedback.</p>
+        <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Early+access+%2F+design+partner+request&body=Company%3A%0AYour+role%3A%0AApprox+engineers%3A%0AWhat%27s+driving+your+PQC+timeline+%28mandate%2Faudit%2Fother%29%3A%0AAnything+else%3A">Apply for early access</a>
+        <span class="priv">Prefer to talk privately? Email <a href="mailto:REPLACE-WITH-YOUR-EMAIL@example.com?subject=QuantumVault%20early%20access">your founder address</a> (swap this in).</span>
       </div>
     </div>
   </section>
