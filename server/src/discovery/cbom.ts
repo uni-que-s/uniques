@@ -10,6 +10,7 @@ const PRIMITIVE: Record<CryptoFamily, string> = {
   ECC: "signature",
   DSA: "signature",
   DH: "key-agree",
+  Asymmetric: "other",
   SymmetricLegacy: "block-cipher",
   HashLegacy: "hash",
 };

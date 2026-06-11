@@ -75,9 +75,10 @@ function pathSignal(file: string, hints: string[]): number {
   return Math.min(hits, 3);
 }
 
-/** Asymmetric crypto (RSA/ECC/DSA/DH) is fully broken by Shor — max HNDL weight. */
+/** Asymmetric crypto (RSA/ECC/DSA/DH) is fully broken by Shor — max HNDL weight.
+ * "Asymmetric" (an unspecified PKCS#8 private key) is one of these too. */
 function isShorBroken(asset: CryptoAsset): boolean {
-  return ["RSA", "ECC", "DSA", "DH"].includes(asset.family);
+  return ["RSA", "ECC", "DSA", "DH", "Asymmetric"].includes(asset.family);
 }
 
 function dataSensitivityScore(asset: CryptoAsset): number {

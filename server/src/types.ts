@@ -3,6 +3,10 @@ export type CryptoFamily =
   | "ECC"
   | "DSA"
   | "DH"
+  // A PKCS#8 `BEGIN PRIVATE KEY` block whose algorithm can't be determined from
+  // the header alone (may be RSA, EC, Ed25519, …). Still quantum-vulnerable, but
+  // we don't assert a specific algorithm we can't see.
+  | "Asymmetric"
   | "SymmetricLegacy"
   | "HashLegacy";
 

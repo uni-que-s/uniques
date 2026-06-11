@@ -118,9 +118,9 @@ test("risk weights: invalid JSON falls back to defaults", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (34)", () => {
+test("patterns: patternCount matches the database length and health endpoint (35)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 34);
+  assert.equal(patternCount(), 35);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
@@ -377,6 +377,29 @@ test("scanner: discovers crypto assets in a temp source tree and skips junk dirs
     assert.ok(assets.some((a) => a.patternId === "rsa-pem-header"));
     // nothing from node_modules should appear
     assert.ok(!assets.some((a) => a.file.includes("node_modules")));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("scanner: PKCS#8 keys are labeled Asymmetric, not mislabeled RSA", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-pkcs8-"));
+  try {
+    // PKCS#1 header — unambiguously RSA.
+    writeFileSync(join(dir, "rsa.pem"), "-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----\n");
+    // PKCS#8 header — algorithm not visible (this is what an Ed25519/EC key uses).
+    writeFileSync(join(dir, "pkcs8.pem"), "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n");
+
+    const { assets } = scanDirectory(dir, "scan-pkcs8");
+    const rsa = assets.find((a) => a.file.endsWith("rsa.pem"));
+    const pkcs8 = assets.find((a) => a.file.endsWith("pkcs8.pem"));
+
+    assert.equal(rsa?.family, "RSA", "PKCS#1 header should remain RSA");
+    assert.ok(pkcs8, "PKCS#8 key should still be detected");
+    assert.equal(pkcs8?.family, "Asymmetric", "PKCS#8 header must NOT be asserted as RSA");
+    assert.equal(pkcs8?.patternId, "pkcs8-pem-private-key");
+    // A PKCS#8 file must never be claimed to be RSA — that was the bug.
+    assert.ok(!assets.some((a) => a.file.endsWith("pkcs8.pem") && a.family === "RSA"));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

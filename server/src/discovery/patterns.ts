@@ -36,12 +36,27 @@ export const PATTERNS: CryptoPattern[] = [
     id: "rsa-pem-header",
     family: "RSA",
     algorithm: "RSA",
-    description: "RSA private key PEM block",
-    regex: /-----BEGIN (?:RSA )?PRIVATE KEY-----/,
+    description: "RSA private key PEM block (PKCS#1)",
+    // PKCS#1 header is unambiguously RSA. The algorithm-agnostic PKCS#8 header
+    // (`BEGIN PRIVATE KEY`, no "RSA") is handled separately so we don't label
+    // EC/Ed25519/etc. keys as RSA.
+    regex: /-----BEGIN RSA PRIVATE KEY-----/,
     quantumVulnerable: true,
     baseSeverity: "critical",
     languages: ["pem", "config", "any"],
     pqcReplacement: "Re-issue as ML-DSA (Dilithium) signing key",
+  },
+  {
+    id: "pkcs8-pem-private-key",
+    family: "Asymmetric",
+    algorithm: "Private key (PKCS#8, algorithm unspecified)",
+    description: "PKCS#8 private key PEM block — algorithm not determinable from the header",
+    regex: /-----BEGIN PRIVATE KEY-----/,
+    quantumVulnerable: true,
+    baseSeverity: "critical",
+    languages: ["pem", "config", "any"],
+    pqcReplacement:
+      "Identify the key's algorithm and role, then re-issue with the matching NIST PQC scheme (ML-DSA for signing, ML-KEM for key exchange)",
   },
   {
     id: "rsa-python-cryptography",
