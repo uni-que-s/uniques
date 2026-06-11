@@ -20,3 +20,20 @@ data/
 # logs & os cruft
 *.log
 .DS_Store
+
+# secrets & credentials — never commit real keys/tokens.
+# (the intentional vulnerable fixtures under server/sample-target/ are
+#  already tracked and are explicitly re-included below.)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+credentials.json
+secrets.json
+!server/sample-target/**
