@@ -21,6 +21,9 @@ data/
 *.log
 .DS_Store
 
+# local editor / agent tooling config
+.claude/
+
 # secrets & credentials — never commit real keys/tokens.
 # (the intentional vulnerable fixtures under server/sample-target/ are
 #  already tracked and are explicitly re-included below.)
