@@ -58,6 +58,15 @@ test("health reports ok and the pattern count", async () => {
   assert.equal(body.patterns, 28);
 });
 
+test("risk/config exposes the active weights and factor descriptions", async () => {
+  const r = await json("/api/risk/config");
+  assert.equal(r.status, 200);
+  const body = await r.json();
+  const sum = Object.values(body.weights as Record<string, number>).reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum - 1) < 1e-9, `weights should sum to 1.0, got ${sum}`);
+  assert.ok(body.factors.hndlExposure.length > 0);
+});
+
 test("openapi.json is served and well-formed", async () => {
   const r = await json("/api/openapi.json");
   assert.equal(r.status, 200);

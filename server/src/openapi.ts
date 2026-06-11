@@ -88,6 +88,9 @@ export function openApiDocument(): Record<string, unknown> {
       "/dashboard": {
         get: { tags: ["meta"], summary: "Posture summary and migration progress for the latest scan", responses: { "200": ok } },
       },
+      "/risk/config": {
+        get: { tags: ["meta"], summary: "Active risk-scoring weights and factor descriptions", responses: { "200": ok } },
+      },
       "/assets": {
         get: {
           tags: ["assets"],

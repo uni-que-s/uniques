@@ -11,6 +11,7 @@ import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
 import { assetsToSarif } from "../discovery/sarif.js";
 import { openApiDocument } from "../openapi.js";
+import { getRiskWeights } from "../risk/scorer.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
 
 export const api = Router();
@@ -28,6 +29,21 @@ api.get("/health", (_req, res) => {
 api.get("/openapi.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(openApiDocument(), null, 2));
+});
+
+// The active (tunable) risk-scoring weights and what each factor means — the
+// model is transparent and auditable, not a black box.
+api.get("/risk/config", (_req, res) => {
+  res.json({
+    weights: getRiskWeights(),
+    factors: {
+      dataSensitivity: "Sensitivity of the data the asset protects (auth, payments, PII).",
+      retentionExposure: "How long the protected data must stay confidential.",
+      hndlExposure: "Harvest-now-decrypt-later risk for key-exchange/transport crypto.",
+      complianceImpact: "Whether the finding is an explicit regulatory gap.",
+      businessImpact: "Operational blast radius if the asset is compromised.",
+    },
+  });
 });
 
 api.get("/dashboard", (req, res) => {

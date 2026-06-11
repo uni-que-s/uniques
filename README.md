@@ -167,6 +167,7 @@ The server reads these environment variables (all optional):
 | `QV_CORS_ORIGIN` | `*` | Comma-separated CORS allowlist; set to your dashboard origin(s) if the API port is exposed directly rather than proxied |
 | `QV_LOG` | on | Set to `off` to silence structured (JSON-per-line) access logs |
 | `QV_SEED` | | Set to `force` to re-run the sample-target seed scan on boot |
+| `QV_RISK_WEIGHTS` | (built-in) | JSON object overriding any of the 5 risk-factor weights (`dataSensitivity`, `retentionExposure`, `hndlExposure`, `complianceImpact`, `businessImpact`); merged over defaults and normalized to 1.0 |
 
 **Hardening:** the API sends conservative security headers (`nosniff`,
 `X-Frame-Options: DENY`, `Referrer-Policy`, COOP), returns a JSON error envelope
@@ -188,6 +189,7 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | GET | `/api/health` | | Service + pattern count |
 | GET | `/api/openapi.json` | | OpenAPI 3.1 description of this API |
 | GET | `/api/dashboard` | | Posture + migration progress for the latest scan |
+| GET | `/api/risk/config` | | Active risk-scoring weights + factor descriptions |
 | GET | `/api/assets` | | Discovered assets (`?family=`, `?priority=`, `?q=`) |
 | GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |
 | GET | `/api/cbom.json` | | CycloneDX 1.6 Cryptography Bill of Materials for the latest scan |

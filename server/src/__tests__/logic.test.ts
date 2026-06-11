@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { scoreAsset, scoreAssets } from "../risk/scorer.js";
+import { scoreAsset, scoreAssets, getRiskWeights, DEFAULT_WEIGHTS } from "../risk/scorer.js";
 import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js";
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
@@ -78,6 +78,43 @@ test("risk: scoreAssets mutates the batch in place and attaches risk", () => {
   const out = scoreAssets(batch);
   assert.equal(out, batch);
   assert.ok(batch.every((a) => a.risk && typeof a.risk.score === "number"));
+});
+
+test("risk weights: defaults apply when QV_RISK_WEIGHTS is unset", () => {
+  delete process.env.QV_RISK_WEIGHTS;
+  assert.deepEqual(getRiskWeights(), DEFAULT_WEIGHTS);
+});
+
+test("risk weights: custom weights are merged, normalized to 1.0, and shift scores", () => {
+  const prev = process.env.QV_RISK_WEIGHTS;
+  try {
+    // Heavily weight HNDL exposure; a partner-path key-exchange asset should score higher.
+    const a = () => asset({ family: "DH", file: "transport/partner/vpn.ts", patternId: "dh-keyexchange" });
+    const baseScore = scoreAsset(a()).score;
+
+    process.env.QV_RISK_WEIGHTS = JSON.stringify({ hndlExposure: 5 });
+    const w = getRiskWeights();
+    const sum = Object.values(w).reduce((x, y) => x + y, 0);
+    assert.ok(Math.abs(sum - 1) < 1e-9, `weights must normalize to 1.0, got ${sum}`);
+    assert.ok(w.hndlExposure > DEFAULT_WEIGHTS.hndlExposure, "hndl weight should dominate");
+
+    const tunedScore = scoreAsset(a()).score;
+    assert.ok(tunedScore > baseScore, `tuned ${tunedScore} should exceed base ${baseScore} for a high-HNDL asset`);
+  } finally {
+    if (prev === undefined) delete process.env.QV_RISK_WEIGHTS;
+    else process.env.QV_RISK_WEIGHTS = prev;
+  }
+});
+
+test("risk weights: invalid JSON falls back to defaults", () => {
+  const prev = process.env.QV_RISK_WEIGHTS;
+  try {
+    process.env.QV_RISK_WEIGHTS = "{not valid";
+    assert.deepEqual(getRiskWeights(), DEFAULT_WEIGHTS);
+  } finally {
+    if (prev === undefined) delete process.env.QV_RISK_WEIGHTS;
+    else process.env.QV_RISK_WEIGHTS = prev;
+  }
 });
 
 // ------------------------------------------------------------- pattern db

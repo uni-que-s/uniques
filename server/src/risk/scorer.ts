@@ -7,14 +7,61 @@ import type { CryptoAsset, RiskScore, RiskFactorBreakdown, Severity } from "../t
  * prioritizes assets for post-quantum migration. Weights sum to 1.0 and reflect
  * that "harvest-now-decrypt-later" (HNDL) exposure and data sensitivity dominate
  * the urgency of migration for long-lived secrets.
+ *
+ * Weights are tunable per deployment via the QV_RISK_WEIGHTS environment
+ * variable (a JSON object of any subset of these keys); provided values are
+ * merged over the defaults and normalized to sum to 1.0, so a sector can
+ * calibrate the model to its risk appetite without code changes.
  */
-const WEIGHTS = {
+export interface RiskWeights {
+  dataSensitivity: number;
+  retentionExposure: number;
+  hndlExposure: number;
+  complianceImpact: number;
+  businessImpact: number;
+}
+
+export const DEFAULT_WEIGHTS: RiskWeights = {
   dataSensitivity: 0.25,
   retentionExposure: 0.2,
   hndlExposure: 0.25,
   complianceImpact: 0.2,
   businessImpact: 0.1,
-} as const;
+};
+
+let cacheKey: string | undefined;
+let cached: RiskWeights = DEFAULT_WEIGHTS;
+
+function parseWeights(raw: string): RiskWeights {
+  try {
+    const obj = JSON.parse(raw) as Partial<Record<keyof RiskWeights, unknown>>;
+    const merged: RiskWeights = { ...DEFAULT_WEIGHTS };
+    for (const k of Object.keys(DEFAULT_WEIGHTS) as (keyof RiskWeights)[]) {
+      const v = obj[k];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) merged[k] = v;
+    }
+    const sum = Object.values(merged).reduce((a, b) => a + b, 0);
+    if (sum <= 0) return DEFAULT_WEIGHTS;
+    for (const k of Object.keys(merged) as (keyof RiskWeights)[]) merged[k] = merged[k] / sum;
+    return merged;
+  } catch {
+    return DEFAULT_WEIGHTS;
+  }
+}
+
+/**
+ * Active risk weights: the defaults, optionally overridden by QV_RISK_WEIGHTS
+ * (JSON) and normalized to sum to 1.0. Invalid input falls back to the defaults.
+ */
+export function getRiskWeights(): RiskWeights {
+  const raw = process.env.QV_RISK_WEIGHTS;
+  if (!raw) return DEFAULT_WEIGHTS;
+  if (raw !== cacheKey) {
+    cacheKey = raw;
+    cached = parseWeights(raw);
+  }
+  return cached;
+}
 
 // Signals derived from where an asset lives. A real deployment enriches these
 // from data-classification metadata; here we infer from path + algorithm.
@@ -109,12 +156,13 @@ export function scoreAsset(asset: CryptoAsset): RiskScore {
     businessImpact: businessImpactScore(asset),
   };
 
+  const W = getRiskWeights();
   const score = clamp(
-    factors.dataSensitivity * WEIGHTS.dataSensitivity +
-      factors.retentionExposure * WEIGHTS.retentionExposure +
-      factors.hndlExposure * WEIGHTS.hndlExposure +
-      factors.complianceImpact * WEIGHTS.complianceImpact +
-      factors.businessImpact * WEIGHTS.businessImpact,
+    factors.dataSensitivity * W.dataSensitivity +
+      factors.retentionExposure * W.retentionExposure +
+      factors.hndlExposure * W.hndlExposure +
+      factors.complianceImpact * W.complianceImpact +
+      factors.businessImpact * W.businessImpact,
   );
 
   const priority = priorityFor(score);
