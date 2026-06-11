@@ -10,7 +10,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getDashboard, runScan, runGitScan, type Dashboard as DashboardData, type AssetStatus } from "../lib/api";
+import {
+  getDashboard,
+  getRiskConfig,
+  runScan,
+  runGitScan,
+  type Dashboard as DashboardData,
+  type AssetStatus,
+  type RiskConfig,
+} from "../lib/api";
 import { Card, StatCard, StatusBadge, ASSET_STATUS_META, FAMILY_COLOR, SEVERITY_COLOR } from "../components/ui";
 import { computePosture } from "../lib/posture";
 import { useAuth } from "../lib/auth";
@@ -18,6 +26,7 @@ import { useAuth } from "../lib/auth";
 export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void }) {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [riskConfig, setRiskConfig] = useState<RiskConfig | null>(null);
   const [mode, setMode] = useState<"git" | "path">("git");
   const [scanInput, setScanInput] = useState("");
   const [repoToken, setRepoToken] = useState("");
@@ -28,6 +37,9 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
   useEffect(() => {
     load();
   }, [user]);
+  useEffect(() => {
+    getRiskConfig().then(setRiskConfig).catch(() => {});
+  }, []);
 
   const doScan = async () => {
     const value = scanInput.trim();
@@ -288,9 +300,45 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
           </div>
         </Card>
       </div>
+
+      {riskConfig && (
+        <Card className="p-5">
+          <div className="mb-1 flex items-end justify-between">
+            <h2 className="text-sm font-semibold text-slate-300">Risk Model</h2>
+            <span className="text-xs text-slate-500">5-factor weighted · transparent · tunable</span>
+          </div>
+          <p className="mb-3 text-xs text-slate-500">
+            How each asset's 0–100 risk score is weighted. Calibrate per deployment via{" "}
+            <code className="text-slate-400">QV_RISK_WEIGHTS</code>.
+          </p>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {Object.entries(riskConfig.weights)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, w]) => (
+                <div key={k} title={riskConfig.factors[k]}>
+                  <div className="mb-0.5 flex items-center justify-between text-xs">
+                    <span className="text-slate-300">{FACTOR_LABEL[k] ?? k}</span>
+                    <span className="font-semibold text-slate-200">{Math.round(w * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-full rounded-full bg-indigo-400" style={{ width: `${Math.round(w * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
+
+const FACTOR_LABEL: Record<string, string> = {
+  dataSensitivity: "Data sensitivity",
+  retentionExposure: "Retention exposure",
+  hndlExposure: "Harvest-now-decrypt-later",
+  complianceImpact: "Compliance impact",
+  businessImpact: "Business impact",
+};
 
 const tooltipStyle = {
   background: "#0f172a",

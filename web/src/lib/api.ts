@@ -108,6 +108,12 @@ export interface ScanJob {
   status: string;
 }
 
+export interface RiskConfig {
+  weights: Record<string, number>;
+  factors: Record<string, string>;
+}
+export const getRiskConfig = () => http.get<RiskConfig>("/risk/config").then((r) => r.data);
+
 export const getDashboard = () => http.get<Dashboard>("/dashboard").then((r) => r.data);
 export const getAssets = (params?: Record<string, string>) =>
   http.get<CryptoAsset[]>("/assets", { params }).then((r) => r.data);
