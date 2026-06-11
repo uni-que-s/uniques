@@ -1,7 +1,37 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative } from "node:path";
+import { extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits } from "./patterns.js";
+
+const IGNORE_FILE = ".quantumvaultignore";
+
+/**
+ * Load path-prefix ignore patterns from a `.quantumvaultignore` at the scan
+ * root. Lines are repo-relative paths (forward slashes); `#` lines and blanks
+ * are skipped. Matching is deliberately prefix-based, NOT glob — a file or
+ * directory is excluded only when its relative path equals a pattern or sits
+ * under it. That keeps suppression explicit and unable to silently hide
+ * findings via a stray wildcard. Used to baseline vendored or already-accepted
+ * crypto so CI gating (`--fail-on`) isn't tripped by known exceptions.
+ */
+function loadIgnorePatterns(target: string): string[] {
+  try {
+    return readFileSync(join(target, IGNORE_FILE), "utf8")
+      .split(/\r?\n/)
+      .map((l) => l.trim().replace(/\/+$/, ""))
+      .filter((l) => l && !l.startsWith("#"));
+  } catch {
+    return [];
+  }
+}
+
+function makeIgnoreMatcher(patterns: string[]): (rel: string) => boolean {
+  if (patterns.length === 0) return () => false;
+  return (rel: string) => {
+    const r = rel.split(sep).join("/");
+    return patterns.some((p) => r === p || r.startsWith(p + "/"));
+  };
+}
 
 const EXT_LANG: Record<string, string> = {
   ".js": "javascript",
@@ -59,7 +89,7 @@ function languageFor(file: string): string | null {
   return null;
 }
 
-function* walk(dir: string): Generator<string> {
+function* walk(dir: string, root: string, isIgnored: (rel: string) => boolean): Generator<string> {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -69,6 +99,7 @@ function* walk(dir: string): Generator<string> {
   for (const name of entries) {
     if (SKIP_DIRS.has(name)) continue;
     const full = join(dir, name);
+    if (isIgnored(relative(root, full))) continue;
     let st;
     try {
       st = statSync(full);
@@ -76,7 +107,7 @@ function* walk(dir: string): Generator<string> {
       continue;
     }
     if (st.isDirectory()) {
-      yield* walk(full);
+      yield* walk(full, root, isIgnored);
     } else if (st.isFile() && st.size <= MAX_FILE_BYTES) {
       yield full;
     }
@@ -105,7 +136,9 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
   const assets: CryptoAsset[] = [];
   let filesScanned = 0;
 
-  for (const file of walk(target)) {
+  const isIgnored = makeIgnoreMatcher(loadIgnorePatterns(target));
+
+  for (const file of walk(target, target, isIgnored)) {
     const language = languageFor(file);
     if (!language) continue;
     filesScanned += 1;

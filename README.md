@@ -125,6 +125,18 @@ code. In CI, run the scan with `--sarif`, upload the result to GitHub
 code-scanning, and add `--fail-on` to block merges on new quantum-vulnerable
 crypto.
 
+**Baselining:** add a `.quantumvaultignore` at the scan root to exclude vendored
+or already-accepted paths so `--fail-on` isn't tripped by known exceptions. Each
+line is a repo-relative path prefix (forward slashes); `#` lines are comments.
+Matching is prefix-based, not glob, so suppression is explicit:
+
+```
+# .quantumvaultignore
+third_party
+legacy/keystore
+config/known-accepted.pem
+```
+
 ## GitHub Action
 
 Drop QuantumVault into any repository's CI to surface quantum-vulnerable crypto

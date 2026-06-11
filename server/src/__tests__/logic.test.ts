@@ -361,6 +361,29 @@ test("scanner: discovers crypto assets in a temp source tree and skips junk dirs
   }
 });
 
+test("scanner: .quantumvaultignore baselines matching paths (prefix-based)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-ign-"));
+  try {
+    mkdirSync(join(dir, "app"));
+    mkdirSync(join(dir, "third_party"));
+    writeFileSync(join(dir, "app", "auth.ts"), "generateKeyPairSync('rsa', { modulusLength: 2048 });\n");
+    writeFileSync(join(dir, "third_party", "lib.ts"), "createDiffieHellman(2048);\n");
+
+    // No ignore file → both directories are scanned.
+    const before = scanDirectory(dir, "s1").assets;
+    assert.ok(before.some((a) => a.file.includes("app")));
+    assert.ok(before.some((a) => a.file.includes("third_party")));
+
+    // Baseline out the vendored directory.
+    writeFileSync(join(dir, ".quantumvaultignore"), "# vendored deps\nthird_party\n");
+    const after = scanDirectory(dir, "s2").assets;
+    assert.ok(after.some((a) => a.file.includes("app")), "app findings retained");
+    assert.ok(!after.some((a) => a.file.includes("third_party")), "third_party findings suppressed");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("scanner: new multi-language patterns fire on real constructs but not on bait text", () => {
   const dir = mkdtempSync(join(tmpdir(), "qv-test-multi-"));
   try {
