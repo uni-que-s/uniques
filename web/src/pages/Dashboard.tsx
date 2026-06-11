@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { getDashboard, runScan, runGitScan, type Dashboard as DashboardData, type AssetStatus } from "../lib/api";
 import { Card, StatCard, StatusBadge, ASSET_STATUS_META, FAMILY_COLOR, SEVERITY_COLOR } from "../components/ui";
+import { computePosture } from "../lib/posture";
 import { useAuth } from "../lib/auth";
 
 export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void }) {
@@ -55,6 +56,7 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
 
   if (!data) return <div className="text-slate-400">Loading…</div>;
 
+  const posture = computePosture(data);
   const familyData = Object.entries(data.byFamily).map(([name, value]) => ({ name, value }));
   const priorityData = (["critical", "high", "medium", "low"] as const).map((p) => ({
     name: p,
@@ -146,6 +148,29 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
         </div>
       )}
 
+      <Card className="p-5">
+        <div className="flex items-center gap-5">
+          <div
+            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-4xl font-black"
+            style={{ color: posture.color, border: `2px solid ${posture.color}`, background: `${posture.color}1a` }}
+          >
+            {posture.grade}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <h2 className="text-lg font-bold text-white">Quantum Posture: {posture.label}</h2>
+              <span className="text-sm font-semibold" style={{ color: posture.color }}>
+                {posture.score}/100
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-slate-400">{posture.narrative}</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full" style={{ width: `${posture.score}%`, background: posture.color }} />
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Crypto Assets" value={data.totalAssets} accent="#818cf8" />
         <StatCard
@@ -163,7 +188,7 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
         <StatCard
           label="Avg Compliance"
           value={`${data.avgCompliancePct}%`}
-          sub="across 3 frameworks"
+          sub={`across ${data.frameworks.length} frameworks`}
           accent={data.avgCompliancePct >= 60 ? "#34d399" : "#facc15"}
         />
       </div>
