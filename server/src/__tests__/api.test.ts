@@ -55,7 +55,7 @@ test("health reports ok and the pattern count", async () => {
   assert.equal(r.status, 200);
   const body = await r.json();
   assert.equal(body.status, "ok");
-  assert.equal(body.patterns, 28);
+  assert.equal(body.patterns, 34);
 });
 
 test("risk/config exposes the active weights and factor descriptions", async () => {

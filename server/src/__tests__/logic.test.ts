@@ -118,9 +118,9 @@ test("risk weights: invalid JSON falls back to defaults", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (28)", () => {
+test("patterns: patternCount matches the database length and health endpoint (34)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 28);
+  assert.equal(patternCount(), 34);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
@@ -153,6 +153,27 @@ test("patterns: extended detectors fire and resist common false positives", () =
 
     const cleanHits = assets.filter((a) => a.file === "clean.ts").map((a) => a.patternId);
     assert.equal(cleanHits.length, 0, `clean.ts should yield no findings, got: ${cleanHits.join(", ")}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("patterns: runtime crypto-API detectors fire across .NET/Python/Node/Swift", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-rt-"));
+  try {
+    writeFileSync(join(dir, "Crypto.cs"), "var r = RSA.Create(2048);\nvar e = ECDsa.Create();\nnew DSACryptoServiceProvider();\n");
+    writeFileSync(join(dir, "keys.py"), "priv = ec.generate_private_key(ec.SECP256R1())\n");
+    writeFileSync(join(dir, "kex.ts"), "const ecdh = createECDH('prime256v1');\n");
+    writeFileSync(join(dir, "Sign.swift"), "let key = P256.Signing.PrivateKey()\n");
+    // bait: prose / unrelated identifiers must not match
+    writeFileSync(join(dir, "clean.py"), "rsa_is_fine_in_comments = 1\nwindows256 = 2\n");
+
+    const ids = new Set(scanDirectory(dir, "rt").assets.map((a) => a.patternId));
+    for (const id of ["rsa-dotnet", "ecc-dotnet", "dsa-dotnet", "ecc-python", "ecc-node-ecdh", "ecc-swift-cryptokit"]) {
+      assert.ok(ids.has(id), `expected ${id} to fire`);
+    }
+    const cleanHits = scanDirectory(dir, "rt2").assets.filter((a) => a.file === "clean.py");
+    assert.equal(cleanHits.length, 0, `clean.py should be clean, got: ${cleanHits.map((a) => a.patternId).join(", ")}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
