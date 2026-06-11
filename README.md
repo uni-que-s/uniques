@@ -245,3 +245,17 @@ GitHub Actions runs on every push/PR:
 - The risk model is a transparent, auditable weighted heuristic — not a black-box
   ML model — by design.
 - Next up: GitHub OAuth onboarding and a hosted deployment.
+
+## Security
+
+Found a vulnerability? Please report it privately — see
+[`SECURITY.md`](SECURITY.md) for the disclosure process and our response SLA. Do
+not open a public issue for security reports.
+
+## Changelog
+
+Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE).
