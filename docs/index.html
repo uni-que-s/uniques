@@ -149,6 +149,31 @@
   .access-card p{color:var(--muted);font-size:14px;margin:0 auto 16px;max-width:340px}
   .access-card .price{font-family:var(--mono);color:var(--accent-ink);font-size:13px;margin-bottom:16px}
 
+  /* product showcase */
+  .shot{margin-top:30px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0c0c14;
+    box-shadow:0 24px 70px rgba(0,0,0,.5),0 0 0 1px rgba(124,58,237,.12)}
+  .shot-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:#12121b}
+  .shot-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .shot-bar .r{background:#ff5f57}.shot-bar .y{background:#febc2e}.shot-bar .g{background:#28c840}
+  .shot-url{margin-left:10px;font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .shot-body{padding:22px}
+  .shot-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+  .shot-kpi{border:1px solid var(--line);border-radius:11px;padding:14px 16px;background:var(--panel)}
+  .shot-kpi .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint)}
+  .shot-kpi .n{font-size:26px;font-weight:800;color:var(--ink);margin-top:4px}
+  .shot-kpi .n.acc{color:#22d3ee}.shot-kpi .n.warn{color:#fb923c}
+  .shot-table{width:100%;border-collapse:collapse;font-size:13px}
+  .shot-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);padding:8px 12px;border-bottom:1px solid var(--line)}
+  .shot-table td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  .shot-table .nm{color:var(--ink);font-weight:600}
+  .shot-table .mono{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .pill.kind{background:#1e2330;color:#94a3b8;font-family:var(--mono);font-weight:600;font-size:9.5px;vertical-align:middle}
+  .pill.on{background:rgba(52,211,153,.15);color:#34d399}
+  .drift .up{color:#fb923c;font-weight:700}.drift .dn{color:#34d399;font-weight:700}
+  .ok-dot{width:7px;height:7px;border-radius:50%;background:#34d399;display:inline-block;margin-right:6px}
+  @media(max-width:640px){.shot-kpis{grid-template-columns:1fr}.shot-hide{display:none}}
+
   /* final cta */
   .final{background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel);
     border:1px solid var(--line);border-radius:18px;padding:46px 30px;text-align:center}
@@ -170,6 +195,7 @@
     <a class="navlink" href="#features">What it does</a>
     <a class="navlink" href="#adopt">Adopt</a>
     <a class="navlink" href="#standards">Standards</a>
+    <a class="navlink" href="#platform">Platform</a>
     <a class="navlink" href="#access">Pricing</a>
     <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">View on GitHub</a>
   </div>
@@ -316,6 +342,55 @@ docker compose up --build
         <span class="chip"><b>FedRAMP</b></span>
         <span class="chip"><b>SOC 2</b></span>
         <span class="chip"><b>PCI-DSS</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCT SHOWCASE -->
+  <section id="platform">
+    <div class="wrap">
+      <span class="kicker">The platform</span>
+      <h2>Continuous post-quantum assurance.</h2>
+      <p class="lead">Point QuantumVault at your repositories and it re-scans them on a schedule —
+        maintaining a living CBOM and flagging new quantum-vulnerable crypto the moment it lands.</p>
+      <div class="shot">
+        <div class="shot-bar"><i class="r"></i><i class="y"></i><i class="g"></i>
+          <span class="shot-url">quantumvault · Continuous Monitoring</span></div>
+        <div class="shot-body">
+          <div class="shot-kpis">
+            <div class="shot-kpi"><div class="l">Active monitors</div><div class="n">3</div></div>
+            <div class="shot-kpi"><div class="l">Scans run</div><div class="n acc">128</div></div>
+            <div class="shot-kpi"><div class="l">New findings · last run</div><div class="n warn">2</div></div>
+          </div>
+          <table class="shot-table">
+            <thead><tr>
+              <th>Target</th><th class="shot-hide">Schedule</th><th>Last run</th><th>Drift</th><th>State</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="nm">payments-api</span> <span class="pill kind">GIT</span><div class="mono">github.com/acme/payments</div></td>
+                <td class="shot-hide">every 60m</td>
+                <td><span class="ok-dot"></span>2m ago</td>
+                <td class="drift"><span class="up">+2</span> / <span class="dn">−1</span></td>
+                <td><span class="pill on">Active</span></td>
+              </tr>
+              <tr>
+                <td><span class="nm">auth-service</span> <span class="pill kind">GIT</span><div class="mono">github.com/acme/auth</div></td>
+                <td class="shot-hide">every 30m</td>
+                <td><span class="ok-dot"></span>8m ago</td>
+                <td class="drift">baseline</td>
+                <td><span class="pill on">Active</span></td>
+              </tr>
+              <tr>
+                <td><span class="nm">edge-gateway</span> <span class="pill kind">PATH</span><div class="mono">/srv/edge</div></td>
+                <td class="shot-hide">every 4h</td>
+                <td><span class="ok-dot"></span>1h ago</td>
+                <td class="drift"><span class="dn">−3</span> migrated</td>
+                <td><span class="pill on">Active</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </section>
