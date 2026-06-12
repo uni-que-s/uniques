@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Assets from "./pages/Assets";
 import Risk from "./pages/Risk";
 import Compliance from "./pages/Compliance";
+import Monitoring from "./pages/Monitoring";
 import History from "./pages/History";
 import AuthModal from "./components/AuthModal";
 import { useAuth } from "./lib/auth";
@@ -13,6 +14,7 @@ const NAV = [
   { to: "/assets", label: "Asset Inventory" },
   { to: "/risk", label: "Risk Analysis" },
   { to: "/compliance", label: "Compliance" },
+  { to: "/monitoring", label: "Monitoring" },
   { to: "/history", label: "Scan History" },
 ];
 
@@ -100,6 +102,7 @@ export default function App() {
           <Route path="/assets" element={<Assets />} />
           <Route path="/risk" element={<Risk />} />
           <Route path="/compliance" element={<Compliance />} />
+          <Route path="/monitoring" element={<Monitoring onRequireAuth={() => setAuthOpen(true)} />} />
           <Route path="/history" element={<History />} />
         </Routes>
       </main>

@@ -15,7 +15,16 @@ const app = createApp();
 // reused. Set QV_SEED=force to always re-seed.
 const sampleTarget = resolve(__dirname, "..", "sample-target");
 if (process.env.QV_SEED === "force" || !store.hasAnyScan()) {
-  const { job, assetCount } = store.runScan(sampleTarget);
+  // Seed a demo continuous monitor and run it once, so the Monitoring page is
+  // populated out of the box alongside the dashboard.
+  const monitor = store.createMonitor({
+    name: "Sample target (demo)",
+    kind: "path",
+    target: sampleTarget,
+    intervalMinutes: 60,
+  });
+  const { job, assetCount } = store.runScan(sampleTarget, undefined, undefined, monitor.id);
+  store.recordMonitorRun(monitor.id, { scanId: job.id, status: "ok" });
   console.log(
     `[seed] scanned ${job.filesScanned} files in ${job.durationMs}ms — ${assetCount} crypto assets discovered`,
   );

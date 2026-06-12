@@ -172,3 +172,43 @@ export const runGitScan = (url: string, token?: string) =>
   http
     .post<{ job: ScanJob; assetCount: number; repo: string }>("/scans/git", { url, token })
     .then((r) => r.data);
+
+// ---------------------------------------------------------------- continuous monitoring
+export interface MonitorTarget {
+  id: string;
+  orgId: string;
+  name: string;
+  kind: "git" | "path";
+  target: string;
+  intervalMinutes: number;
+  enabled: boolean;
+  createdAt: string;
+  lastRunAt: string | null;
+  nextRunAt: string;
+  lastScanId: string | null;
+  lastStatus: "ok" | "failed" | null;
+  lastError: string | null;
+  runCount: number;
+}
+export interface Drift {
+  hasPrevious: boolean;
+  newFindings: number;
+  removedFindings: number;
+}
+export interface MonitorDetail {
+  monitor: MonitorTarget;
+  drift: Drift;
+  scans: ScanJob[];
+}
+
+export const getMonitors = () => http.get<MonitorTarget[]>("/monitors").then((r) => r.data);
+export const getMonitor = (id: string) => http.get<MonitorDetail>(`/monitors/${id}`).then((r) => r.data);
+export const createMonitor = (input: {
+  name: string;
+  kind: "git" | "path";
+  target: string;
+  intervalMinutes: number;
+}) => http.post<MonitorTarget>("/monitors", input).then((r) => r.data);
+export const setMonitorEnabled = (id: string, enabled: boolean) =>
+  http.patch<MonitorTarget>(`/monitors/${id}`, { enabled }).then((r) => r.data);
+export const deleteMonitor = (id: string) => http.delete(`/monitors/${id}`).then(() => undefined);
