@@ -51,6 +51,22 @@ test("cli: --sarif emits a valid SARIF 2.1.0 log", () => {
   }
 });
 
+test("cli: --assessment emits a branded HTML report with the org name", () => {
+  const dir = vulnDir();
+  try {
+    const { status, stdout } = runCli([dir, "--assessment", "--org", "Globex Bank"]);
+    assert.equal(status, 0);
+    assert.match(stdout, /<!doctype html>/i);
+    assert.ok(stdout.includes("Quantum Readiness"));
+    assert.ok(stdout.includes("Globex Bank"));
+    assert.ok(stdout.includes("Cryptographic Inventory"));
+    // The real RSA finding drives the inventory.
+    assert.ok(stdout.includes("RSA"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("cli: --fail-on gates CI — non-zero on findings, zero on a clean tree", () => {
   const vuln = vulnDir();
   const clean = mkdtempSync(join(tmpdir(), "qv-cli-clean-"));

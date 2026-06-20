@@ -122,8 +122,11 @@ for (const stmt of [
 db.exec(`CREATE INDEX IF NOT EXISTS idx_scans_monitor ON scans(monitor_id)`);
 
 export const DEFAULT_ORG_ID = "org_default";
+/** Display name for the public demo org — the single source of truth shared by
+ *  the seed row and the unauthenticated display-name fallback (e.g. report headers). */
+export const DEFAULT_ORG_NAME = "Demo Organization";
 
 // Ensure a default organization exists for unauthenticated / seed usage.
 db.prepare(
   `INSERT OR IGNORE INTO organizations (id, name, created_at) VALUES (?, ?, ?)`,
-).run(DEFAULT_ORG_ID, "Default Organization", new Date().toISOString());
+).run(DEFAULT_ORG_ID, DEFAULT_ORG_NAME, new Date().toISOString());

@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **Quantum Readiness Assessment** — QuantumVault now generates its flagship
+  executive report directly from a scan, instead of hand-filling a template. The
+  report computes an at-a-glance quantum-posture grade (the same model the
+  dashboard surfaces), a cryptographic inventory by family with quantum-impact
+  classification and NIST replacements, a priority distribution, the real top
+  findings (production paths first), a five-framework compliance gap matrix, and a
+  phased migration roadmap quantified from the actual critical/high/medium counts.
+  - CLI: `quantumvault <path> --assessment [--org "<name>"]` emits the branded,
+    print-to-PDF HTML — no server required.
+  - API: `GET /api/assessment/report.html` (branded HTML) and
+    `GET /api/assessment/report.json` (structured model), org-scoped; `404` until
+    the org has a scan. Both are listed in the OpenAPI document.
+  - Dashboard: a "Quantum Readiness Assessment" action on the Compliance page
+    opens the report in a new tab, ready to print or save as PDF.
+  - Every figure traces to live scan data (no sample numbers), all dynamic values
+    are HTML-escaped, and the report states its own methodology and limits.
 
 ## [0.1.0] - 2026-06-11
 

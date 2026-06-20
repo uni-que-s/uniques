@@ -157,6 +157,42 @@ test("unknown asset id returns 404", async () => {
   assert.equal(r.status, 404);
 });
 
+test("assessment report is generated from a scan as JSON and branded HTML, org-scoped", async () => {
+  const token = await signup("assess@acme.test", "Assessment Co");
+
+  // A brand-new org has no scan yet -> 404 with a helpful message.
+  const before = await json("/api/assessment/report.json", authed(token));
+  assert.equal(before.status, 404);
+
+  // After a scan, the structured model is populated from real findings.
+  const scan = await json("/api/scans", authed(token, { method: "POST", body: JSON.stringify({ target: srcDir }) }));
+  assert.equal(scan.status, 201);
+
+  const jsonRes = await json("/api/assessment/report.json", authed(token));
+  assert.equal(jsonRes.status, 200);
+  const model = await jsonRes.json();
+  assert.equal(model.orgName, "Assessment Co");
+  assert.ok(model.totals.totalAssets >= 2);
+  assert.ok(["A", "B", "C", "D", "F"].includes(model.posture.grade));
+  assert.ok(Array.isArray(model.inventory) && model.inventory.length >= 1);
+  assert.equal(model.priority.length, 4);
+  assert.equal(model.roadmap.length, 3);
+
+  // The HTML deliverable is branded, escaped, print-ready, and carries the org name.
+  const htmlRes = await json("/api/assessment/report.html", authed(token));
+  assert.equal(htmlRes.status, 200);
+  assert.match(htmlRes.headers.get("content-type") ?? "", /text\/html/);
+  const html = await htmlRes.text();
+  assert.ok(html.includes("Quantum Readiness"));
+  assert.ok(html.includes("Assessment Co"));
+  assert.ok(html.includes("@media print"));
+
+  // Org isolation: a different org with no scan still 404s (can't see this org's data).
+  const other = await signup("empty@beta.test", "Empty Co");
+  const otherRes = await json("/api/assessment/report.json", authed(other));
+  assert.equal(otherRes.status, 404);
+});
+
 test("responses carry baseline security headers", async () => {
   const r = await json("/api/health");
   assert.equal(r.headers.get("x-content-type-options"), "nosniff");

@@ -1,12 +1,15 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { store } from "../store/store.js";
+import { DEFAULT_ORG_NAME } from "../store/db.js";
 import { patternCount } from "../discovery/patterns.js";
 import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
 import { rateLimit } from "../auth/rateLimit.js";
 import { renderReportHtml } from "../compliance/export.js";
+import { buildAssessment } from "../report/assessment.js";
+import { renderAssessmentHtml } from "../report/assessmentHtml.js";
 import { assetsToCsv } from "../discovery/csv.js";
 import { assetsToCbom } from "../discovery/cbom.js";
 import { assetsToSarif } from "../discovery/sarif.js";
@@ -83,6 +86,36 @@ api.get("/sarif.json", (req, res) => {
   res.setHeader("Content-Type", "application/sarif+json");
   res.setHeader("Content-Disposition", `attachment; filename="quantumvault.sarif"`);
   res.send(JSON.stringify(assetsToSarif(assets), null, 2));
+});
+
+// Quantum Readiness Assessment — the flagship executive report, generated from
+// the latest scan. JSON is the structured model; HTML is the branded,
+// print-to-PDF deliverable. Both are open reads on the scoped org.
+function assessmentFor(req: Request) {
+  const orgName = req.auth?.orgName ?? DEFAULT_ORG_NAME;
+  const assets = store.getAssets(undefined, req.orgId);
+  const reports = store.getReports(undefined, req.orgId);
+  const latest = store.getScans(req.orgId)[0];
+  return buildAssessment({
+    orgName,
+    generatedAt: new Date().toISOString(),
+    scan: latest
+      ? { target: latest.target, filesScanned: latest.filesScanned, finishedAt: latest.finishedAt }
+      : null,
+    assets,
+    reports,
+  });
+}
+
+api.get("/assessment/report.json", (req, res) => {
+  if (!store.hasAnyScan(req.orgId)) return res.status(404).json({ error: "no scan yet — run a scan first" });
+  res.json(assessmentFor(req));
+});
+
+api.get("/assessment/report.html", (req, res) => {
+  if (!store.hasAnyScan(req.orgId)) return res.status(404).json({ error: "no scan yet — run a scan first" });
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(renderAssessmentHtml(assessmentFor(req)));
 });
 
 api.get("/assets/:id", (req, res) => {
@@ -213,7 +246,7 @@ api.get("/compliance/:framework/export.html", (req, res) => {
   const framework = req.params.framework.toUpperCase();
   const report = store.getReport(framework, undefined, req.orgId);
   if (!report) return res.status(404).json({ error: "report not found" });
-  const orgName = req.auth?.orgName ?? "Demo Organization";
+  const orgName = req.auth?.orgName ?? DEFAULT_ORG_NAME;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(renderReportHtml(report, orgName));
 });

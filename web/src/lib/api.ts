@@ -165,6 +165,24 @@ export async function openCompliancePdf(framework: string) {
   w.document.close();
   setTimeout(() => w.print(), 400);
 }
+
+/**
+ * Open the branded Quantum Readiness Assessment in a new tab, ready to
+ * print/save as PDF — the executive-facing deliverable for the whole estate.
+ * Uses a Blob URL (not document.write) so the trusted report HTML loads in its
+ * own document context without injecting markup into a page we control.
+ */
+export async function openAssessmentReport() {
+  const res = await http.get(`/assessment/report.html`, { responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  const w = window.open(url, "_blank");
+  if (!w) {
+    URL.revokeObjectURL(url);
+    throw new Error("Popup blocked — allow popups to open the assessment.");
+  }
+  // Revoke once the new tab has had time to load the document.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 export const getScans = () => http.get<ScanJob[]>("/scans").then((r) => r.data);
 export const runScan = (target: string) =>
   http.post<{ job: ScanJob; assetCount: number }>("/scans", { target }).then((r) => r.data);

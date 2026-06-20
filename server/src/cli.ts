@@ -7,13 +7,17 @@ import { scoreAssets } from "./risk/scorer.js";
 import { assetsToCbom } from "./discovery/cbom.js";
 import { assetsToSarif } from "./discovery/sarif.js";
 import { assetsToCsv } from "./discovery/csv.js";
+import { generateReport, FRAMEWORKS } from "./compliance/reporter.js";
+import { buildAssessment } from "./report/assessment.js";
+import { renderAssessmentHtml } from "./report/assessmentHtml.js";
 
-type Format = "table" | "json" | "sarif" | "cbom" | "csv";
+type Format = "table" | "json" | "sarif" | "cbom" | "csv" | "assessment";
 
 interface Args {
   path?: string;
   format: Format;
   failOn?: string;
+  org?: string;
   help: boolean;
 }
 
@@ -32,6 +36,8 @@ Options:
   --sarif           Output SARIF 2.1.0 (for GitHub code-scanning)
   --cbom            Output a CycloneDX 1.6 CBOM
   --csv             Output a CSV inventory
+  --assessment      Output a branded Quantum Readiness Assessment (print-to-PDF HTML)
+  --org <name>      Organization name for the assessment report header
   --fail-on <sev>   Exit 1 if any finding is at or above <sev>
                     (critical | high | medium | low) — for CI gating
   -h, --help        Show this help
@@ -39,6 +45,7 @@ Options:
 Examples:
   quantumvault ./src
   quantumvault . --sarif > quantumvault.sarif
+  quantumvault . --assessment --org "Acme Corp" > assessment.html
   quantumvault . --fail-on high
 `;
 
@@ -51,6 +58,8 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--sarif") args.format = "sarif";
     else if (a === "--cbom") args.format = "cbom";
     else if (a === "--csv") args.format = "csv";
+    else if (a === "--assessment") args.format = "assessment";
+    else if (a === "--org") args.org = argv[++i];
     else if (a === "--fail-on") args.failOn = argv[++i];
     else if (!a.startsWith("-")) args.path = a;
   }
@@ -108,6 +117,18 @@ function main(): void {
     case "csv":
       process.stdout.write(assetsToCsv(assets));
       break;
+    case "assessment": {
+      const reports = FRAMEWORKS.map((fw) => generateReport(fw, assets, job.id));
+      const assessment = buildAssessment({
+        orgName: args.org?.trim() || "Your Organization",
+        generatedAt: new Date().toISOString(),
+        scan: { target: job.target, filesScanned: job.filesScanned, finishedAt: job.finishedAt },
+        assets,
+        reports,
+      });
+      process.stdout.write(renderAssessmentHtml(assessment) + "\n");
+      break;
+    }
     default:
       printTable(job, assets);
   }

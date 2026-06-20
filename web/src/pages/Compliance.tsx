@@ -3,6 +3,7 @@ import {
   getCompliance,
   downloadComplianceJson,
   openCompliancePdf,
+  openAssessmentReport,
   type ComplianceReport,
 } from "../lib/api";
 import { Card, StatusBadge } from "../components/ui";
@@ -37,14 +38,31 @@ export default function Compliance() {
       setExportMsg(e?.message ?? "Export failed.");
     }
   };
+  const onAssessment = async () => {
+    setExportMsg(null);
+    try {
+      await openAssessmentReport();
+    } catch (e: any) {
+      setExportMsg(e?.message ?? "Could not open the assessment.");
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-white">Compliance Automation</h1>
-        <p className="text-sm text-slate-400">
-          Auto-generated control reports with remediation guidance
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Compliance Automation</h1>
+          <p className="text-sm text-slate-400">
+            Auto-generated control reports with remediation guidance
+          </p>
+        </div>
+        <button
+          onClick={onAssessment}
+          title="Open the branded, executive-ready Quantum Readiness Assessment — print or save as PDF"
+          className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition hover:from-violet-500 hover:to-indigo-400"
+        >
+          Quantum Readiness Assessment ↗
+        </button>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-2">

@@ -44,6 +44,7 @@ export function openApiDocument(): Record<string, unknown> {
       { name: "auth" },
       { name: "scans" },
       { name: "assets" },
+      { name: "monitors" },
       { name: "compliance" },
       { name: "export" },
       { name: "meta" },
@@ -126,6 +127,12 @@ export function openApiDocument(): Record<string, unknown> {
       "/assets/export.csv": { get: { tags: ["export"], summary: "Asset inventory as CSV (honors list filters)", responses: { "200": ok } } },
       "/cbom.json": { get: { tags: ["export"], summary: "CycloneDX 1.6 Cryptography Bill of Materials", responses: { "200": ok } } },
       "/sarif.json": { get: { tags: ["export"], summary: "SARIF 2.1.0 log (GitHub code-scanning)", responses: { "200": ok } } },
+      "/assessment/report.json": {
+        get: { tags: ["export"], summary: "Quantum Readiness Assessment model (structured JSON) for the latest scan", responses: { "200": ok, "404": { description: "No scan yet" } } },
+      },
+      "/assessment/report.html": {
+        get: { tags: ["export"], summary: "Quantum Readiness Assessment as branded print-to-PDF HTML", responses: { "200": ok, "404": { description: "No scan yet" } } },
+      },
       "/scans": {
         get: { tags: ["scans"], summary: "Scan history", responses: { "200": ok } },
         post: {
@@ -154,6 +161,47 @@ export function openApiDocument(): Record<string, unknown> {
           },
           responses: { "201": ok, "400": { description: "Invalid/unsupported repo" }, "401": { description: "Auth required" }, "429": { description: "Rate limited" } },
         },
+      },
+      "/monitors": {
+        get: { tags: ["monitors"], summary: "List configured continuous-monitoring targets for the org", responses: { "200": ok } },
+        post: {
+          tags: ["monitors"],
+          summary: "Create a monitor (scheduled re-scan of a repo or path)",
+          security: bearer,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name", "kind", "target"],
+                  properties: {
+                    name: { type: "string" },
+                    kind: { type: "string", enum: ["git", "path"] },
+                    target: { type: "string" },
+                    intervalMinutes: { type: "number", minimum: 1, default: 60 },
+                  },
+                },
+              },
+            },
+          },
+          responses: { "201": ok, "400": { description: "Validation error" }, "401": { description: "Auth required" } },
+        },
+      },
+      "/monitors/{id}": {
+        get: { tags: ["monitors"], summary: "Monitor state plus its drift and recent scan history", parameters: [idParam], responses: { "200": ok, "404": { description: "Not found" } } },
+        patch: {
+          tags: ["monitors"],
+          summary: "Enable or disable a monitor",
+          security: bearer,
+          parameters: [idParam],
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", required: ["enabled"], properties: { enabled: { type: "boolean" } } } } },
+          },
+          responses: { "200": ok, "400": { description: "Validation error" }, "401": { description: "Auth required" }, "404": { description: "Not found" } },
+        },
+        delete: { tags: ["monitors"], summary: "Delete a monitor and stop its schedule", security: bearer, parameters: [idParam], responses: { "204": { description: "Deleted" }, "401": { description: "Auth required" }, "404": { description: "Not found" } } },
       },
       "/compliance": { get: { tags: ["compliance"], summary: "Reports for all frameworks", responses: { "200": ok } } },
       "/compliance/{framework}": {

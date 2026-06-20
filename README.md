@@ -44,6 +44,13 @@ risk once a cryptographically-relevant quantum computer exists.
   and the full inventory exports as a **CycloneDX 1.6 CBOM** (Cryptography Bill of
   Materials) — the standards-based interchange format NIST/CISA reference for
   post-quantum migration inventories.
+- **Quantum Readiness Assessment** — one command (or one dashboard click) turns a
+  scan into a branded, executive-ready report: an at-a-glance quantum-posture
+  grade, the cryptographic inventory by family, a prioritized worklist, the real
+  top findings, a five-framework compliance gap matrix, and a phased migration
+  roadmap quantified from the actual findings. Print-to-PDF HTML for the boardroom,
+  or structured **JSON** for a system of record. Every number traces to live scan
+  data — no sample figures — and it states its own methodology and limits.
 - **CI-native scanning** — a `quantumvault` CLI scans any path and emits a
   human-readable summary or machine output: **JSON**, **SARIF 2.1.0** (for GitHub
   code-scanning / PR annotations), **CSV**, or **CBOM**. `--fail-on <severity>`
@@ -123,10 +130,16 @@ npm run cli -- . --fail-on high               # exit 1 if any finding is >= high
 ```
 
 Output formats: default table, `--json`, `--sarif` (2.1.0), `--cbom` (CycloneDX
-1.6), `--csv`. `--fail-on <critical|high|medium|low>` gates a pipeline by exit
-code. In CI, run the scan with `--sarif`, upload the result to GitHub
-code-scanning, and add `--fail-on` to block merges on new quantum-vulnerable
-crypto.
+1.6), `--csv`, and `--assessment` (a branded Quantum Readiness Assessment as
+print-to-PDF HTML — pass `--org "<name>"` for the report header). `--fail-on
+<critical|high|medium|low>` gates a pipeline by exit code. In CI, run the scan
+with `--sarif`, upload the result to GitHub code-scanning, and add `--fail-on` to
+block merges on new quantum-vulnerable crypto.
+
+```bash
+# produce the executive deliverable from a client/internal repo, no server needed
+quantumvault ./repo --assessment --org "Acme Corp" > quantum-readiness.html
+```
 
 **Baselining:** add a `.quantumvaultignore` at the scan root to exclude vendored
 or already-accepted paths so `--fail-on` isn't tripped by known exceptions. Each
@@ -209,6 +222,8 @@ Reads are open on the demo org; mutations require `Authorization: Bearer <token>
 | GET | `/api/assets/export.csv` | | Download the inventory as CSV (honors the same filters) |
 | GET | `/api/cbom.json` | | CycloneDX 1.6 Cryptography Bill of Materials for the latest scan |
 | GET | `/api/sarif.json` | | SARIF 2.1.0 log of the latest scan (GitHub code-scanning) |
+| GET | `/api/assessment/report.json` | | Quantum Readiness Assessment as a structured JSON model |
+| GET | `/api/assessment/report.html` | | Quantum Readiness Assessment as branded print-to-PDF HTML |
 | GET | `/api/assets/:id` | | Single asset with risk breakdown |
 | PATCH | `/api/assets/:id/status` | ● | Set remediation status (`open`/`in_progress`/`migrated`/`accepted`) |
 | POST | `/api/scans` | ● | Scan a local path `{ "target": "/abs/path" }` |
