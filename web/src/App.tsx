@@ -91,11 +91,31 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
   );
 }
 
+const IS_DEMO = __DEMO__;
+
+function DemoBanner() {
+  return (
+    <div className="ml-60 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-b border-violet-500/30 bg-violet-500/10 px-6 py-2 text-center text-xs text-violet-100">
+      <span className="font-semibold">Live demo</span>
+      <span className="text-violet-200/80">
+        — read-only, populated by scanning real OSS libraries (auth0/node-jsonwebtoken, pyjwt, golang-jwt, paramiko).
+      </span>
+      <a
+        href="https://github.com/DemigodDSK/quantumvault"
+        className="font-semibold text-white underline decoration-violet-400 underline-offset-2 hover:text-violet-200"
+      >
+        Install it to scan your own code →
+      </a>
+    </div>
+  );
+}
+
 export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   return (
     <div className="min-h-screen">
       <Sidebar onSignIn={() => setAuthOpen(true)} />
+      {IS_DEMO && <DemoBanner />}
       <main className="ml-60 px-8 py-7">
         <Routes>
           <Route path="/" element={<Dashboard onRequireAuth={() => setAuthOpen(true)} />} />

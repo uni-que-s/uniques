@@ -2,6 +2,16 @@ import axios from "axios";
 
 const http = axios.create({ baseURL: "/api" });
 
+// Static demo build (GitHub Pages): serve everything from baked fixtures, no
+// backend. The dynamic import sits inside a branch that folds to `if(false)` in
+// a normal build, so Rollup drops the demo module and its 1.4 MB fixture
+// entirely. We install a wrapper adapter *synchronously* (so the very first
+// request uses it) that lazily resolves and delegates to the real demo adapter.
+if (__DEMO__) {
+  const adapterP = import("../demo/adapter").then((m) => m.demoAdapter);
+  http.defaults.adapter = (config) => adapterP.then((fn) => fn(config));
+}
+
 const TOKEN_KEY = "qv_token";
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
