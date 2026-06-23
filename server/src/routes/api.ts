@@ -8,6 +8,7 @@ import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
 import { rateLimit } from "../auth/rateLimit.js";
 import { renderReportHtml } from "../compliance/export.js";
+import { FRAMEWORKS } from "../compliance/reporter.js";
 import { buildAssessment } from "../report/assessment.js";
 import { renderAssessmentHtml } from "../report/assessmentHtml.js";
 import { assetsToCsv } from "../discovery/csv.js";
@@ -226,16 +227,24 @@ api.get("/compliance", (req, res) => {
   res.json(store.getReports(undefined, req.orgId));
 });
 
+// Resolve a framework path param to its canonical stored casing so "fedramp",
+// "FEDRAMP", and "FedRAMP" all match the stored "FedRAMP" (SQLite "=" is
+// case-sensitive). Returns undefined for an unknown framework.
+function resolveFramework(param: string): string | undefined {
+  return FRAMEWORKS.find((f) => f.toUpperCase() === param.toUpperCase());
+}
+
 api.get("/compliance/:framework", (req, res) => {
-  const report = store.getReport(req.params.framework.toUpperCase(), undefined, req.orgId);
+  const framework = resolveFramework(req.params.framework);
+  const report = framework ? store.getReport(framework, undefined, req.orgId) : undefined;
   if (!report) return res.status(404).json({ error: "report not found" });
   res.json(report);
 });
 
 // Auditor exports — JSON for systems of record, HTML (print-to-PDF) for humans.
 api.get("/compliance/:framework/export.json", (req, res) => {
-  const framework = req.params.framework.toUpperCase();
-  const report = store.getReport(framework, undefined, req.orgId);
+  const framework = resolveFramework(req.params.framework);
+  const report = framework ? store.getReport(framework, undefined, req.orgId) : undefined;
   if (!report) return res.status(404).json({ error: "report not found" });
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Content-Disposition", `attachment; filename="${framework}-compliance.json"`);
@@ -243,8 +252,8 @@ api.get("/compliance/:framework/export.json", (req, res) => {
 });
 
 api.get("/compliance/:framework/export.html", (req, res) => {
-  const framework = req.params.framework.toUpperCase();
-  const report = store.getReport(framework, undefined, req.orgId);
+  const framework = resolveFramework(req.params.framework);
+  const report = framework ? store.getReport(framework, undefined, req.orgId) : undefined;
   if (!report) return res.status(404).json({ error: "report not found" });
   const orgName = req.auth?.orgName ?? DEFAULT_ORG_NAME;
   res.setHeader("Content-Type", "text/html; charset=utf-8");

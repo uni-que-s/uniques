@@ -220,3 +220,29 @@ test("malformed JSON bodies get a 400, not a 500", async () => {
   });
   assert.equal(r.status, 400);
 });
+
+test("compliance framework lookup is case-insensitive (FedRAMP export works)", async () => {
+  const token = await signup("fedramp@test.io", "FedRAMP Org");
+  const scan = await json("/api/scans", authed(token, { method: "POST", body: JSON.stringify({ target: srcDir }) }));
+  assert.equal(scan.status, 201);
+
+  // "FedRAMP" is stored mixed-case; any casing of the path param must resolve to
+  // it (SQLite "=" is case-sensitive, so a naive toUpperCase() 404s the report).
+  for (const fw of ["FedRAMP", "fedramp", "FEDRAMP"]) {
+    const r = await json(`/api/compliance/${fw}`, authed(token));
+    assert.equal(r.status, 200, `GET /compliance/${fw} should be 200`);
+    assert.equal((await r.json()).framework, "FedRAMP");
+  }
+
+  const expJson = await json("/api/compliance/fedramp/export.json", authed(token));
+  assert.equal(expJson.status, 200);
+  assert.match(expJson.headers.get("content-disposition") ?? "", /FedRAMP-compliance\.json/);
+
+  const expHtml = await json("/api/compliance/FedRAMP/export.html", authed(token));
+  assert.equal(expHtml.status, 200);
+  assert.match(expHtml.headers.get("content-type") ?? "", /text\/html/);
+
+  // An unknown framework still 404s.
+  const unknown = await json("/api/compliance/NOTAFRAMEWORK", authed(token));
+  assert.equal(unknown.status, 404);
+});

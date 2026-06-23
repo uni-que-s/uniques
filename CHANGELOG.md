@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     opens the report in a new tab, ready to print or save as PDF.
   - Every figure traces to live scan data (no sample numbers), all dynamic values
     are HTML-escaped, and the report states its own methodology and limits.
+- **Zero-install live demo** — a static build of the dashboard (`npm --prefix web
+  run build:demo` → `docs/demo/`) that runs entirely client-side on GitHub Pages,
+  serving baked fixtures from a real scan of popular OSS libraries. Gated behind a
+  compile-time flag so the demo code and fixture are dead-code-eliminated from the
+  normal build. Linked from the landing page ("See it live — no install").
+
+### Fixed
+
+- Compliance report lookups are now case-insensitive on the framework name, so
+  the `FedRAMP` report and its JSON/HTML exports resolve correctly (previously a
+  naive upper-casing 404'd `FedRAMP`, whose stored name is mixed-case).
 
 ## [0.1.0] - 2026-06-11
 
