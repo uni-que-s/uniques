@@ -25,7 +25,7 @@ const TAG_CLASS: Record<Severity, string> = {
 // Labels mirror the compliance report renderer (compliance/export.ts) so the
 // same client never receives two QuantumVault reports that disagree on what a
 // "fail" status is called. Red for fail, amber for partial, green for pass.
-const STATUS_LABEL = { pass: "Pass", gap: "Partial", fail: "Fail" } as const;
+const STATUS_LABEL = { pass: "No gaps found", gap: "Partial", fail: "Fail" } as const;
 const STATUS_CLASS = { pass: "t-low", gap: "t-med", fail: "t-crit" } as const;
 
 function fmtDate(iso: string): string {

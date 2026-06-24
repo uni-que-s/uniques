@@ -1,7 +1,7 @@
 import type { ComplianceReport, ComplianceStatus } from "../types.js";
 
 const STATUS_LABEL: Record<ComplianceStatus, string> = {
-  pass: "Pass",
+  pass: "No gaps found",
   gap: "Partial",
   fail: "Fail",
 };
@@ -42,7 +42,7 @@ export function renderReportHtml(report: ComplianceReport, orgName: string): str
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
-<title>${esc(report.framework)} Compliance Report — ${esc(orgName)}</title>
+<title>${esc(report.framework)} Control-Gap Report — ${esc(orgName)}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; }
@@ -68,8 +68,9 @@ export function renderReportHtml(report: ComplianceReport, orgName: string): str
   <div class="head">
     <div>
       <div class="brand"><div class="logo">Q</div><strong>QuantumVault</strong></div>
-      <h1>${esc(report.framework)} Compliance Report</h1>
+      <h1>${esc(report.framework)} Control-Gap Report</h1>
       <div class="muted">${esc(orgName)} &middot; Generated ${esc(generated)} &middot; Scan ${esc(report.scanId)}</div>
+      <div class="muted">Control-gap evidence for review &mdash; not a certification of compliance.</div>
     </div>
     <div class="scorebox">
       <div class="score">${report.scorePct}%</div>

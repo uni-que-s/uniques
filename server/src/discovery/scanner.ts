@@ -124,6 +124,55 @@ function nextAssetId(): string {
   return `asset_${assetSeq.toString(36)}_${Date.now().toString(36)}`;
 }
 
+const C_STYLE = new Set([
+  "javascript", "typescript", "c", "cpp", "csharp", "java", "kotlin", "scala", "go", "rust", "swift", "php",
+]);
+const HASH_STYLE = new Set(["python", "ruby", "yaml", "config", "terraform", "php"]);
+
+/**
+ * Return `content` with comment regions blanked to spaces (newlines preserved, so
+ * line/column positions are unchanged). String and template literals are kept
+ * intact — a crypto name in a comment is a *mention* and must not fire, but real
+ * uses live inside strings (e.g. `getInstance("RSA")`, JWT alg values, PEM blocks),
+ * so those stay matchable. This is the cheap, regex-level precision win; semantic
+ * (AST) call-site detection is the larger follow-on.
+ */
+export function maskComments(content: string, language: string): string {
+  const lineMarkers: string[] = [];
+  if (C_STYLE.has(language)) lineMarkers.push("//");
+  if (HASH_STYLE.has(language)) lineMarkers.push("#");
+  const blockComments = C_STYLE.has(language);
+  if (lineMarkers.length === 0 && !blockComments) return content;
+
+  let out = "";
+  let inBlock = false;
+  let quote = "";
+  for (let k = 0; k < content.length; k++) {
+    const ch = content[k];
+    if (inBlock) {
+      if (ch === "*" && content[k + 1] === "/") { out += "  "; k++; inBlock = false; }
+      else out += ch === "\n" ? "\n" : " ";
+      continue;
+    }
+    if (quote) {
+      out += ch;
+      if (ch === "\\") { out += content[k + 1] ?? ""; k++; }
+      else if (ch === quote) quote = "";
+      continue;
+    }
+    if (blockComments && ch === "/" && content[k + 1] === "*") { out += "  "; k++; inBlock = true; continue; }
+    if (ch === '"' || ch === "'" || ch === "`") { quote = ch; out += ch; continue; }
+    const isLineComment = lineMarkers.some((m) => content.startsWith(m, k));
+    if (isLineComment) {
+      while (k < content.length && content[k] !== "\n") { out += " "; k++; }
+      if (k < content.length) out += "\n";
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
 export interface ScanResult {
   job: ScanJob;
   assets: CryptoAsset[];
@@ -157,6 +206,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
 
     const rel = relative(target, file) || file;
     const lines = content.split(/\r?\n/);
+    const codeLines = maskComments(content, language).split(/\r?\n/);
 
     for (const pattern of PATTERNS) {
       const langOk =
@@ -167,9 +217,12 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        const codeLine = codeLines[i] ?? line;
         if (line.length > 1000) continue;
         pattern.regex.lastIndex = 0;
-        if (!pattern.regex.test(line)) continue;
+        // Match against the comment-masked view: a crypto name in a comment is a
+        // mention, not a use, and must not fire. String literals are preserved.
+        if (!pattern.regex.test(codeLine)) continue;
 
         assets.push({
           id: nextAssetId(),
