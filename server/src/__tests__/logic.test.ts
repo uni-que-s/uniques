@@ -144,9 +144,9 @@ test("risk weights: invalid JSON falls back to defaults", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (35)", () => {
+test("patterns: patternCount matches the database length and health endpoint (43)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 35);
+  assert.equal(patternCount(), 43);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
@@ -200,6 +200,38 @@ test("patterns: runtime crypto-API detectors fire across .NET/Python/Node/Swift"
     }
     const cleanHits = scanDirectory(dir, "rt2").assets.filter((a) => a.file === "clean.py");
     assert.equal(cleanHits.length, 0, `clean.py should be clean, got: ${cleanHits.map((a) => a.patternId).join(", ")}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("patterns: embedded C/C++ firmware crypto detectors fire (mbedTLS/wolfSSL/OpenSSL C)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-embed-"));
+  try {
+    writeFileSync(join(dir, "boot.c"),
+      "mbedtls_rsa_gen_key(&ctx, rng, NULL, 2048, 65537);\n" +
+      "mbedtls_ecdsa_sign(&grp, &r, &s, &d, hash, 32, rng, NULL);\n" +
+      "mbedtls_dhm_make_public(&dhm, 256, out, olen, rng, NULL);\n");
+    writeFileSync(join(dir, "tls.cpp"),
+      "wc_MakeRsaKey(&key, 2048, 65537, &rng);\n" +
+      "wc_ecc_make_key(&rng, 32, &eccKey);\n");
+    writeFileSync(join(dir, "sign.cc"),
+      "EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 2048);\n" +
+      "EC_KEY *k = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);\n" +
+      "DH_generate_key(dh);\n");
+    // bait: prose and unrelated identifiers must not fire
+    writeFileSync(join(dir, "clean.c"), "// uses aes-256-gcm only\nint mbedtls_aes_setkey_enc = 0;\n");
+
+    const ids = new Set(scanDirectory(dir, "embed").assets.map((a) => a.patternId));
+    for (const id of [
+      "rsa-mbedtls", "ecc-mbedtls", "dh-mbedtls",
+      "rsa-wolfssl", "ecc-wolfssl",
+      "rsa-openssl-c", "ecc-openssl-c", "dh-openssl-c",
+    ]) {
+      assert.ok(ids.has(id), `expected ${id} to fire`);
+    }
+    const cleanHits = scanDirectory(dir, "embed2").assets.filter((a) => a.file === "clean.c");
+    assert.equal(cleanHits.length, 0, `clean.c should be clean, got: ${cleanHits.map((a) => a.patternId).join(", ")}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

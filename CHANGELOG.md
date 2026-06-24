@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Embedded C/C++ firmware crypto detection (v0.2.1)** — the scanner now natively
+  detects the firmware staples of long-life embedded systems: **mbedTLS**
+  (`mbedtls_rsa_*`, `mbedtls_ecdsa_*`, `mbedtls_ecdh_*`, `mbedtls_dhm_*`),
+  **wolfSSL / wolfCrypt** (`wc_MakeRsaKey`, `wc_ecc_make_key`, …), and the
+  **OpenSSL C API** (`EVP_PKEY_CTX_set_rsa_keygen_bits`, `EC_KEY_new_by_curve_name`,
+  `DH_generate_key`, …). Adds common C++ extensions (`.cc`, `.cxx`, `.hpp`, `.hh`)
+  to the scanned set. Pattern count: 35 → 43. Targets the automotive (UN R155/R156),
+  medical (FDA §524B), and defense (CNSA 2.0 firmware-signing) PQC mandates.
 - **Deeper CBOM & standards export (v0.2.0 milestone)** — the CycloneDX 1.6
   Cryptography Bill of Materials now carries algorithm **OIDs** (RSA/ECC/DSA/DH,
   registry-verified), `cryptoFunctions`, `classicalSecurityLevel`, elliptic
