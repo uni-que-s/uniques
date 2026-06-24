@@ -1,6 +1,11 @@
 # QuantumVault
 
 [![CI](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml/badge.svg)](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml)
+[![Live site](https://img.shields.io/badge/live%20site-demigoddsk.github.io%2Fquantumvault-2563eb)](https://demigoddsk.github.io/quantumvault/)
+
+### 🔗 [**See it live → demigoddsk.github.io/quantumvault**](https://demigoddsk.github.io/quantumvault/)
+
+Overview, product showcase, and a [**zero-install live demo**](https://demigoddsk.github.io/quantumvault/demo/) — the real dashboard running fully in your browser, no install or backend required.
 
 **Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
 cryptographic assets across a codebase, scores them for post-quantum migration
