@@ -9,8 +9,9 @@ Overview, product showcase, and a [**zero-install live demo**](https://demigodds
 
 **Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
 cryptographic assets across a codebase, scores them for post-quantum migration
-priority, tracks remediation to completion, and auto-generates FISMA, CISA,
-FedRAMP, SOC 2, PCI-DSS, CNSA 2.0, and NIST CSF 2.0 compliance reports.
+priority, tracks remediation to completion, and auto-generates control-gap /
+audit-evidence reports mapped to FISMA, CISA, FedRAMP, SOC 2, PCI-DSS, CNSA 2.0,
+and NIST CSF 2.0.
 
 It closes the full loop — **discover → prioritize → track → prove compliance** —
 for the "harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at
@@ -18,7 +19,7 @@ risk once a cryptographically-relevant quantum computer exists.
 
 ## Features
 
-- **Cryptographic asset discovery** — a 34-pattern, language-agnostic scanner
+- **Cryptographic asset discovery** — a 43-pattern, language-agnostic scanner
   detects RSA, ECC (incl. Ed25519/X25519), DSA, Diffie-Hellman, legacy symmetric
   (DES/3DES/AES-128), broken hashes (MD5/SHA-1), RSA/EC/DSA private-key PEMs (incl.
   PGP key blocks), JWT/JOSE signing algorithms (RS/ES/PS), Web Crypto RSA, SSH key
@@ -29,8 +30,11 @@ risk once a cryptographically-relevant quantum computer exists.
   never logged).
 - **Risk scoring & prioritization** — a 5-factor weighted model (data sensitivity,
   retention exposure, harvest-now-decrypt-later exposure, compliance impact,
-  business impact) yields a 0–100 score, a priority tier, a migration-effort
-  estimate, and a NIST PQC replacement recommendation (ML-KEM / ML-DSA / SLH-DSA).
+  business impact) yields a **priority tier** and a 0–100 score from **transparent,
+  tunable default weights** — a heuristic prioritizer, not a calibrated benchmark;
+  sensitivity is inferred from path/deployment context, so tune the weights to your
+  estate. Also emits a migration-effort estimate and a NIST PQC replacement
+  recommendation (ML-KEM / ML-DSA / SLH-DSA).
   Scores are calibrated by **deployment context** — findings in test/example code
   or vendored dependencies are de-prioritized (they protect no production data),
   so the result is a ranked worklist rather than a wall of equally-urgent alerts.
@@ -42,8 +46,10 @@ risk once a cryptographically-relevant quantum computer exists.
 - **Drift detection** — each scan is diffed against the previous one, so the
   dashboard flags **new findings introduced** and **findings removed** since last
   time — catching, e.g., a PR that adds a fresh RSA usage.
-- **Compliance automation** — maps findings to FISMA, CISA, FedRAMP, SOC 2,
-  PCI-DSS, CNSA 2.0, and NIST CSF 2.0 controls with pass/gap/fail status and remediation guidance; exports an auditor-ready
+- **Control-gap mapping / audit evidence** — maps findings to FISMA, CISA, FedRAMP,
+  SOC 2, PCI-DSS, CNSA 2.0, and NIST CSF 2.0 controls as a **control-gap view** (it
+  surfaces gaps and supplies evidence for your auditor — it does **not** assert a
+  self-certified "pass") with remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
   inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets,
   and the full inventory exports as a conformance-validated **CycloneDX 1.6 CBOM**

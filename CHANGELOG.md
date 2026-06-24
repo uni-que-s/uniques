@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Detection precision + honesty (v0.2.2)** — in response to an adversarial
+  red-team review:
+  - **Comment masking** — the scanner now matches against a comment-stripped view
+    of each file, so a crypto name in a `//`, `#`, or `/* */` comment is treated as
+    a *mention*, not a *use*, and no longer fires. String literals are preserved, so
+    real uses (`getInstance("RSA")`, JWT alg values, PEM blocks) still fire. Added a
+    precision regression test. (Eliminating *string*-mention false positives needs
+    semantic/AST detection — tracked as a follow-on.)
+  - **No self-asserted "pass"** — compliance output is reframed as **control-gap /
+    audit evidence**: reports are titled "Control-Gap Report," the passing state
+    renders as "No gaps found," and a disclaimer states it is evidence for review,
+    not a certification of compliance.
+  - **Honest risk-model framing** — the README now labels the 0–100 score as a
+    heuristic prioritizer from transparent, **tunable default** weights (not a
+    calibrated benchmark), with sensitivity inferred from path/deployment context.
+  - **README accuracy** — corrected the stale "34-pattern" claim to 43.
+
 ### Added
 
 - **Embedded C/C++ firmware crypto detection (v0.2.1)** — the scanner now natively

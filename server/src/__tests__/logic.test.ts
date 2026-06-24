@@ -205,6 +205,31 @@ test("patterns: runtime crypto-API detectors fire across .NET/Python/Node/Swift"
   }
 });
 
+test("patterns: comment-only crypto mentions do not fire (precision — masks comments, keeps real uses)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-prec-"));
+  try {
+    // Heavy crypto vocabulary, but ONLY in comments — the file performs none.
+    writeFileSync(join(dir, "mentions.ts"),
+      "// migrating away from RSA and ECDSA toward ML-KEM\n" +
+      "/* historical: we used Diffie-Hellman, DSA, mbedtls_rsa_gen_key here */\n" +
+      "export const COUNT = 1; // wc_ecc_make_key + ssh-rsa keys were removed\n");
+    writeFileSync(join(dir, "notes.py"),
+      "# TODO: drop rsa.generate_private_key and the ECDSA path\n" +
+      "VALUE = 2  # ssh-rsa and -----BEGIN RSA PRIVATE KEY----- references\n");
+    // Real uses (in code, not comments) MUST still fire.
+    writeFileSync(join(dir, "real.c"), "mbedtls_rsa_gen_key(&c, rng, NULL, 2048, 65537);\n");
+
+    const assets = scanDirectory(dir, "prec").assets;
+    const mentionHits = assets.filter((a) => a.file === "mentions.ts" || a.file === "notes.py");
+    assert.equal(mentionHits.length, 0,
+      `comment-only crypto mentions must not fire, got: ${mentionHits.map((a) => a.file + ":" + a.patternId).join(", ")}`);
+    assert.ok(assets.some((a) => a.file === "real.c" && a.patternId === "rsa-mbedtls"),
+      "a real crypto call outside comments must still fire");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("patterns: embedded C/C++ firmware crypto detectors fire (mbedTLS/wolfSSL/OpenSSL C)", () => {
   const dir = mkdtempSync(join(tmpdir(), "qv-embed-"));
   try {
