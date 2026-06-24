@@ -9,7 +9,7 @@ import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
-import { assetsToCbom } from "../discovery/cbom.js";
+import { assetsToCbom, validateCbom } from "../discovery/cbom.js";
 import { assetsToSarif } from "../discovery/sarif.js";
 import { openApiDocument } from "../openapi.js";
 import { RateLimiter, rateLimit } from "../auth/rateLimit.js";
@@ -241,8 +241,8 @@ test("csv: empty inventory still emits a header row", () => {
 test("cbom: emits a valid CycloneDX 1.6 cryptography bill of materials", () => {
   const cbom = assetsToCbom(
     [
-      asset({ family: "RSA", algorithm: "RSA", keyBits: 2048, file: "a.ts", line: 3, quantumVulnerable: true }),
-      asset({ family: "HashLegacy", algorithm: "MD5/SHA-1", file: "b.ts", line: 9, quantumVulnerable: true }),
+      asset({ family: "RSA", algorithm: "RSA", keyBits: 2048, file: "a.ts", line: 3, patternId: "rsa", quantumVulnerable: true }),
+      asset({ family: "HashLegacy", algorithm: "MD5/SHA-1", file: "b.ts", line: 9, patternId: "hash", quantumVulnerable: true }),
     ],
     { target: "/repo" },
   ) as any;
@@ -253,25 +253,83 @@ test("cbom: emits a valid CycloneDX 1.6 cryptography bill of materials", () => {
   assert.equal(cbom.metadata.component.name, "/repo");
   assert.equal(cbom.components.length, 2);
 
-  const rsa = cbom.components[0];
+  // Components are sorted by bom-ref, so locate by name rather than index.
+  const rsa = cbom.components.find((c: any) => c.name === "RSA");
+  assert.ok(rsa, "RSA component present");
   assert.equal(rsa.type, "cryptographic-asset");
   assert.equal(rsa.cryptoProperties.assetType, "algorithm");
-  assert.equal(rsa.cryptoProperties.algorithmProperties.primitive, "pke");
-  assert.equal(rsa.cryptoProperties.algorithmProperties.parameterSetIdentifier, "2048");
-  // quantum-vulnerable -> NIST quantum security level 0
-  assert.equal(rsa.cryptoProperties.algorithmProperties.nistQuantumSecurityLevel, 0);
+  assert.equal(rsa.cryptoProperties.oid, "1.2.840.113549.1.1.1"); // verified rsaEncryption OID
+  const rsaAp = rsa.cryptoProperties.algorithmProperties;
+  assert.equal(rsaAp.primitive, "pke");
+  assert.equal(rsaAp.parameterSetIdentifier, "2048");
+  // RSA key size isn't observed from a usage scan, so classical strength is
+  // honestly omitted rather than assumed.
+  assert.equal(rsaAp.classicalSecurityLevel, undefined);
+  assert.ok(rsaAp.cryptoFunctions.includes("sign") && rsaAp.cryptoFunctions.includes("keygen"));
+  // quantum-vulnerable asymmetric -> NIST quantum security category 0
+  assert.equal(rsaAp.nistQuantumSecurityLevel, 0);
   assert.equal(rsa.evidence.occurrences[0].location, "a.ts");
   assert.equal(rsa.evidence.occurrences[0].line, 3);
 
-  // hash family maps to the "hash" primitive
-  assert.equal(cbom.components[1].cryptoProperties.algorithmProperties.primitive, "hash");
+  // Lumped MD5/SHA-1 maps to "hash", emits 0-bit strength, and withholds an OID.
+  const hash = cbom.components.find((c: any) => c.name === "MD5/SHA-1");
+  assert.equal(hash.cryptoProperties.algorithmProperties.primitive, "hash");
+  assert.equal(hash.cryptoProperties.algorithmProperties.classicalSecurityLevel, 0);
+  assert.equal(hash.cryptoProperties.oid, undefined);
+
+  // Dependency graph: the application consumes every discovered algorithm.
+  assert.equal(cbom.dependencies[0].ref, "application:/repo");
+  assert.equal(cbom.dependencies[0].dependsOn.length, 2);
+
+  // The document conforms to our CycloneDX 1.6 validator.
+  assert.deepEqual(validateCbom(cbom), { valid: true, errors: [] });
 });
 
-test("cbom: empty inventory still produces a well-formed BOM with no components", () => {
+test("cbom: serial number is deterministic for the same inventory, distinct otherwise", () => {
+  const findings = [asset({ family: "RSA", algorithm: "RSA", file: "a.ts", line: 3, patternId: "rsa" })];
+  const a = assetsToCbom(findings, { target: "/repo", generatedAt: "2026-01-01T00:00:00.000Z" }) as any;
+  const b = assetsToCbom(findings, { target: "/repo", generatedAt: "2030-09-09T00:00:00.000Z" }) as any;
+  // Same findings + target -> identical serial, even at a different export time.
+  assert.equal(a.serialNumber, b.serialNumber);
+  const other = assetsToCbom(findings, { target: "/other-repo" }) as any;
+  assert.notEqual(a.serialNumber, other.serialNumber);
+});
+
+test("cbom: AES-128 carries NIST quantum category 1 (Grover only square-roots strength)", () => {
+  const cbom = assetsToCbom([asset({ family: "SymmetricLegacy", algorithm: "AES-128", patternId: "aes" })]) as any;
+  const aes = cbom.components[0].cryptoProperties.algorithmProperties;
+  assert.equal(aes.primitive, "block-cipher");
+  assert.equal(aes.nistQuantumSecurityLevel, 1);
+  assert.equal(aes.classicalSecurityLevel, 128);
+});
+
+test("cbom: validator rejects a non-conformant document", () => {
+  const broken = {
+    bomFormat: "CycloneDX",
+    specVersion: "1.5", // wrong spec version
+    serialNumber: "not-a-urn",
+    version: 1,
+    metadata: { timestamp: "2026-01-01T00:00:00.000Z" },
+    components: [
+      { type: "library", "bom-ref": "x", cryptoProperties: { assetType: "algorithm", algorithmProperties: { primitive: "made-up", nistQuantumSecurityLevel: 9 } } },
+    ],
+    dependencies: [{ ref: "ghost" }],
+  };
+  const result = validateCbom(broken);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => e.includes("specVersion")));
+  assert.ok(result.errors.some((e) => e.includes("serialNumber")));
+  assert.ok(result.errors.some((e) => e.includes("primitive")));
+  assert.ok(result.errors.some((e) => e.includes("nistQuantumSecurityLevel")));
+  assert.ok(result.errors.some((e) => e.includes("does not resolve")));
+});
+
+test("cbom: empty inventory still produces a well-formed, conformant BOM", () => {
   const cbom = assetsToCbom([]) as any;
   assert.equal(cbom.bomFormat, "CycloneDX");
   assert.ok(Array.isArray(cbom.components));
   assert.equal(cbom.components.length, 0);
+  assert.equal(validateCbom(cbom).valid, true);
 });
 
 // ------------------------------------------------------------- SARIF

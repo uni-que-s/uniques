@@ -1,4 +1,6 @@
 import { patternCount } from "./discovery/patterns.js";
+import { FRAMEWORKS } from "./compliance/reporter.js";
+import { VERSION } from "./version.js";
 
 /**
  * Hand-authored OpenAPI 3.1 description of the QuantumVault API. Served at
@@ -20,14 +22,14 @@ export function openApiDocument(): Record<string, unknown> {
     name: "framework",
     in: "path",
     required: true,
-    schema: { type: "string", enum: ["FISMA", "CISA", "FedRAMP", "SOC2", "PCI-DSS"] },
+    schema: { type: "string", enum: [...FRAMEWORKS] },
   };
 
   return {
     openapi: "3.1.0",
     info: {
       title: "QuantumVault API",
-      version: "0.1.0",
+      version: VERSION,
       description:
         "Quantum-safe cryptography platform: cryptographic asset discovery, risk scoring, " +
         "remediation tracking, compliance reporting, and CBOM/SARIF export. " +

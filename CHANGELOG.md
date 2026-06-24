@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deeper CBOM & standards export (v0.2.0 milestone)** — the CycloneDX 1.6
+  Cryptography Bill of Materials now carries algorithm **OIDs** (RSA/ECC/DSA/DH,
+  registry-verified), `cryptoFunctions`, `classicalSecurityLevel`, elliptic
+  `curve`, and a graded NIST quantum-security **category** (0–6) per finding; it
+  emits a `dependencies` graph linking the scanned application to every
+  discovered algorithm; and it uses **content-addressed, deterministic** bom-refs
+  and serial number, so re-scanning the same code yields a diffable BOM. A new
+  `validateCbom()` conformance check (sharing one set of spec enums with the
+  emitter) lets the output be *proven* CycloneDX-1.6-valid, not just asserted.
+  Ambiguous lumped patterns (DES/3DES, MD5/SHA-1, Ed25519/X25519) deliberately
+  withhold a specific OID rather than overclaim.
+- **Two new compliance frameworks** — **CNSA 2.0** (NSA Commercial National
+  Security Algorithm Suite — the PQC mandate: ML-KEM-1024 / ML-DSA-87 /
+  AES-256 / SHA-384+) and **NIST CSF 2.0** (cryptographic-inventory and
+  data-protection subcategories) join FISMA/CISA/FedRAMP/SOC 2/PCI-DSS. Reports,
+  JSON/HTML exports, and the dashboard pick them up automatically.
+
 - **Quantum Readiness Assessment** — QuantumVault now generates its flagship
   executive report directly from a scan, instead of hand-filling a template. The
   report computes an at-a-glance quantum-posture grade (the same model the
