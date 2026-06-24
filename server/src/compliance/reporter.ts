@@ -14,6 +14,9 @@ interface ControlDef {
   /** Predicate selecting the assets this control is concerned with. */
   applies: (a: CryptoAsset) => boolean;
   remediation: string;
+  /** Inventory-style controls pass as soon as an inventory exists (rather than
+   *  failing on the count of matched assets) — having the CBOM *is* the control. */
+  inventory?: boolean;
 }
 
 /**
@@ -51,6 +54,7 @@ const CATALOGS: Record<Framework, ControlDef[]> = {
       title: "Cryptographic Inventory",
       description: "Maintain a complete inventory of quantum-vulnerable assets (CISA PQC roadmap).",
       applies: () => true,
+      inventory: true,
       remediation: "Maintain continuous discovery; this inventory satisfies the baseline requirement.",
     },
     {
@@ -88,6 +92,7 @@ const CATALOGS: Record<Framework, ControlDef[]> = {
       title: "System Component Inventory",
       description: "Cryptographic components must be inventoried and tracked.",
       applies: () => true,
+      inventory: true,
       remediation: "Sync this cryptographic inventory into the system component baseline.",
     },
   ],
@@ -158,6 +163,87 @@ const CATALOGS: Record<Framework, ControlDef[]> = {
         "Enforce hybrid TLS (classical + ML-KEM) on all transmission paths and re-issue certificates with PQC-ready signatures.",
     },
   ],
+  // NSA Commercial National Security Algorithm Suite 2.0 — the defining PQC
+  // mandate for U.S. National Security Systems (CSI CNSA 2.0 FAQ, Sep 2022).
+  "CNSA-2.0": [
+    {
+      id: "CNSA2-KEM",
+      title: "Key Establishment — ML-KEM-1024",
+      description: "All asymmetric key establishment must use ML-KEM-1024 (FIPS 203); RSA transport and (EC)DH are disallowed.",
+      applies: (a) => ["RSA", "ECC", "DH"].includes(a.family),
+      remediation: "Replace RSA key transport and (EC)DH key exchange with ML-KEM-1024.",
+    },
+    {
+      id: "CNSA2-SIG",
+      title: "Digital Signatures — ML-DSA-87",
+      description: "General-purpose signatures must use ML-DSA-87 (FIPS 204); RSA, ECDSA, EdDSA, and DSA do not qualify.",
+      applies: (a) => ["RSA", "ECC", "DSA"].includes(a.family),
+      remediation: "Migrate signing to ML-DSA-87; retire RSA/ECDSA/EdDSA/DSA signature keys.",
+    },
+    {
+      id: "CNSA2-SYM",
+      title: "Symmetric Encryption — AES-256",
+      description: "Symmetric encryption must use AES with 256-bit keys; AES-128/192 and legacy ciphers are insufficient.",
+      applies: (a) => a.family === "SymmetricLegacy",
+      remediation: "Standardize on AES-256-GCM; remove DES/3DES and sub-256-bit AES.",
+    },
+    {
+      id: "CNSA2-HASH",
+      title: "Hashing — SHA-384 / SHA-512",
+      description: "Hashing must use SHA-384 or SHA-512; MD5, SHA-1, and SHA-256 do not meet CNSA 2.0.",
+      applies: (a) => a.family === "HashLegacy",
+      remediation: "Replace MD5/SHA-1 with SHA-384 or SHA-512.",
+    },
+    {
+      id: "CNSA2-TIMELINE",
+      title: "Transition-Timeline Conformance",
+      description: "Quantum-vulnerable public-key crypto must be eliminated ahead of the CNSA 2.0 enforcement gates (NSS exclusive by ~2033).",
+      applies: (a) => ["RSA", "ECC", "DSA", "DH"].includes(a.family),
+      remediation: "Schedule removal of every RSA/ECC/DSA/DH usage against the CNSA 2.0 timeline.",
+    },
+  ],
+  // NIST Cybersecurity Framework 2.0 (CSWP 29) — outcome subcategories that
+  // underpin cryptographic inventory and protection of data in transit/at rest.
+  "NIST-CSF-2.0": [
+    {
+      id: "ID.AM-02",
+      title: "Software, Services & Systems Inventory",
+      description: "Maintained inventories of software/services/systems — the basis for a cryptographic bill of materials.",
+      applies: () => true,
+      inventory: true,
+      remediation: "Maintain this CBOM as the cryptographic component inventory.",
+    },
+    {
+      id: "ID.RA-01",
+      title: "Vulnerability Identification",
+      description: "Vulnerabilities are identified and recorded; quantum-vulnerable crypto is a recordable cryptographic vulnerability.",
+      applies: (a) => ["RSA", "ECC", "DSA", "DH"].includes(a.family),
+      remediation: "Record quantum-vulnerable algorithms as crypto vulnerabilities and track them to remediation.",
+    },
+    {
+      id: "PR.DS-01",
+      title: "Protect Data-at-Rest",
+      description: "Data-at-rest confidentiality must not rely on quantum-vulnerable key wrapping or weak ciphers.",
+      applies: (a) => a.family === "RSA" || a.family === "SymmetricLegacy",
+      remediation: "Protect stored data with AES-256 and ML-KEM-based key wrapping.",
+    },
+    {
+      id: "PR.DS-02",
+      title: "Protect Data-in-Transit",
+      description: "Channels whose key exchange or authentication uses RSA/ECDH/ECDSA fail this outcome once PQC is required.",
+      applies: (a) =>
+        a.patternId.includes("tls") || a.patternId.includes("cert") ||
+        a.family === "DH" || a.family === "ECC" || a.family === "RSA",
+      remediation: "Deploy hybrid/PQC TLS and SSH; replace RSA/ECDH/ECDSA on transmission paths.",
+    },
+    {
+      id: "PR.PS-01",
+      title: "Configuration Baseline (Approved Cryptography)",
+      description: "Configuration baselines must specify approved algorithms and drive remediation of high-risk crypto.",
+      applies: (a) => a.risk?.priority === "critical" || a.risk?.priority === "high",
+      remediation: "Baseline approved algorithms/parameters and remediate critical/high-risk findings first.",
+    },
+  ],
 };
 
 function statusFor(affected: number): ComplianceStatus {
@@ -184,7 +270,7 @@ export function generateReport(
 ): ComplianceReport {
   const controls: ComplianceControl[] = CATALOGS[framework].map((def) => {
     const affectedAssets = assets.filter(def.applies).length;
-    const status = def.id === "PQC-1" || def.id === "CM-8"
+    const status = def.inventory
       ? (assets.length > 0 ? "pass" : "gap") // inventory controls pass once we have an inventory
       : statusFor(affectedAssets);
     return {
@@ -214,4 +300,6 @@ export function generateReport(
   };
 }
 
-export const FRAMEWORKS: Framework[] = ["FISMA", "CISA", "FedRAMP", "SOC2", "PCI-DSS"];
+export const FRAMEWORKS: Framework[] = [
+  "FISMA", "CISA", "FedRAMP", "SOC2", "PCI-DSS", "CNSA-2.0", "NIST-CSF-2.0",
+];

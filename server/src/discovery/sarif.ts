@@ -1,5 +1,6 @@
 import type { CryptoAsset } from "../types.js";
 import { PATTERNS } from "./patterns.js";
+import { VERSION } from "../version.js";
 
 const PATTERN_BY_ID = new Map(PATTERNS.map((p) => [p.id, p]));
 const INFO_URI = "https://github.com/DemigodDSK/quantumvault";
@@ -72,7 +73,7 @@ export function assetsToSarif(assets: CryptoAsset[], meta: SarifMeta = {}): Reco
           driver: {
             name: "QuantumVault",
             informationUri: INFO_URI,
-            version: meta.toolVersion ?? "0.1.0",
+            version: meta.toolVersion ?? VERSION,
             rules,
           },
         },

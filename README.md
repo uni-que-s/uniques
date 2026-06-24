@@ -5,7 +5,7 @@
 **Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
 cryptographic assets across a codebase, scores them for post-quantum migration
 priority, tracks remediation to completion, and auto-generates FISMA, CISA,
-FedRAMP, SOC 2, and PCI-DSS compliance reports.
+FedRAMP, SOC 2, PCI-DSS, CNSA 2.0, and NIST CSF 2.0 compliance reports.
 
 It closes the full loop — **discover → prioritize → track → prove compliance** —
 for the "harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at
@@ -37,13 +37,14 @@ risk once a cryptographically-relevant quantum computer exists.
 - **Drift detection** — each scan is diffed against the previous one, so the
   dashboard flags **new findings introduced** and **findings removed** since last
   time — catching, e.g., a PR that adds a fresh RSA usage.
-- **Compliance automation** — maps findings to FISMA, CISA, FedRAMP, SOC 2, and
-  PCI-DSS controls with pass/gap/fail status and remediation guidance; exports an auditor-ready
+- **Compliance automation** — maps findings to FISMA, CISA, FedRAMP, SOC 2,
+  PCI-DSS, CNSA 2.0, and NIST CSF 2.0 controls with pass/gap/fail status and remediation guidance; exports an auditor-ready
   **JSON** (system of record) or **print-to-PDF HTML** report. The raw asset
   inventory also exports to **CSV** (filtered) for spreadsheets, SIEM, or tickets,
-  and the full inventory exports as a **CycloneDX 1.6 CBOM** (Cryptography Bill of
-  Materials) — the standards-based interchange format NIST/CISA reference for
-  post-quantum migration inventories.
+  and the full inventory exports as a conformance-validated **CycloneDX 1.6 CBOM**
+  (Cryptography Bill of Materials) with algorithm OIDs, NIST quantum-security
+  categories, and an application→algorithm dependency graph — the standards-based
+  interchange format NIST/CISA reference for post-quantum migration inventories.
 - **Quantum Readiness Assessment** — one command (or one dashboard click) turns a
   scan into a branded, executive-ready report: an at-a-glance quantum-posture
   grade, the cryptographic inventory by family, a prioritized worklist, the real
@@ -69,7 +70,7 @@ web/      React 18 + TypeScript + Vite + Tailwind v4 + Recharts dashboard
 server/   Express + TypeScript API
             discovery/   pattern DB, directory scanner, Git clone   (core engine)
             risk/        5-factor weighted risk scorer
-            compliance/  FISMA/CISA/FedRAMP/SOC2/PCI-DSS report generator + HTML export
+            compliance/  FISMA/CISA/FedRAMP/SOC2/PCI-DSS/CNSA-2.0/NIST-CSF-2.0 report generator + HTML export
             auth/        scrypt auth, sessions, org-scoping middleware
             store/       SQLite persistence (node:sqlite — zero native deps)
             sample-target/  bundled vulnerable fixtures, scanned on first boot

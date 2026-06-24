@@ -47,13 +47,15 @@ function sampleAssets(): CryptoAsset[] {
 }
 
 // --------------------------------------------------------------- registration
-test("compliance: SOC2 and PCI-DSS are registered in FRAMEWORKS", () => {
+test("compliance: SOC2, PCI-DSS, CNSA-2.0, and NIST-CSF-2.0 are registered in FRAMEWORKS", () => {
   assert.ok(FRAMEWORKS.includes("SOC2"));
   assert.ok(FRAMEWORKS.includes("PCI-DSS"));
+  assert.ok(FRAMEWORKS.includes("CNSA-2.0"));
+  assert.ok(FRAMEWORKS.includes("NIST-CSF-2.0"));
 });
 
 // --------------------------------------------------------------- new frameworks
-for (const framework of ["SOC2", "PCI-DSS"] as const) {
+for (const framework of ["SOC2", "PCI-DSS", "CNSA-2.0", "NIST-CSF-2.0"] as const) {
   test(`compliance: ${framework} report is well-formed with sane, bounded values`, () => {
     const assets = sampleAssets();
     const report = generateReport(framework, assets, "scan-1");
@@ -107,6 +109,29 @@ test("compliance: PCI-DSS control catalog covers stored-data, key-mgmt, and tran
   for (const req of ["3.5", "3.6", "3.7", "4.2.1"]) {
     assert.ok(ids.includes(req), `missing PCI-DSS requirement ${req}`);
   }
+});
+
+test("compliance: CNSA-2.0 catalog maps the suite's algorithm requirements and fails on quantum-vulnerable crypto", () => {
+  const report = generateReport("CNSA-2.0", sampleAssets(), "scan-cnsa");
+  const ids = report.controls.map((c) => c.id);
+  for (const req of ["CNSA2-KEM", "CNSA2-SIG", "CNSA2-SYM", "CNSA2-HASH", "CNSA2-TIMELINE"]) {
+    assert.ok(ids.includes(req), `missing CNSA 2.0 control ${req}`);
+  }
+  // RSA/ECC/DH in the sample must trigger the KEM control (gap or fail, never pass).
+  const kem = report.controls.find((c) => c.id === "CNSA2-KEM")!;
+  assert.notEqual(kem.status, "pass");
+  assert.ok(kem.affectedAssets > 0, "KEM control should flag the quantum-vulnerable key-establishment assets");
+});
+
+test("compliance: NIST-CSF-2.0 catalog uses official subcategory ids and treats inventory as satisfied", () => {
+  const report = generateReport("NIST-CSF-2.0", sampleAssets(), "scan-csf");
+  const ids = report.controls.map((c) => c.id);
+  for (const req of ["ID.AM-02", "ID.RA-01", "PR.DS-01", "PR.DS-02", "PR.PS-01"]) {
+    assert.ok(ids.includes(req), `missing NIST CSF 2.0 subcategory ${req}`);
+  }
+  // ID.AM-02 is an inventory control: having the CBOM satisfies it.
+  const inv = report.controls.find((c) => c.id === "ID.AM-02")!;
+  assert.equal(inv.status, "pass");
 });
 
 test("compliance: a clean inventory yields a perfect, passing report", () => {
