@@ -134,19 +134,15 @@ test("compliance: NIST-CSF-2.0 catalog uses official subcategory ids and treats 
   assert.equal(inv.status, "pass");
 });
 
-test("compliance: a clean inventory yields a perfect, passing report", () => {
-  for (const framework of ["SOC2", "PCI-DSS"] as const) {
-    // only non-vulnerable, modern crypto present -> no control applies
-    const clean = [
-      asset({ family: "SymmetricLegacy", patternId: "aes-256-gcm", algorithm: "AES-256-GCM", quantumVulnerable: false }),
-    ];
-    // ensure none of the predicates match by using a family/pattern outside the catalogs' scope
+test("compliance: a clean scan (zero findings) is a perfect 100% pass for EVERY framework", () => {
+  // Covers the inventory-control frameworks (CISA/FedRAMP/NIST-CSF) too: a clean
+  // scan is a complete (empty) inventory, so inventory controls must PASS, not gap.
+  for (const framework of FRAMEWORKS) {
     const report = generateReport(framework, [], "scan-empty");
-    assert.ok(report.scorePct >= 0 && report.scorePct <= 100);
-    // with zero findings every non-inventory control passes
-    assert.equal(report.scorePct, 100);
-    assert.equal(report.overallStatus, "pass");
-    // touch `clean` so it isn't flagged unused while documenting intent
-    assert.equal(clean.length, 1);
+    assert.equal(report.scorePct, 100, `${framework} should be 100% on a clean scan, got ${report.scorePct}`);
+    assert.equal(report.overallStatus, "pass", `${framework} overall should pass on a clean scan`);
+    for (const c of report.controls) {
+      assert.equal(c.status, "pass", `${framework} control ${c.id} should pass on a clean scan`);
+    }
   }
 });

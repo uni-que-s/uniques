@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A clean scan is now 100% compliant for every framework (v0.2.4)** — inventory
+  controls (CISA `PQC-1`, FedRAMP `CM-8`, NIST-CSF `ID.AM-02`) were marked **gap**
+  when a scan found zero crypto, which dragged CISA/FedRAMP to "83% Partial" and
+  NIST-CSF to 90% on a clean codebase. But a clean scan **is** a complete (empty)
+  inventory — a report only exists because a scan ran — so inventory controls now
+  pass. A codebase with no quantum-vulnerable crypto is a perfect 100% pass across
+  all seven frameworks. Test extended to cover every framework on a clean scan.
+
 ### Changed
 
 - **Grade reflects production code, not fixtures (v0.2.3)** — the scanner now
