@@ -1,0 +1,11 @@
+# QuantumVault's own detection rules, reference tables, and report/label text
+# contain cryptographic algorithm NAMES as match patterns and human-readable
+# strings — they are rule definitions, not cryptographic usage. Exclude them
+# from a self-scan so the inventory reflects what the product actually uses
+# (which is: no quantum-vulnerable crypto). Test directories and sample-target/
+# are already skipped by default.
+server/src/discovery/patterns.ts
+server/src/discovery/cryptoRef.ts
+server/src/compliance/reporter.ts
+server/src/report/assessment.ts
+server/src/cli.ts
