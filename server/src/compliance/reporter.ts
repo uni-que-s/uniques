@@ -270,8 +270,12 @@ export function generateReport(
 ): ComplianceReport {
   const controls: ComplianceControl[] = CATALOGS[framework].map((def) => {
     const affectedAssets = assets.filter(def.applies).length;
-    const status = def.inventory
-      ? (assets.length > 0 ? "pass" : "gap") // inventory controls pass once we have an inventory
+    // Inventory controls are satisfied by the existence of this report: a report
+    // is only generated from a completed scan, so a cryptographic inventory
+    // exists — even when the scan is clean (zero findings). A clean codebase must
+    // therefore PASS inventory controls, not gap them.
+    const status: ComplianceStatus = def.inventory
+      ? "pass"
       : statusFor(affectedAssets);
     return {
       id: def.id,
