@@ -152,7 +152,11 @@ function gapText(report: ComplianceReport): string {
 export function buildAssessment(input: AssessmentInput): AssessmentReport {
   const { orgName, generatedAt, scan, assets, reports } = input;
   const total = assets.length;
-  const vulnerable = assets.filter((a) => a.quantumVulnerable).length;
+  // Low-confidence findings are possible mentions — excluded from the grade,
+  // priority distribution, and migration math, consistent with the dashboard.
+  const actionable = assets.filter((a) => a.confidence !== "low");
+  const possibleMentions = total - actionable.length;
+  const vulnerable = actionable.filter((a) => a.quantumVulnerable).length;
 
   // ---- inventory by family (sorted by count desc) -------------------------
   const familyCounts = new Map<CryptoFamily, number>();
@@ -170,7 +174,7 @@ export function buildAssessment(input: AssessmentInput): AssessmentReport {
 
   // ---- priority distribution ---------------------------------------------
   const priorityCounts: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
-  for (const a of assets) priorityCounts[priorityOf(a)] += 1;
+  for (const a of actionable) priorityCounts[priorityOf(a)] += 1;
   const priority: PriorityRow[] = PRIORITY_ORDER.map((p) => ({
     priority: p,
     count: priorityCounts[p],
@@ -178,9 +182,9 @@ export function buildAssessment(input: AssessmentInput): AssessmentReport {
   }));
 
   // ---- migration progress & effort (for posture + KPIs) ------------------
-  const resolved = assets.filter((a) => RESOLVED_STATUSES.includes(a.status)).length;
-  const migrationProgressPct = total ? Math.round((resolved / total) * 100) : 0;
-  const estMigrationDays = assets
+  const resolved = actionable.filter((a) => RESOLVED_STATUSES.includes(a.status)).length;
+  const migrationProgressPct = actionable.length ? Math.round((resolved / actionable.length) * 100) : 0;
+  const estMigrationDays = actionable
     .filter((a) => !RESOLVED_STATUSES.includes(a.status))
     .reduce((s, a) => s + (a.risk?.migrationEffortDays ?? 0), 0);
 
@@ -200,6 +204,7 @@ export function buildAssessment(input: AssessmentInput): AssessmentReport {
   const posture = computePosture({
     totalAssets: total,
     quantumVulnerable: vulnerable,
+    possibleMentions,
     byPriority: { critical: priorityCounts.critical, high: priorityCounts.high },
     avgCompliancePct,
     migrationProgressPct,

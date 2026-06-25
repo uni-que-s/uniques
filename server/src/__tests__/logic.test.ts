@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { scoreAsset, scoreAssets, getRiskWeights, DEFAULT_WEIGHTS } from "../risk/scorer.js";
-import { extractKeyBits, patternCount, PATTERNS } from "../discovery/patterns.js";
+import { extractKeyBits, patternCount, PATTERNS, confidenceFor } from "../discovery/patterns.js";
 import { normalizeRepo } from "../discovery/repo.js";
 import { scanDirectory } from "../discovery/scanner.js";
 import { assetsToCsv } from "../discovery/csv.js";
@@ -29,6 +29,7 @@ function asset(partial: Partial<CryptoAsset> & { family: CryptoFamily }): Crypto
     snippet: "",
     patternId: "p",
     quantumVulnerable: true,
+    confidence: "high",
     pqcReplacement: "ML-KEM (Kyber)",
     status: "open",
     ...partial,
@@ -225,6 +226,35 @@ test("patterns: comment-only crypto mentions do not fire (precision — masks co
       `comment-only crypto mentions must not fire, got: ${mentionHits.map((a) => a.file + ":" + a.patternId).join(", ")}`);
     assert.ok(assets.some((a) => a.file === "real.c" && a.patternId === "rsa-mbedtls"),
       "a real crypto call outside comments must still fire");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("patterns: confidence flags mentions as low and real call-sites as high", () => {
+  // Call-sites / key material → high; name-config → medium; bare name/enum → low.
+  assert.equal(confidenceFor("rsa-keygen-openssl"), "high");
+  assert.equal(confidenceFor("rsa-pem-header"), "high");
+  assert.equal(confidenceFor("rsa-mbedtls"), "high");
+  assert.equal(confidenceFor("dh-keyexchange"), "medium");
+  assert.equal(confidenceFor("jwt-rsa-alg"), "low");
+  assert.equal(confidenceFor("ecc-curve-decl"), "low");
+
+  const dir = mkdtempSync(join(tmpdir(), "qv-conf-"));
+  try {
+    // A real RSA key generation (high) plus a JWT-alg ENUM (a mention, not a use → low).
+    writeFileSync(join(dir, "app.ts"),
+      "const k = generateKeyPairSync('rsa', { modulusLength: 4096 });\n" +
+      'export const SUPPORTED = ["RS256", "ES256"];\n');
+    const assets = scanDirectory(dir, "conf").assets;
+    assert.ok(
+      assets.some((a) => a.patternId === "rsa-keygen-openssl" && a.confidence === "high"),
+      "a real RSA call must be high-confidence",
+    );
+    assert.ok(
+      assets.some((a) => a.patternId === "jwt-rsa-alg" && a.confidence === "low"),
+      "a JWT-alg enum must be low-confidence (possible mention)",
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

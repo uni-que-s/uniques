@@ -12,6 +12,13 @@ export type CryptoFamily =
 
 export type Severity = "critical" | "high" | "medium" | "low";
 
+/** How strongly a detection implies actual cryptographic USAGE versus a mere
+ *  mention (a name in a string, enum, doc, or config token). Regex can't see
+ *  call-sites, so name/enum matches are down-ranked. "low" = possible mention:
+ *  surfaced for review, but excluded from the posture grade and the headline
+ *  quantum-vulnerable count. (The full fix is AST/semantic detection.) */
+export type Confidence = "high" | "medium" | "low";
+
 /** Remediation lifecycle for a discovered asset. */
 export type AssetStatus = "open" | "in_progress" | "migrated" | "accepted";
 
@@ -50,6 +57,8 @@ export interface CryptoAsset {
   snippet: string;
   patternId: string;
   quantumVulnerable: boolean;
+  /** Detection confidence — how strongly the match implies real usage vs a mention. */
+  confidence: Confidence;
   pqcReplacement: string;
   /** Remediation status, defaults to "open" when an asset is first discovered. */
   status: AssetStatus;

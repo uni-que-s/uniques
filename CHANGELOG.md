@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Per-finding confidence score (v0.2.5)** — every detection now carries a
+  confidence level: **high** (a library call-site or key material — e.g.
+  `mbedtls_rsa_gen_key(`, `getInstance("RSA")`, a PEM block), **medium** (a
+  name/config token), or **low** (a bare algorithm name/number in a string, enum,
+  or doc — a likely *mention*, not a usage). **Low-confidence "possible mentions"
+  are surfaced separately and excluded from the posture grade and the headline
+  quantum-vulnerable count**, so a config like `["RS256","ES256"]` no longer reads
+  as hard exposure. The CLI splits the count, the CBOM carries
+  `quantumvault:confidence`, and the dashboard shows a "Possible Mentions" stat +
+  a "mention" chip in the inventory. (This is the honest middle step toward full
+  AST/semantic detection — it flags the regex engine's known weakness rather than
+  hiding it.)
+
 ### Fixed
 
 - **A clean scan is now 100% compliant for every framework (v0.2.4)** — inventory

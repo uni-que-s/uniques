@@ -32,21 +32,25 @@ test("store: status updates drive migration progress and are org-scoped", () => 
     assert.ok(assets.length >= 2, `expected >=2 assets, got ${assets.length}`);
     assert.ok(assets.every((a) => a.status === "open"), "new assets must start 'open'");
 
+    // The worklist / migration math is over ACTIONABLE findings only — low-confidence
+    // "possible mentions" are excluded (a clean design choice, surfaced separately).
+    const actionable = assets.filter((a) => a.confidence !== "low");
+
     // Baseline: nothing resolved.
     let dash = store.dashboard(org);
     assert.equal(dash.migrationProgressPct, 0);
-    assert.equal(dash.byStatus.open, assets.length);
+    assert.equal(dash.byStatus.open, actionable.length);
     const totalEffort = dash.migrationEffortDays;
     assert.equal(dash.remainingEffortDays, totalEffort);
 
-    // Resolve one asset -> progress and remaining effort move.
-    const first = assets[0];
+    // Resolve one actionable asset -> progress and remaining effort move.
+    const first = actionable[0];
     const updated = store.updateAssetStatus(first.id, "migrated", org);
     assert.equal(updated?.status, "migrated");
 
     dash = store.dashboard(org);
     assert.equal(dash.byStatus.migrated, 1);
-    assert.equal(dash.migrationProgressPct, Math.round((1 / assets.length) * 100));
+    assert.equal(dash.migrationProgressPct, Math.round((1 / actionable.length) * 100));
     assert.ok(dash.remainingEffortDays <= totalEffort);
 
     // Invalid status is rejected.
@@ -75,7 +79,9 @@ test("store: remediation status carries forward across re-scans", () => {
     // First scan, then resolve one finding.
     store.runScan(src, undefined, org);
     const before = store.getAssets(undefined, org);
-    const target = before.find((a) => a.patternId === "rsa-modulus-bits") ?? before[0];
+    // Resolve an ACTIONABLE finding (low-confidence "mentions" are excluded from
+    // the dashboard worklist), so byStatus reflects the migration below.
+    const target = before.find((a) => a.confidence !== "low") ?? before[0];
     store.updateAssetStatus(target.id, "migrated", org);
 
     // Re-scan the same (unchanged) source — a brand new scan with new asset ids.

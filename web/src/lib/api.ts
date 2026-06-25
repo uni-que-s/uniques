@@ -68,6 +68,7 @@ export interface CryptoAsset {
   snippet: string;
   patternId: string;
   quantumVulnerable: boolean;
+  confidence: "high" | "medium" | "low";
   pqcReplacement: string;
   status: AssetStatus;
   risk?: RiskScore;
@@ -76,6 +77,7 @@ export interface CryptoAsset {
 export interface Dashboard {
   totalAssets: number;
   quantumVulnerable: number;
+  possibleMentions: number;
   byFamily: Record<string, number>;
   byPriority: Record<string, number>;
   byStatus: Record<AssetStatus, number>;
