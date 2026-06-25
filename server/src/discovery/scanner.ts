@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
-import { PATTERNS, extractKeyBits } from "./patterns.js";
+import { PATTERNS, extractKeyBits, confidenceFor } from "./patterns.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
 
@@ -256,6 +256,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
+          confidence: confidenceFor(pattern.id),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

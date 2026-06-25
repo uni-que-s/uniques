@@ -36,7 +36,7 @@ function gradeFor(score: number): Grade {
 
 type PostureInput = Pick<
   Dashboard,
-  "totalAssets" | "quantumVulnerable" | "byPriority" | "avgCompliancePct" | "migrationProgressPct"
+  "totalAssets" | "quantumVulnerable" | "possibleMentions" | "byPriority" | "avgCompliancePct" | "migrationProgressPct"
 >;
 
 /**
@@ -46,12 +46,15 @@ type PostureInput = Pick<
  * findings. No black box — every input is shown on the dashboard.
  */
 export function computePosture(d: PostureInput): Posture {
-  if (!d.totalAssets) {
+  const mentions = d.possibleMentions ?? 0;
+  if (!d.quantumVulnerable) {
     return {
       score: 100,
       grade: "A",
       label: "No exposure",
-      narrative: "No cryptographic assets discovered yet — run a scan to assess posture.",
+      narrative: d.totalAssets || mentions
+        ? `No actionable quantum-vulnerable cryptography found${mentions ? ` — ${mentions} possible mention${mentions === 1 ? "" : "s"} flagged for review` : ""}.`
+        : "No cryptographic assets discovered yet — run a scan to assess posture.",
       color: GRADE_COLOR.A,
     };
   }
@@ -67,6 +70,7 @@ export function computePosture(d: PostureInput): Posture {
   const narrative =
     `${d.quantumVulnerable} of ${d.totalAssets} assets are quantum-vulnerable` +
     (priority ? `, ${priority} high-priority` : "") +
+    (mentions ? `, ${mentions} possible mention${mentions === 1 ? "" : "s"}` : "") +
     `. ${d.migrationProgressPct}% remediated · ${d.avgCompliancePct}% avg compliance.`;
 
   return { score, grade, label: GRADE_LABEL[grade], narrative, color: GRADE_COLOR[grade] };

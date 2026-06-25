@@ -35,6 +35,8 @@ function gradeFor(score: number): Grade {
 export interface PostureInput {
   totalAssets: number;
   quantumVulnerable: number;
+  /** Low-confidence "possible mention" findings — excluded from the grade. */
+  possibleMentions?: number;
   byPriority: { critical?: number; high?: number };
   avgCompliancePct: number;
   migrationProgressPct: number;
@@ -48,12 +50,15 @@ export interface PostureInput {
  * unmitigated critical/high findings. No black box — every input is reported.
  */
 export function computePosture(d: PostureInput): Posture {
-  if (!d.totalAssets) {
+  if (!d.quantumVulnerable) {
+    const mentions = d.possibleMentions ?? 0;
     return {
       score: 100,
       grade: "A",
       label: "No exposure",
-      narrative: "No cryptographic assets discovered yet — run a scan to assess posture.",
+      narrative: d.totalAssets || mentions
+        ? `No actionable quantum-vulnerable cryptography found${mentions ? ` — ${mentions} possible mention${mentions === 1 ? "" : "s"} flagged for review` : ""}.`
+        : "No cryptographic assets discovered yet — run a scan to assess posture.",
       color: GRADE_COLOR.A,
     };
   }
@@ -66,9 +71,11 @@ export function computePosture(d: PostureInput): Posture {
   const grade = gradeFor(score);
 
   const priority = critical + high;
+  const mentions = d.possibleMentions ?? 0;
   const narrative =
     `${d.quantumVulnerable} of ${d.totalAssets} assets are quantum-vulnerable` +
     (priority ? `, ${priority} high-priority` : "") +
+    (mentions ? `, ${mentions} possible mention${mentions === 1 ? "" : "s"}` : "") +
     `. ${d.migrationProgressPct}% remediated · ${d.avgCompliancePct}% avg compliance.`;
 
   return { score, grade, label: GRADE_LABEL[grade], narrative, color: GRADE_COLOR[grade] };

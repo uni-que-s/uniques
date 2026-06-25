@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AssetStatus, CryptoAsset, ComplianceReport, MonitorTarget, RiskScore, ScanJob } from "../types.js";
 import { ASSET_STATUSES, RESOLVED_STATUSES } from "../types.js";
 import { scanDirectory } from "../discovery/scanner.js";
+import { confidenceFor } from "../discovery/patterns.js";
 import { scoreAssets } from "../risk/scorer.js";
 import { generateReport, FRAMEWORKS } from "../compliance/reporter.js";
 import { db, DEFAULT_ORG_ID } from "./db.js";
@@ -57,6 +58,7 @@ function rowToAsset(r: AssetRow): CryptoAsset {
     snippet: r.snippet,
     patternId: r.pattern_id,
     quantumVulnerable: !!r.quantum_vulnerable,
+    confidence: confidenceFor(r.pattern_id),
     pqcReplacement: r.pqc_replacement,
     status: (r.status as AssetStatus) ?? "open",
     risk: r.risk_json ? (JSON.parse(r.risk_json) as RiskScore) : undefined,
@@ -371,8 +373,18 @@ class Store {
     const byStatus: Record<AssetStatus, number> = { open: 0, in_progress: 0, migrated: 0, accepted: 0 };
     let migrationEffortDays = 0;
     let remainingEffortDays = 0;
+    let quantumVulnerable = 0;
+    let possibleMentions = 0;
 
     for (const a of assets) {
+      // Low-confidence findings are possible mentions (a crypto name in a string,
+      // enum, or doc). Surface them separately and exclude them from every
+      // grade-driving aggregate so they can't tank the posture or pad the worklist.
+      if (a.confidence === "low") {
+        possibleMentions += 1;
+        continue;
+      }
+      if (a.quantumVulnerable) quantumVulnerable += 1;
       byFamily[a.family] = (byFamily[a.family] ?? 0) + 1;
       const p = a.risk?.priority ?? "low";
       byPriority[p] += 1;
@@ -382,8 +394,9 @@ class Store {
       if (!RESOLVED_STATUSES.includes(a.status)) remainingEffortDays += effort;
     }
 
+    const actionable = assets.length - possibleMentions;
     const resolved = byStatus.migrated + byStatus.accepted;
-    const migrationProgressPct = assets.length ? Math.round((resolved / assets.length) * 100) : 0;
+    const migrationProgressPct = actionable ? Math.round((resolved / actionable) * 100) : 0;
 
     const reports = this.getReports(undefined, orgId);
     const avgCompliance = reports.length
@@ -394,7 +407,8 @@ class Store {
 
     return {
       totalAssets: assets.length,
-      quantumVulnerable: assets.filter((a) => a.quantumVulnerable).length,
+      quantumVulnerable,
+      possibleMentions,
       byFamily,
       byPriority,
       byStatus,

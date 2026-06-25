@@ -132,6 +132,14 @@ export default function Assets() {
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-sm" style={{ background: FAMILY_COLOR[a.family] ?? "#64748b" }} />
                     <span className="font-medium text-slate-200">{a.algorithm}</span>
+                    {a.confidence === "low" && (
+                      <span
+                        title="Low confidence — a possible mention (name in a string/enum/doc), not counted as exposure"
+                        className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400"
+                      >
+                        mention
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-5 py-3 font-mono text-xs text-slate-400">

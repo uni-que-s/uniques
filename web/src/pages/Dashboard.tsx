@@ -183,13 +183,19 @@ export default function Dashboard({ onRequireAuth }: { onRequireAuth: () => void
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="Crypto Assets" value={data.totalAssets} accent="#818cf8" />
         <StatCard
           label="Quantum-Vulnerable"
           value={data.quantumVulnerable}
           sub={`${Math.round((data.quantumVulnerable / Math.max(data.totalAssets, 1)) * 100)}% of inventory`}
           accent="#f43f5e"
+        />
+        <StatCard
+          label="Possible Mentions"
+          value={data.possibleMentions}
+          sub="low confidence · review"
+          accent="#facc15"
         />
         <StatCard
           label="Migration Effort"

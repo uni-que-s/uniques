@@ -1,4 +1,4 @@
-import type { CryptoPattern } from "../types.js";
+import type { CryptoPattern, Confidence } from "../types.js";
 
 /**
  * Pattern database for cryptographic asset discovery.
@@ -530,6 +530,38 @@ export function extractKeyBits(line: string, family: string): number | null {
     return [512, 768, 1024, 2048, 3072, 4096].includes(bits) ? bits : null;
   }
   return [128, 256].includes(bits) ? bits : null;
+}
+
+/**
+ * Detection confidence per pattern: how strongly a match implies actual crypto
+ * USAGE versus a mention (a name/number in a string, enum, doc, or config token).
+ * Regex sees text, not call-sites, so name/enum matchers are down-ranked. Patterns
+ * not listed default to "high" — they match a library call-site or key material
+ * (e.g. `mbedtls_rsa_gen_key(`, `KeyPairGenerator.getInstance("RSA")`, a PEM block).
+ */
+const PATTERN_CONFIDENCE: Record<string, Confidence> = {
+  // "low" = possible mention: fires on the bare algorithm name/number anywhere
+  // (a JWT alg in an enum, a curve name in a doc, `bits = 2048` on any variable).
+  // Excluded from the posture grade and the headline count; surfaced for review.
+  "ecc-curve-decl": "low",
+  "ecc-ed25519": "low",
+  "rsa-modulus-bits": "low",
+  "jwt-rsa-alg": "low",
+  "jwt-ecdsa-alg": "low",
+  // "medium" = a name/config token that is usually real but can be a mention.
+  "ssh-rsa-key": "medium",
+  "ssh-ecdsa-key": "medium",
+  "dsa-usage": "medium",
+  "dh-keyexchange": "medium",
+  "sym-des-3des": "medium",
+  "sym-aes128": "medium",
+  "hash-md5-sha1": "medium",
+  "tls-rsa-cert": "medium",
+};
+
+/** Detection confidence for a finding, by the pattern that matched it. */
+export function confidenceFor(patternId: string): Confidence {
+  return PATTERN_CONFIDENCE[patternId] ?? "high";
 }
 
 export function patternCount(): number {

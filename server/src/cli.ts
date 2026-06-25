@@ -67,23 +67,33 @@ function parseArgs(argv: string[]): Args {
 }
 
 function printTable(job: ScanJob, assets: CryptoAsset[]): void {
+  // Low-confidence findings are possible mentions (a crypto name in a string,
+  // enum, or doc) — reported separately, not counted as hard exposure.
+  const actionable = assets.filter((a) => a.confidence !== "low");
+  const mentions = assets.length - actionable.length;
   const byPriority: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
-  for (const a of assets) byPriority[a.risk?.priority ?? "low"] += 1;
+  for (const a of actionable) byPriority[a.risk?.priority ?? "low"] += 1;
 
   process.stdout.write(
-    `\nQuantumVault — ${job.filesScanned} files scanned, ${assets.length} quantum-vulnerable assets (${job.durationMs}ms)\n`,
+    `\nQuantumVault — ${job.filesScanned} files scanned, ${actionable.length} quantum-vulnerable assets` +
+      (mentions ? ` · ${mentions} possible mention${mentions === 1 ? "" : "s"} (low confidence)` : "") +
+      ` (${job.durationMs}ms)\n`,
   );
   process.stdout.write(
     `  critical ${byPriority.critical}   high ${byPriority.high}   medium ${byPriority.medium}   low ${byPriority.low}\n\n`,
   );
 
-  const top = [...assets].sort((a, b) => (b.risk?.score ?? 0) - (a.risk?.score ?? 0)).slice(0, 25);
+  const top = [...actionable].sort((a, b) => (b.risk?.score ?? 0) - (a.risk?.score ?? 0)).slice(0, 25);
   for (const a of top) {
     const pri = (a.risk?.priority ?? "low").padEnd(8);
-    process.stdout.write(`  [${pri}] ${a.algorithm}  —  ${a.file}:${a.line}\n`);
+    const conf = a.confidence.padEnd(6);
+    process.stdout.write(`  [${pri}] [${conf}] ${a.algorithm}  —  ${a.file}:${a.line}\n`);
   }
-  if (assets.length > top.length) {
-    process.stdout.write(`  … and ${assets.length - top.length} more\n`);
+  if (actionable.length > top.length) {
+    process.stdout.write(`  … and ${actionable.length - top.length} more\n`);
+  }
+  if (mentions) {
+    process.stdout.write(`  ${mentions} possible mention${mentions === 1 ? "" : "s"} (low confidence) — review, not counted as exposure\n`);
   }
   process.stdout.write("\n");
 }

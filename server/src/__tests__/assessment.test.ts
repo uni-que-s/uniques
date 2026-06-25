@@ -34,6 +34,7 @@ function asset(
     snippet: rest.snippet ?? "",
     patternId: rest.patternId ?? "p",
     quantumVulnerable: rest.quantumVulnerable ?? true,
+    confidence: rest.confidence ?? "high",
     pqcReplacement: rest.pqcReplacement ?? "ML-KEM",
     status: rest.status ?? "open",
     risk,
