@@ -230,6 +230,28 @@ test("patterns: comment-only crypto mentions do not fire (precision — masks co
   }
 });
 
+test("scanner: test/example/sample directories are skipped so the grade reflects production code", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-nonprod-"));
+  try {
+    for (const d of ["src", "__tests__", "examples", "sample-data", "src/mocks"]) {
+      mkdirSync(join(dir, d), { recursive: true });
+    }
+    const crypto = "mbedtls_rsa_gen_key(&c, rng, NULL, 2048, 65537);\n";
+    writeFileSync(join(dir, "src", "app.c"), crypto); // production — must fire
+    writeFileSync(join(dir, "__tests__", "x.c"), crypto); // skipped
+    writeFileSync(join(dir, "examples", "y.c"), crypto); // skipped
+    writeFileSync(join(dir, "sample-data", "z.c"), crypto); // skipped (sample- prefix)
+    writeFileSync(join(dir, "src", "mocks", "m.c"), crypto); // skipped (mocks dir)
+
+    const assets = scanDirectory(dir, "nonprod").assets;
+    const files = assets.map((a) => a.file);
+    assert.ok(files.some((f) => f.includes("app.c")), "production src must be scanned");
+    assert.equal(assets.length, 1, `only the production finding should count, got: ${files.join(", ")}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("patterns: embedded C/C++ firmware crypto detectors fire (mbedTLS/wolfSSL/OpenSSL C)", () => {
   const dir = mkdtempSync(join(tmpdir(), "qv-embed-"));
   try {

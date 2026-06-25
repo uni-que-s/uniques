@@ -74,6 +74,9 @@ const EXT_LANG: Record<string, string> = {
 const SKIP_DIRS = new Set([
   "node_modules",
   ".git",
+  ".claude",
+  ".idea",
+  ".vscode",
   "dist",
   "build",
   "vendor",
@@ -82,6 +85,22 @@ const SKIP_DIRS = new Set([
   "target",
   "coverage",
 ]);
+
+// Directories whose crypto is not part of a production cryptographic posture —
+// tests, examples, samples, fixtures, mocks, demos. Skipped by default so a
+// scan's grade reflects SHIPPED code, not test fixtures or sample data. Without
+// this, a healthy repo gets graded "F" on its own test inputs — the worst first
+// impression a security tool can make. (Applied to directories only.)
+const NON_PRODUCTION_DIRS = new Set([
+  "test", "tests", "__tests__", "spec", "specs", "__mocks__", "mocks", "mock",
+  "e2e", "examples", "example", "samples", "sample", "fixtures", "fixture",
+  "__fixtures__", "testdata", "demo", "demos",
+]);
+const NON_PRODUCTION_PREFIX = /^(sample|example|test|spec|mock|fixture|demo)[-_.]/;
+function isNonProductionDir(name: string): boolean {
+  const n = name.toLowerCase();
+  return NON_PRODUCTION_DIRS.has(n) || NON_PRODUCTION_PREFIX.test(n);
+}
 
 const MAX_FILE_BYTES = 2_000_000;
 const NULL_BYTE = "\x00";
@@ -111,6 +130,7 @@ function* walk(dir: string, root: string, isIgnored: (rel: string) => boolean): 
       continue;
     }
     if (st.isDirectory()) {
+      if (isNonProductionDir(name)) continue; // tests/examples/samples: not production posture
       yield* walk(full, root, isIgnored);
     } else if (st.isFile() && st.size <= MAX_FILE_BYTES) {
       yield full;

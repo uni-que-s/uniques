@@ -7,6 +7,8 @@
 
 Overview, product showcase, and a [**zero-install live demo**](https://demigoddsk.github.io/quantumvault/demo/) — the real dashboard running fully in your browser, no install or backend required.
 
+> **Find the quantum-vulnerable cryptography in your codebase and produce the CBOM regulators now require — running entirely on-prem, so your source never leaves your network.**
+
 **Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
 cryptographic assets across a codebase, scores them for post-quantum migration
 priority, tracks remediation to completion, and auto-generates control-gap /
@@ -68,8 +70,9 @@ risk once a cryptographically-relevant quantum computer exists.
   code-scanning / PR annotations), **CSV**, or **CBOM**. `--fail-on <severity>`
   returns a non-zero exit code so a pipeline can block PRs that introduce
   quantum-vulnerable crypto. The same SARIF is served at `GET /api/sarif.json`.
-- **Auth & multi-tenancy** — scrypt-hashed accounts with session tokens; every
-  scan, asset, and report is scoped to an organization; credential endpoints are
+- **Auth & org scoping (self-hosted, single-tenant by design)** — scrypt-hashed
+  accounts with session tokens; every scan, asset, and report is scoped to an
+  organization within your own self-hosted instance; credential endpoints are
   rate-limited per client IP to blunt brute-force, and the expensive scan
   endpoints are throttled per organization. An unauthenticated demo org is seeded
   so the dashboard is populated out of the box.
@@ -274,7 +277,11 @@ GitHub Actions runs on every push/PR:
   matched by file + detection pattern + matched line (line numbers may shift).
 - The risk model is a transparent, auditable weighted heuristic — not a black-box
   ML model — by design.
-- Next up: GitHub OAuth onboarding and a hosted deployment.
+- **Self-hosted by design.** QuantumVault runs entirely inside your own
+  environment — a single auditable service you deploy in your network or an
+  air-gapped enclave. Your source code never leaves your boundary; there is no
+  SaaS tier and no data egress. (This is the deliberate posture, not a
+  limitation — it's the whole point for a regulated buyer.)
 
 ## Security
 

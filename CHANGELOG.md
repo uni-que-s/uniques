@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Grade reflects production code, not fixtures (v0.2.3)** — the scanner now
+  skips **non-production directories** by default (`test`/`tests`/`__tests__`,
+  `examples`, `samples`, `fixtures`, `mocks`, `demo`, and `sample-*`/`test-*`
+  prefixes), plus tooling dirs (`.claude`, `.idea`, `.vscode`). Without this, a
+  healthy repo could be graded "F" on its own test inputs — the worst first
+  impression a security tool can make. A real scan target (firmware, an app) is
+  unaffected. Added a regression test.
+- **On-prem positioning** — the README now leads with the wedge ("find your
+  quantum-vulnerable crypto and produce the CBOM regulators require — on-prem, so
+  your source never leaves your network"), frames single-tenant self-host as the
+  intended posture, and removes the "hosted deployment" SaaS line.
 - **Detection precision + honesty (v0.2.2)** — in response to an adversarial
   red-team review:
   - **Comment masking** — the scanner now matches against a comment-stripped view
