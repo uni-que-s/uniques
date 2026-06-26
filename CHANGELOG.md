@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-occurrence context classifier (v0.3.0, ENG-01a)** — confidence is now
+  refined by the *syntactic context of each match*, not just the pattern that
+  fired. A crypto name embedded in a **natural-language string** (a log line,
+  error, or doc — e.g. `"migrating away from diffie-hellman and 3DES"`) is
+  reclassified as a **low-confidence possible mention** instead of counted
+  exposure. "Prose" is gated on the presence of an English function word, so a
+  *structured* crypto value with no prose — an SSH key line
+  (`"ssh-rsa AAAA… user@host"`), an OpenSSL cipher list, a tight identifier
+  (`"RSA-OAEP"`) — is **not** downgraded, and neither is a real call
+  (`createDiffieHellman(2048)`), including one inside a template-literal
+  interpolation (`` `…${createDiffieHellman(2048)}…` ``). Every occurrence on a
+  line is scanned, so a prose mention can't mask a real same-line call. Value-
+  bearing patterns (PEM/PGP key blocks, SSH key types, X.509 signature
+  algorithms) are real wherever they appear and are never downgraded. The
+  classifier is a **zero-dependency lexical pass** — no parser, no new deps,
+  preserving the air-gapped single-binary posture. It can only *reclassify* a
+  finding as a possible mention, never fabricate or upgrade one; the policy lives
+  in one tunable function (`resolveConfidence`). Hardened against a 4-lens
+  adversarial review (recall / tokenizer / offset / honesty) that caught — and
+  drove fixes for — six recall regressions before release. This is the honest
+  down-payment on full AST/call-site detection (ENG-01b).
 - **Per-finding confidence score (v0.2.5)** — every detection now carries a
   confidence level: **high** (a library call-site or key material — e.g.
   `mbedtls_rsa_gen_key(`, `getInstance("RSA")`, a PEM block), **medium** (a

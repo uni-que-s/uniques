@@ -260,6 +260,73 @@ test("patterns: confidence flags mentions as low and real call-sites as high", (
   }
 });
 
+test("patterns: ENG-01a — a crypto name in a prose string is a possible mention (low), real uses unchanged", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-ctx-"));
+  try {
+    // Line 1: prose strings naming crypto primitives — mentions, not uses.
+    // Line 2: a real Diffie-Hellman call in code — a genuine use.
+    // Line 3: a tight algorithm-identifier string (one token) passed as config.
+    writeFileSync(join(dir, "app.ts"),
+      'const log = "We are migrating away from diffie-hellman and 3DES this quarter";\n' +
+      "createDiffieHellman(2048);\n" +
+      'const algo = { name: "RSA-OAEP" };\n');
+    // Key material embedded in a (wordy) string must STILL be high — never downgraded.
+    writeFileSync(join(dir, "leak.ts"),
+      'const dump = "here is the leaked key -----BEGIN RSA PRIVATE KEY----- abcdef and more";\n');
+
+    const assets = scanDirectory(dir, "ctx").assets;
+    const at = (file: string, patternId: string, line: number) =>
+      assets.find((a) => a.file === file && a.patternId === patternId && a.line === line);
+
+    // Same pattern, two contexts: prose string → low; real call → its base (medium).
+    assert.equal(at("app.ts", "dh-keyexchange", 1)?.confidence, "low", "diffie-hellman in prose is a mention");
+    assert.equal(at("app.ts", "dh-keyexchange", 2)?.confidence, "medium", "a real createDiffieHellman call is unchanged");
+    // 3DES named in the same prose string → also a mention.
+    assert.equal(at("app.ts", "sym-des-3des", 1)?.confidence, "low", "3DES in prose is a mention");
+    // A one-token identifier string is a real config value, not prose → base (high) kept.
+    assert.equal(at("app.ts", "rsa-webcrypto", 3)?.confidence, "high", "tight 'RSA-OAEP' token string is a real use");
+    // Key material is real wherever it appears — prose context must not downgrade it.
+    assert.equal(at("leak.ts", "rsa-pem-header", 1)?.confidence, "high", "an RSA private-key block is high even inside a string");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("patterns: ENG-01a hardening — structural values + real same-line/template calls survive (adversarial-review regressions)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-ctx2-"));
+  try {
+    // (1) SSH public keys as quoted multi-word config values — REAL keys, kept.
+    // The canonical `type blob user@host` form is intrinsically ≥3 tokens.
+    writeFileSync(join(dir, "keys.yaml"),
+      'admin_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDx root@bastion"\n' +
+      'node_key: "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAy deploy@host"\n');
+    // (2) An OpenSSL cipher list — ≥3 tokens but no function words → not prose.
+    writeFileSync(join(dir, "tls.yaml"),
+      'ciphers: "ECDHE-RSA-AES128-GCM-SHA256 DHE-RSA-AES128-GCM-SHA256 AES128-SHA"\n');
+    // (3) A real DH call inside a template-literal interpolation — kept.
+    writeFileSync(join(dir, "q.ts"), "const q = `rotate ${createDiffieHellman(2048)} keys now`;\n");
+    // (4) Prose mention + real call on the SAME line — the real call is kept.
+    writeFileSync(join(dir, "log.ts"),
+      'logger.info("rotating the diffie-hellman params now"); createDiffieHellman(2048);\n');
+
+    const assets = scanDirectory(dir, "ctx2").assets;
+    const conf = (file: string, patternId: string) =>
+      assets.find((a) => a.file === file && a.patternId === patternId)?.confidence;
+
+    // Value-bearing key/cert patterns are never downgraded — recall is preserved.
+    assert.equal(conf("keys.yaml", "ssh-rsa-key"), "medium", "a quoted ssh-rsa key is real, not a mention");
+    assert.equal(conf("keys.yaml", "ssh-ecdsa-key"), "medium", "a quoted ecdsa-sha2 key is real, not a mention");
+    // A structured multi-token value with no function words is not prose.
+    assert.equal(conf("tls.yaml", "sym-aes128"), "medium", "a cipher list is structured config, not prose");
+    // A real call inside ${...} keeps its confidence (the interpolation is code).
+    assert.equal(conf("q.ts", "dh-keyexchange"), "medium", "a real call in a template interpolation is kept");
+    // A real call sharing a line with a prose mention of the same family is kept.
+    assert.equal(conf("log.ts", "dh-keyexchange"), "medium", "a same-line real call is not stolen by a prose mention");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("scanner: test/example/sample directories are skipped so the grade reflects production code", () => {
   const dir = mkdtempSync(join(tmpdir(), "qv-nonprod-"));
   try {
