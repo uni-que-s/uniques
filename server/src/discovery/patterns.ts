@@ -564,6 +564,45 @@ export function confidenceFor(patternId: string): Confidence {
   return PATTERN_CONFIDENCE[patternId] ?? "high";
 }
 
+// Patterns whose match IS a concrete cryptographic value — key material (PEM/PGP
+// blocks), an SSH public-key line, or an X.509 signature-algorithm token. When
+// these fire, the matched text is the artifact itself, real regardless of any
+// surrounding words (a canonical SSH key `ssh-rsa <blob> user@host` is multi-word
+// by convention; a private-key block embedded in a string is still a key). So
+// per-occurrence context must never downgrade these to a "possible mention".
+const KEY_MATERIAL = new Set<string>([
+  "rsa-pem-header",
+  "pkcs8-pem-private-key",
+  "rsa-pgp-private-block",
+  "ecc-pem-header",
+  "dsa-pem-header",
+  "ssh-rsa-key",
+  "ssh-ecdsa-key",
+  "tls-rsa-cert",
+]);
+
+/**
+ * Final per-occurrence confidence: the pattern's base confidence, refined by the
+ * syntactic context of *this* match (ENG-01a). A crypto name sitting in a PROSE
+ * string — a log line, an error message, a doc comment rendered as a string — is
+ * a *mention*, not a use, so it is capped to "low" (possible mention, excluded
+ * from the grade and headline count). Key material is real anywhere and is never
+ * downgraded.
+ *
+ * ── POLICY SEAM ──────────────────────────────────────────────────────────────
+ * This is the one knob worth a human's judgment: how aggressively should context
+ * override a pattern's base confidence? Today it only *downgrades* a prose-string
+ * match to "low" — it never fabricates or upgrades a finding, so it cannot create
+ * a false positive, only reclassify one as a possible mention. A stricter policy
+ * (e.g. also downgrade single-token strings for medium patterns) would trade
+ * recall for precision; a looser one would surface more as real. Tune here.
+ */
+export function resolveConfidence(patternId: string, ctx: { proseString: boolean }): Confidence {
+  const base = confidenceFor(patternId);
+  if (ctx.proseString && !KEY_MATERIAL.has(patternId)) return "low";
+  return base;
+}
+
 export function patternCount(): number {
   return PATTERNS.length;
 }

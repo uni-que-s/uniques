@@ -1,9 +1,21 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
-import { PATTERNS, extractKeyBits, confidenceFor } from "./patterns.js";
+import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
+import { C_STYLE, HASH_STYLE, lexStringSpans, isProseStringAt } from "./context.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
+
+// Global-flag clones of each pattern's regex so a line can be scanned for ALL
+// occurrences (`matchAll`). A prose mention earlier on a line ("rotating the
+// diffie-hellman params; createDiffieHellman(2048)") must not steal the match
+// position from a real call later on the same line and wrongly downgrade it.
+const GLOBAL_REGEX: Map<string, RegExp> = new Map(
+  PATTERNS.map((p) => [
+    p.id,
+    new RegExp(p.regex.source, p.regex.flags.includes("g") ? p.regex.flags : p.regex.flags + "g"),
+  ]),
+);
 
 /**
  * Load path-prefix ignore patterns from a `.quantumvaultignore` at the scan
@@ -144,11 +156,6 @@ function nextAssetId(): string {
   return `asset_${assetSeq.toString(36)}_${Date.now().toString(36)}`;
 }
 
-const C_STYLE = new Set([
-  "javascript", "typescript", "c", "cpp", "csharp", "java", "kotlin", "scala", "go", "rust", "swift", "php",
-]);
-const HASH_STYLE = new Set(["python", "ruby", "yaml", "config", "terraform", "php"]);
-
 /**
  * Return `content` with comment regions blanked to spaces (newlines preserved, so
  * line/column positions are unchanged). String and template literals are kept
@@ -225,8 +232,19 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
     if (content.indexOf(NULL_BYTE) !== -1) continue; // skip binary files
 
     const rel = relative(target, file) || file;
-    const lines = content.split(/\r?\n/);
-    const codeLines = maskComments(content, language).split(/\r?\n/);
+    // Normalize line endings so a match's column maps cleanly to an absolute
+    // offset (used for syntactic-context lookup); CRLF would otherwise drift it.
+    const normalized = content.indexOf("\r") === -1 ? content : content.replace(/\r\n?/g, "\n");
+    const lines = normalized.split("\n");
+    const codeLines = maskComments(normalized, language).split("\n");
+    const stringSpans = lexStringSpans(normalized, language);
+    // Absolute start offset of each line in `normalized`, so `lineStart[i] +
+    // matchColumn` locates a match in the file's string/code segment map.
+    const lineStart: number[] = new Array(lines.length);
+    for (let i = 0, off = 0; i < lines.length; i++) {
+      lineStart[i] = off;
+      off += lines[i].length + 1;
+    }
 
     for (const pattern of PATTERNS) {
       const langOk =
@@ -239,10 +257,25 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         const line = lines[i];
         const codeLine = codeLines[i] ?? line;
         if (line.length > 1000) continue;
-        pattern.regex.lastIndex = 0;
         // Match against the comment-masked view: a crypto name in a comment is a
         // mention, not a use, and must not fire. String literals are preserved.
-        if (!pattern.regex.test(codeLine)) continue;
+        // Scan EVERY occurrence on the line (matchAll) and classify each by its
+        // syntactic context (ENG-01a): a crypto name in a prose string (log/doc/
+        // error) is a mention, but the finding is only downgraded to "low" if
+        // *every* occurrence is prose — a single real call-site keeps it as-is.
+        const regex = GLOBAL_REGEX.get(pattern.id)!;
+        regex.lastIndex = 0;
+        let matched = false;
+        let proseString = true;
+        for (const occ of codeLine.matchAll(regex)) {
+          if (occ.index === undefined) continue;
+          matched = true;
+          if (!isProseStringAt(normalized, stringSpans, lineStart[i] + occ.index)) {
+            proseString = false;
+            break;
+          }
+        }
+        if (!matched) continue;
 
         assets.push({
           id: nextAssetId(),
@@ -256,7 +289,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: confidenceFor(pattern.id),
+          confidence: resolveConfidence(pattern.id, { proseString }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });
