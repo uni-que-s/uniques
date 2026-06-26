@@ -142,6 +142,11 @@ The same engine ships as a CLI for CI pipelines and local checks:
 npm run cli -- ./path/to/repo                 # human-readable summary
 npm run cli -- ./path/to/repo --sarif > out.sarif   # GitHub code-scanning
 npm run cli -- . --fail-on high               # exit 1 if any finding is >= high
+
+# adopt in CI without failing on day-one debt: accept current findings once…
+npm run cli -- . --write-baseline quantumvault-baseline.json
+# …then fail only on crypto introduced AFTER the baseline:
+npm run cli -- . --baseline quantumvault-baseline.json --fail-on high
 ```
 
 Output formats: default table, `--json`, `--sarif` (2.1.0), `--cbom` (CycloneDX
@@ -156,10 +161,19 @@ block merges on new quantum-vulnerable crypto.
 quantumvault ./repo --assessment --org "Acme Corp" > quantum-readiness.html
 ```
 
-**Baselining:** add a `.quantumvaultignore` at the scan root to exclude vendored
-or already-accepted paths so `--fail-on` isn't tripped by known exceptions. Each
-line is a repo-relative path prefix (forward slashes); `#` lines are comments.
-Matching is prefix-based, not glob, so suppression is explicit:
+**Baseline & ratchet (recommended for CI):** `--write-baseline <file>` records
+the current findings as accepted; `--baseline <file>` then makes `--fail-on` gate
+only on findings that are *new* since the baseline. Fingerprints are
+line-independent (moving or reindenting an accepted finding isn't "new"), and the
+baseline stores opaque fingerprints only — never algorithm names — so a committed
+baseline file never trips the scanner on itself. Re-run `--write-baseline` to
+accept new findings deliberately. (Low-confidence "possible mentions" are never
+gated.)
+
+**Path exclusions:** for vendored or whole-directory exceptions, add a
+`.quantumvaultignore` at the scan root. Each line is a repo-relative path prefix
+(forward slashes); `#` lines are comments. Matching is prefix-based, not glob, so
+suppression is explicit:
 
 ```
 # .quantumvaultignore
@@ -184,7 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DemigodDSK/quantumvault@v0.1.0   # pin to a release tag (or a commit SHA)
+      - uses: DemigodDSK/quantumvault@v0.3.3   # pin to a release tag (or a commit SHA)
         with:
           path: .
           fail-on: high          # optional: fail the PR on a high+ finding
@@ -195,9 +209,27 @@ jobs:
 ```
 
 Inputs: `path` (default `.`), `fail-on` (`critical|high|medium|low`, empty =
-never fail), `sarif-file` (default `quantumvault.sarif`). The action is a
-self-contained Docker action — no separate install. This repo dogfoods it via
-the **Self-scan** workflow.
+never fail), `sarif-file` (default `quantumvault.sarif`), and `baseline` (path to
+a committed baseline file). The action is a self-contained Docker action — no
+separate install. This repo dogfoods it via the **Self-scan** workflow.
+
+**Adopt on an existing codebase (ratchet on *new* crypto):** generate a baseline
+once and commit it, then point the action at it. The build then fails only on
+crypto introduced after adoption — never on pre-existing findings:
+
+```bash
+# once, locally, at the repo root — then commit quantumvault-baseline.json
+quantumvault . --write-baseline quantumvault-baseline.json
+```
+
+```yaml
+      - uses: DemigodDSK/quantumvault@v0.3.3
+        with:
+          path: .
+          fail-on: high
+          baseline: quantumvault-baseline.json   # gate only on new findings
+          sarif-file: quantumvault.sarif
+```
 
 ## Configuration
 
