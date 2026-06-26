@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **GitHub Action supports the baseline ratchet + "adopt in CI" docs (v0.3.3)** —
+  the published Docker action gains a `baseline` input, so `fail-on` gates only on
+  findings new since a committed baseline. README now has a copy-pasteable
+  workflow for adopting QuantumVault on an existing codebase (generate a baseline
+  once, commit it, gate on new crypto thereafter). Verified end-to-end through the
+  built action image.
 - **CI baseline / ratchet (v0.3.2)** — adopt QuantumVault in CI without failing
   the build on day-one debt. `--write-baseline <file>` records the current
   findings as accepted; `--baseline <file>` then gates (with `--fail-on`) only on

@@ -16,6 +16,10 @@ inputs:
     description: "Where to write the SARIF 2.1.0 result, relative to the workspace."
     required: false
     default: "quantumvault.sarif"
+  baseline:
+    description: "Path to a committed QuantumVault baseline file (created with `--write-baseline`). When set, fail-on gates only on findings that are NEW since the baseline — adopt in CI without failing on pre-existing crypto."
+    required: false
+    default: ""
 runs:
   using: "docker"
   image: "action.Dockerfile"
@@ -23,3 +27,4 @@ runs:
     - ${{ inputs.path }}
     - ${{ inputs.fail-on }}
     - ${{ inputs.sarif-file }}
+    - ${{ inputs.baseline }}
