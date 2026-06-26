@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CI baseline / ratchet (v0.3.2)** — adopt QuantumVault in CI without failing
+  the build on day-one debt. `--write-baseline <file>` records the current
+  findings as accepted; `--baseline <file>` then gates (with `--fail-on`) only on
+  findings that are **new** since the baseline. Fingerprints are
+  **line-independent** (derived from file + pattern + algorithm + normalized
+  snippet), so moving or reindenting an accepted finding doesn't flag it as new.
+  The baseline stores **opaque fingerprints only** — never readable algorithm
+  names — so a committed baseline file never trips the scanner on itself.
+  Relatedly, `--fail-on` now ignores low-confidence "possible mentions"
+  (consistent with the report), so a mention can no longer fail a build.
 - **CBOM conformance proven against the official CycloneDX 1.6 schema** — the
   emitted CBOM is now validated against the bundled official `bom-1.6.schema.json`
   (plus its SPDX + JSF references) in CI, turning "standards-compliant" from a

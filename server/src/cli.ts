@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { CryptoAsset, ScanJob, Severity } from "./types.js";
+import { VERSION } from "./version.js";
 import { scanDirectory } from "./discovery/scanner.js";
 import { scoreAssets } from "./risk/scorer.js";
 import { assetsToCbom } from "./discovery/cbom.js";
 import { assetsToSarif } from "./discovery/sarif.js";
 import { assetsToCsv } from "./discovery/csv.js";
+import { buildBaseline, loadBaselineSet, partitionByBaseline } from "./discovery/baseline.js";
 import { generateReport, FRAMEWORKS } from "./compliance/reporter.js";
 import { buildAssessment } from "./report/assessment.js";
 import { renderAssessmentHtml } from "./report/assessmentHtml.js";
@@ -18,6 +20,8 @@ interface Args {
   format: Format;
   failOn?: string;
   org?: string;
+  baseline?: string;
+  writeBaseline?: string;
   help: boolean;
 }
 
@@ -38,8 +42,15 @@ Options:
   --csv             Output a CSV inventory
   --assessment      Output a branded Quantum Readiness Assessment (print-to-PDF HTML)
   --org <name>      Organization name for the assessment report header
-  --fail-on <sev>   Exit 1 if any finding is at or above <sev>
-                    (critical | high | medium | low) — for CI gating
+  --fail-on <sev>   Exit 1 if a gated finding is at or above <sev>
+                    (critical | high | medium | low) — for CI gating.
+                    Low-confidence "possible mentions" are never gated.
+  --baseline <file> Compare against an accepted baseline; only NEW findings (not
+                    in the baseline) are gated by --fail-on. Adopt in CI without
+                    failing on pre-existing crypto.
+  --write-baseline <file>
+                    Write the current findings as the accepted baseline and exit.
+                    Run once to adopt, and again to accept new findings.
   -h, --help        Show this help
 
 Examples:
@@ -47,6 +58,8 @@ Examples:
   quantumvault . --sarif > quantumvault.sarif
   quantumvault . --assessment --org "Acme Corp" > assessment.html
   quantumvault . --fail-on high
+  quantumvault . --write-baseline quantumvault-baseline.json
+  quantumvault . --baseline quantumvault-baseline.json --fail-on high
 `;
 
 function parseArgs(argv: string[]): Args {
@@ -61,6 +74,8 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--assessment") args.format = "assessment";
     else if (a === "--org") args.org = argv[++i];
     else if (a === "--fail-on") args.failOn = argv[++i];
+    else if (a === "--baseline") args.baseline = argv[++i];
+    else if (a === "--write-baseline") args.writeBaseline = argv[++i];
     else if (!a.startsWith("-")) args.path = a;
   }
   return args;
@@ -114,6 +129,15 @@ function main(): void {
   const { job, assets } = scanDirectory(target, "cli");
   scoreAssets(assets);
 
+  // Write an accepted baseline and exit — the one-time "adopt in CI" action.
+  if (args.writeBaseline) {
+    const baseline = buildBaseline(assets, { version: VERSION, generatedAt: new Date().toISOString() });
+    writeFileSync(args.writeBaseline, JSON.stringify(baseline, null, 2) + "\n");
+    const n = baseline.fingerprints.length;
+    process.stdout.write(`Wrote ${n} baselined finding${n === 1 ? "" : "s"} to ${args.writeBaseline}\n`);
+    process.exit(0);
+  }
+
   switch (args.format) {
     case "json":
       process.stdout.write(JSON.stringify({ job, assets }, null, 2) + "\n");
@@ -143,15 +167,32 @@ function main(): void {
       printTable(job, assets);
   }
 
+  // Gating operates on actionable findings — low-confidence "possible mentions"
+  // are never exposure and never fail a build. With --baseline, only findings
+  // that are NEW since the accepted baseline are gated.
+  let gated = assets.filter((a) => a.confidence !== "low");
+  if (args.baseline) {
+    if (!existsSync(args.baseline)) {
+      process.stderr.write(`error: baseline not found: ${args.baseline} (create it with --write-baseline)\n`);
+      process.exit(2);
+    }
+    const accepted = loadBaselineSet(readFileSync(args.baseline, "utf8"));
+    const { fresh, baselined } = partitionByBaseline(gated, accepted);
+    gated = fresh;
+    process.stderr.write(
+      `\nBaseline: ${fresh.length} new finding${fresh.length === 1 ? "" : "s"} since baseline (${baselined.length} accepted).\n`,
+    );
+  }
+
   if (args.failOn) {
     const threshold = SEVERITY_RANK[args.failOn as Severity];
     if (!threshold) {
       process.stderr.write(`error: --fail-on must be one of critical | high | medium | low\n`);
       process.exit(2);
     }
-    const worst = Math.max(0, ...assets.map((a) => SEVERITY_RANK[a.risk?.priority ?? "low"]));
+    const worst = Math.max(0, ...gated.map((a) => SEVERITY_RANK[a.risk?.priority ?? "low"]));
     if (worst >= threshold) {
-      process.stderr.write(`FAIL: findings at or above "${args.failOn}" severity.\n`);
+      process.stderr.write(`FAIL: ${args.baseline ? "new findings" : "findings"} at or above "${args.failOn}" severity.\n`);
       process.exit(1);
     }
   }
