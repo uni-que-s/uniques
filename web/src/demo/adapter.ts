@@ -69,6 +69,7 @@ export const demoAdapter: AxiosAdapter = async (config) => {
   if (method !== "get") fail(config, 403, READONLY);
 
   switch (path) {
+    case "/health": return reply(config, { status: "ok", service: "quantumvault", version: __APP_VERSION__ });
     case "/dashboard": return reply(config, d.dashboard);
     case "/risk/config": return reply(config, d.riskConfig);
     case "/scans": return reply(config, d.scans);
