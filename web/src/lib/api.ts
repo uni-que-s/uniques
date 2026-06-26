@@ -30,6 +30,16 @@ export interface AuthUser {
   orgName: string;
 }
 
+/** Health/version of the running backend — lets the dashboard show which build a
+ *  self-hosted instance is actually serving (no phone-home). */
+export interface Health {
+  status: string;
+  service: string;
+  version: string;
+  patterns?: number;
+}
+export const getHealth = () => http.get<Health>("/health").then((r) => r.data);
+
 export const signup = (email: string, password: string, orgName?: string) =>
   http.post<{ token: string; user: AuthUser }>("/auth/signup", { email, password, orgName }).then((r) => r.data);
 export const login = (email: string, password: string) =>

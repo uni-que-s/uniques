@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { store } from "../store/store.js";
 import { DEFAULT_ORG_NAME } from "../store/db.js";
+import { VERSION } from "../version.js";
 import { patternCount } from "../discovery/patterns.js";
 import { cloneRepo } from "../discovery/repo.js";
 import { requireAuth } from "../auth/middleware.js";
@@ -26,7 +27,10 @@ export const api = Router();
 const scanLimiter = rateLimit(30, 5 * 60_000, (req) => req.orgId);
 
 api.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "quantumvault", patterns: patternCount() });
+  // `version` lets an operator confirm which build a self-hosted instance is
+  // running — the on-prem update story, and the fix for the stale-container
+  // gotcha (a container can serve old code until rebuilt). No phone-home.
+  res.json({ status: "ok", service: "quantumvault", version: VERSION, patterns: patternCount() });
 });
 
 // Machine-readable API contract for integrators / SDK generation.

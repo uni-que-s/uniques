@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Assets from "./pages/Assets";
@@ -8,6 +8,33 @@ import Monitoring from "./pages/Monitoring";
 import History from "./pages/History";
 import AuthModal from "./components/AuthModal";
 import { useAuth } from "./lib/auth";
+import { getHealth } from "./lib/api";
+
+/**
+ * Show which QuantumVault build is running. In a self-hosted deployment this is
+ * the *backend's* version (from /api/health) — so a stale container that's still
+ * serving old code is visible at a glance. Falls back to the web build version
+ * if the backend is unreachable. No phone-home: we never check for a newer
+ * release (that would breach the air-gapped posture).
+ */
+function VersionTag() {
+  const [info, setInfo] = useState<{ version: string; patterns?: number }>({ version: __APP_VERSION__ });
+  useEffect(() => {
+    getHealth()
+      // An older backend may answer 200 without a `version` field — fall back to
+      // the web build version rather than rendering "vundefined".
+      .then((h) => setInfo({ version: h.version || __APP_VERSION__, patterns: h.patterns }))
+      .catch(() => {
+        /* backend unreachable — keep the web build version */
+      });
+  }, []);
+  return (
+    <div className="px-2 text-[10px] text-slate-600" title={`QuantumVault v${info.version}`}>
+      <span className="font-mono text-slate-500">v{info.version}</span>
+      {info.patterns != null && <span> · {info.patterns} patterns</span>}
+    </div>
+  );
+}
 
 const NAV = [
   { to: "/", label: "Dashboard", end: true },
@@ -86,6 +113,7 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
           <div className="font-semibold text-slate-400">Post-Quantum Ready</div>
           NIST ML-KEM · ML-DSA · SLH-DSA migration tracking
         </div>
+        <VersionTag />
       </div>
     </aside>
   );

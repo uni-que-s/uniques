@@ -50,11 +50,13 @@ async function signup(email: string, orgName: string): Promise<string> {
   return (await r.json()).token as string;
 }
 
-test("health reports ok and the pattern count", async () => {
+test("health reports ok, the running version, and the pattern count", async () => {
+  const { VERSION } = await import("../version.js");
   const r = await json("/api/health");
   assert.equal(r.status, 200);
   const body = await r.json();
   assert.equal(body.status, "ok");
+  assert.equal(body.version, VERSION, "health must report the running build version");
   assert.equal(body.patterns, 43);
 });
 
