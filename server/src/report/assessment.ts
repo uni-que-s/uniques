@@ -1,5 +1,6 @@
 import type { CryptoAsset, CryptoFamily, ComplianceReport, Severity } from "../types.js";
 import { RESOLVED_STATUSES } from "../types.js";
+import { VERSION } from "../version.js";
 import { computePosture, type Posture } from "./posture.js";
 
 /**
@@ -98,6 +99,9 @@ export interface RoadmapPhase {
 export interface AssessmentReport {
   orgName: string;
   generatedAt: string;
+  /** Version of the QuantumVault scanner that produced this report — audit
+   *  provenance, so a reviewer knows exactly which build generated the findings. */
+  toolVersion: string;
   scope: { target: string; filesScanned: number; scannedAt: string | null };
   posture: Posture;
   kpis: {
@@ -260,6 +264,7 @@ export function buildAssessment(input: AssessmentInput): AssessmentReport {
   return {
     orgName,
     generatedAt,
+    toolVersion: VERSION,
     scope: {
       target: scan?.target ?? "—",
       filesScanned: scan?.filesScanned ?? 0,
