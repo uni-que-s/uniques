@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CBOM conformance proven against the official CycloneDX 1.6 schema** — the
+  emitted CBOM is now validated against the bundled official `bom-1.6.schema.json`
+  (plus its SPDX + JSF references) in CI, turning "standards-compliant" from a
+  claim into a checkable fact. The runtime keeps its fast, dependency-free
+  `validateCbom()` structural guard; full JSON-Schema conformance runs as a test
+  with **ajv as a dev dependency only**, so the shipped runtime stays
+  zero-extra-dependency. Schemas are vendored so validation runs fully offline (no
+  network in CI), consistent with the air-gapped posture.
 - **Version visibility + provenance (v0.3.1)** — a self-hosted instance now shows
   which build it is running: `GET /api/health` returns `version`, and the
   dashboard sidebar displays it (the backend's version, so a stale container

@@ -140,8 +140,8 @@ const inEnum = (allowed: readonly string[], v: unknown): boolean =>
  * dependency graph whose refs all resolve). It is intentionally a fast, dependency
  * -free regression guard over the subset of CycloneDX 1.6 we use — NOT a full
  * JSON-Schema validation (it does not load bom-1.6.schema.json or reject unknown
- * keys). For belt-and-suspenders, validate sample output against the official
- * schema in CI.
+ * keys). Full conformance against the official CycloneDX 1.6 schema is proven
+ * separately in CI by `__tests__/cbom-schema.test.ts` (ajv, dev-dependency only).
  */
 export function validateCbom(doc: unknown): CbomValidation {
   const errors: string[] = [];
