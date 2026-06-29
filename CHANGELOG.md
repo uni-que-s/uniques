@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enum-constant references downgraded — precision worklist cleared (v0.3.10)** —
+  the zero-dependency stand-in for the call-vs-reference data flow a full AST would
+  give, and the final qbench worklist gap. A bare read of an algorithm enum/class
+  constant (`const x = SignatureAlgorithm.DSA`, `if (algo == SignatureAlgorithm.DSA)`)
+  names the primitive but does not perform the operation, so it is a possible
+  mention, not exposure. Scoped narrowly so it cannot swallow a real use: the match
+  text itself must be `Receiver.CONSTANT` (which excludes `dsa.generate`,
+  `RSA.Create`, and bare-token matches), it must not be an invocation, and it must
+  sit in assignment/comparison position — an argument-position use
+  (`signWith(SignatureAlgorithm.DSA, key)`) keeps its confidence and still fires.
+  With this the qbench precision worklist is **empty**: every gap surfaced since the
+  benchmark was introduced is resolved and gated (77 cases at 1.0/1.0). The full
+  tree-sitter AST (ENG-01b) is not needed for the known gaps; it stays in reserve
+  if a future gap genuinely requires data flow.
+
+### Fixed
+
+- **Comment-masking no longer leaks across lines from a regex literal (v0.3.10)** —
+  the comment masker tracked `'`/`"` string state without resetting at end-of-line,
+  so a regex containing a quote character (e.g. `str.replace(/^["']+/g, "")`) opened
+  a "string" that never closed and left every following line unmasked — exposing
+  later **comments** to pattern matching and producing false positives. Since a
+  `'`/`"` literal cannot span a newline in JS/TS, the masker (and the string-span
+  lexer) now reset that state at the line break; template literals (backticks) still
+  span lines. Found by the v0.3.10 self-scan and covered by a regression case.
 - **Windows-path false positive cleared + Diffie-Hellman detected in config (v0.3.9)**
   — closes the last lexical precision-worklist gap and a recall miss. The path
   classifier now also recognizes **Windows drive paths** (`"C:\\certs\\diffie-hellman.pem"`,

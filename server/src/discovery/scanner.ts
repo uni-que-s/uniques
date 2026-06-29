@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
-import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt, isDisableDirectiveAt } from "./context.js";
+import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt, isDisableDirectiveAt, isEnumConstRefAt } from "./context.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
 
@@ -189,9 +189,15 @@ export function maskComments(content: string, language: string): string {
       continue;
     }
     if (quote) {
+      if (ch === "\\") { out += ch + (content[k + 1] ?? ""); k++; continue; } // escaped char (incl. line continuation)
+      // A `'` or `"` string cannot span a newline in JS/TS — an unterminated one
+      // is a misparse (e.g. a quote char inside a regex char-class `/["']/`) or
+      // broken code. Reset at the newline so the bad quote state can't leak into
+      // later lines and expose their comments to matching. Template literals
+      // (backticks) legitimately span lines and are not reset.
+      if (ch === "\n" && quote !== "`") { quote = ""; out += "\n"; continue; }
       out += ch;
-      if (ch === "\\") { out += content[k + 1] ?? ""; k++; }
-      else if (ch === quote) quote = "";
+      if (ch === quote) quote = "";
       continue;
     }
     if (blockComments && ch === "/" && content[k + 1] === "*") { out += "  "; k++; inBlock = true; continue; }
@@ -268,22 +274,26 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         // mention, not a use, and must not fire. String literals are preserved.
         // Scan EVERY occurrence on the line (matchAll) and classify each by its
         // syntactic context (ENG-01a): a crypto name in a mention string (label/
-        // log/error/doc/URL slug) is not a use, and a config key turned off
-        // (`"ssh-rsa": false`) is not exposure. A finding is downgraded only if
-        // *every* occurrence qualifies — a single real call-site or structured
-        // value keeps it as-is.
+        // log/error/doc/URL slug) is not a use, a config key turned off
+        // (`"ssh-rsa": false`) is not exposure, and a bare enum-constant read
+        // (`= SignatureAlgorithm.DSA`) is a reference, not an operation. A finding
+        // is downgraded only if *every* occurrence qualifies — a single real
+        // call-site or structured value keeps it as-is.
         const regex = GLOBAL_REGEX.get(pattern.id)!;
         regex.lastIndex = 0;
         let matched = false;
         let mention = true;
         let disabled = true;
+        let enumRef = true;
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
           const off = lineStart[i] + occ.index;
+          const endOff = off + occ[0].length;
           if (mention && !isMentionStringAt(normalized, stringSpans, off)) mention = false;
-          if (disabled && !isDisableDirectiveAt(normalized, stringSpans, off, off + occ[0].length)) disabled = false;
-          if (!mention && !disabled) break;
+          if (disabled && !isDisableDirectiveAt(normalized, stringSpans, off, endOff)) disabled = false;
+          if (enumRef && !isEnumConstRefAt(normalized, off, endOff, occ[0])) enumRef = false;
+          if (!mention && !disabled && !enumRef) break;
         }
         if (!matched) continue;
 
@@ -299,7 +309,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

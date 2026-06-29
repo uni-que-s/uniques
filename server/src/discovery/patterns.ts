@@ -755,16 +755,20 @@ const KEY_MATERIAL = new Set<string>([
  *  - `disabled`: the name is a config key explicitly turned off (`"ssh-rsa":
  *    false`). This is the sole signal allowed to override never-downgrade — a
  *    disabled algorithm is not a live exposure, no matter how concrete the token.
+ *  - `enumRef`: the name is a bare read of an algorithm enum/class constant
+ *    (`= SignatureAlgorithm.DSA`) — a reference, not an operation. The zero-dep
+ *    stand-in for the call-vs-reference data flow a full AST would give.
  * A stricter policy (e.g. also downgrade single-token strings for medium
  * patterns) would trade recall for precision; a looser one would surface more as
  * real. Tune here.
  */
 export function resolveConfidence(
   patternId: string,
-  ctx: { mention: boolean; disabled?: boolean },
+  ctx: { mention: boolean; disabled?: boolean; enumRef?: boolean },
 ): Confidence {
   const base = confidenceFor(patternId);
   if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
+  if (ctx.enumRef) return "low"; // a bare enum-constant read is a reference, not a use
   if (ctx.mention && !KEY_MATERIAL.has(patternId)) return "low";
   return base;
 }
