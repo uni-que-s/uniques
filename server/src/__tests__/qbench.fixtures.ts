@@ -125,6 +125,22 @@ export const QBENCH: QCase[] = [
     code: `const keypair = forge.pki.rsa.generateKeyPair({ bits: 2048, e: 0x10001 });\n` },
   { id: "guard-enc-ec-pem", ext: "pem", expect: ["ecc-pem-header"], why: "encrypted EC key keeps its typed header; the AES-256-CBC DEK line is correctly not exposure",
     code: `-----BEGIN EC PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-256-CBC,B2F8\nMIHexample\n-----END EC PRIVATE KEY-----\n` },
+
+  // ── v0.3.5: label / message / identifier mentions no longer count as exposure
+  //    (mention classifier = natural-language word in a >=2-word string;
+  //     sym-des-3des gained a trailing word boundary)
+  { id: "mention-label-3des", ext: "ts", expect: [], why: "a 2-word label string ('3DES weak') is a mention, not a use",
+    code: `const label = "3DES weak";\n` },
+  { id: "mention-toast-dh", ext: "ts", expect: [], why: "a UI/error string with no stopword ('Diffie-Hellman handshake failed') is a mention",
+    code: `const toast = "Diffie-Hellman handshake failed";\n` },
+  { id: "mention-banner-aes128", ext: "ts", expect: [], why: "a status string ('AES128 disabled') is a mention",
+    code: `const banner = "AES128 disabled";\n` },
+  { id: "mention-errmsg-dss", ext: "ts", expect: [], why: "a log/error string ('ssh-dss key rejected') is a mention",
+    code: `const errmsg = "ssh-dss key rejected";\n` },
+  { id: "identifier-class-3des", ext: "ts", expect: [], why: "a class name carrying a token (TripleDESLegacyAdapter) is not a cipher use (trailing-\\b fix)",
+    code: `class TripleDESLegacyAdapter {}\n` },
+  { id: "identifier-envvar-3des", ext: "ts", expect: [], why: "an env-var name (TRIPLEDES_FALLBACK_DISABLED) is not a cipher use (trailing-\\b fix)",
+    code: `const v = process.env.TRIPLEDES_FALLBACK_DISABLED;\n` },
 ];
 
 /**
@@ -139,18 +155,11 @@ export const KNOWN_GAPS: QCase[] = [
   // ── false positives: string / identifier / config mentions still counted ──
   // (option-3 target: the call-argument-vs-label distinction the lexical
   //  classifier can't yet make)
-  { id: "gap-short-string-3des", ext: "ts", expect: [], gapKind: "fp",
-    why: "a 2-word label string of a medium name-pattern ('3DES weak') stays medium (prose needs >=3 words + a stopword)",
-    code: `logger.warn("3DES weak");\n` },
+  // (resolved in v0.3.5 and promoted into QBENCH: short label strings, no-stopword
+  //  messages, and identifier-substring matches — see mention-*/identifier-* cases)
   { id: "gap-route-string-dh", ext: "ts", expect: [], gapKind: "fp",
-    why: "a URL/route path string containing a primitive name is flagged medium",
+    why: "a URL/route path string (one slash-joined token, no whitespace word) still flags medium — needs a path/segment rule",
     code: `const route = "/api/v2/diffie-hellman/rotate";\n` },
-  { id: "gap-toast-no-stopword", ext: "ts", expect: [], gapKind: "fp",
-    why: "a 3-word UI string with NO stopword ('Diffie-Hellman handshake failed') escapes the prose downgrade",
-    code: `const toast = "Diffie-Hellman handshake failed";\n` },
-  { id: "gap-identifier-3des", ext: "ts", expect: [], gapKind: "fp",
-    why: "a class/identifier carrying a primitive token (TripleDESLegacyAdapter) is flagged medium",
-    code: `class TripleDESLegacyAdapter {}\n` },
   { id: "gap-enum-ref-dsa", ext: "ts", expect: [], gapKind: "fp",
     why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation",
     code: `const x = SignatureAlgorithm.DSA;\n` },

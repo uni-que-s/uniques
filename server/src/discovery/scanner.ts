@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
-import { C_STYLE, HASH_STYLE, lexStringSpans, isProseStringAt } from "./context.js";
+import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt } from "./context.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
 
@@ -260,18 +260,19 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         // Match against the comment-masked view: a crypto name in a comment is a
         // mention, not a use, and must not fire. String literals are preserved.
         // Scan EVERY occurrence on the line (matchAll) and classify each by its
-        // syntactic context (ENG-01a): a crypto name in a prose string (log/doc/
-        // error) is a mention, but the finding is only downgraded to "low" if
-        // *every* occurrence is prose — a single real call-site keeps it as-is.
+        // syntactic context (ENG-01a): a crypto name in a mention string (label/
+        // log/error/doc) is not a use, but the finding is only downgraded to
+        // "low" if *every* occurrence is a mention — a single real call-site or
+        // structured value keeps it as-is.
         const regex = GLOBAL_REGEX.get(pattern.id)!;
         regex.lastIndex = 0;
         let matched = false;
-        let proseString = true;
+        let mention = true;
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
-          if (!isProseStringAt(normalized, stringSpans, lineStart[i] + occ.index)) {
-            proseString = false;
+          if (!isMentionStringAt(normalized, stringSpans, lineStart[i] + occ.index)) {
+            mention = false;
             break;
           }
         }
@@ -289,7 +290,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { proseString }),
+          confidence: resolveConfidence(pattern.id, { mention }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

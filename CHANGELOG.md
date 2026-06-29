@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mention classifier — label / log / identifier false positives downgraded
+  (v0.3.5)** — the per-occurrence classifier now treats a crypto name inside a
+  *label or message* string (≥2 words with a natural-language word, e.g.
+  `"3DES weak"`, `"Diffie-Hellman handshake failed"`, `"AES128 disabled"`,
+  `"ssh-dss key rejected"`) as a **possible mention**, not exposure — generalizing
+  the old prose rule (which needed ≥3 words and a function word). Structured crypto
+  values keep their confidence: cipher lists, SSH key lines, and single tight
+  tokens (`"RSA-OAEP"`, `"diffie-hellman"`, `"des-ede3-cbc"`) carry no
+  natural-language word, and real call-sites anchor in code. Also fixed
+  `sym-des-3des` to require a trailing word boundary, so an identifier like
+  `TripleDESLegacyAdapter` or env var `TRIPLEDES_DISABLED` no longer matches.
+  These cases moved from the qbench worklist into the gated corpus (precision/
+  recall held at 1.0).
 - **`qbench` precision benchmark + precision/recall fixes (v0.3.4)** — a labeled
   corpus + harness scores detection **precision and recall** over real call-sites
   and known traps, gating regressions at 1.0 on every build ("more precise on

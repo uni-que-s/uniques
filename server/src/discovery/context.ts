@@ -65,46 +65,44 @@ export function lexStringSpans(content: string, language: string): Array<[number
   return spans;
 }
 
-// Common English function words. Their presence is the signal that a string is
-// natural-language PROSE (a sentence / log line / doc) rather than a structured
-// cryptographic value. A sentence — "we are migrating away from diffie-hellman" —
-// is full of these; a structured value — an SSH key line `ssh-rsa <blob>
-// user@host`, an OpenSSL cipher list, an X.509 DN — carries none. Word count
-// alone can't tell them apart (a canonical SSH key is intrinsically ≥3 tokens),
-// so we additionally require a function word before calling a string "prose".
-const STOPWORDS = new Set([
-  "a", "an", "the", "and", "or", "but", "if", "then", "else", "we", "you", "they", "he", "she", "it",
-  "is", "are", "was", "were", "be", "been", "being", "to", "of", "in", "on", "at", "for", "from", "with",
-  "as", "this", "that", "these", "those", "our", "your", "their", "its", "will", "would", "can", "could",
-  "should", "may", "might", "must", "has", "have", "had", "do", "does", "did", "not", "no", "now", "please",
-  "when", "while", "by", "via", "after", "before", "across", "all", "any", "into", "out", "up", "down", "about",
-]);
+// A natural-language word: starts with a letter, then ≥2 lowercase letters, all
+// alphabetic (no digits, hyphens, or slashes). "weak", "disabled", "handshake",
+// "failed", "rejected", "migrating" match; crypto tokens do NOT — "RSA"/"AES" (no
+// lowercase tail), "3DES"/"AES128" (digits), "ssh-rsa"/"des-ede3-cbc"/"RSA-OAEP"
+// (hyphens), "ECDHE-RSA-AES128-GCM-SHA256" (caps + hyphens + digits).
+const NL_WORD = /^[A-Za-z][a-z]{2,}$/;
 
 /**
- * Does a string literal's inner text read like a natural-language sentence — ≥ 3
- * whitespace-separated words, at least one of which is a common function word?
- * This separates a real mention ("we removed diffie-hellman and 3DES") from a
- * structured crypto value ("ssh-rsa AAAA… user@host", "ECDHE-RSA-AES128-…") and
- * from a tight identifier ("RSA-OAEP", "RS256").
+ * Does a string literal's inner text read like a natural-language LABEL, log line,
+ * error, or sentence — rather than a structured crypto value or a tight algorithm
+ * identifier? A string is a mention if it has ≥2 whitespace-separated words AND at
+ * least one is a natural-language word.
+ *
+ * This separates a mention ("3DES weak", "Diffie-Hellman handshake failed", "we
+ * removed diffie-hellman and 3DES") from a structured value that must keep its
+ * confidence: an SSH key line ("ssh-rsa AAAA… user@host"), an OpenSSL cipher list
+ * ("ECDHE-RSA-AES128-GCM-SHA256 …"), or a single tight token ("RSA-OAEP",
+ * "diffie-hellman", "des-ede3-cbc") — none of which carry a natural-language word.
+ * The ≥2-word floor keeps a lone lowercase algorithm token from being downgraded.
  */
-function looksLikeProse(inner: string): boolean {
+function looksLikeMention(inner: string): boolean {
   const words = inner.trim().split(/\s+/);
-  if (words.length < 3) return false;
-  return words.some((w) => STOPWORDS.has(w.toLowerCase().replace(/[^a-z]/g, "")));
+  if (words.length < 2) return false;
+  return words.some((w) => NL_WORD.test(w));
 }
 
 /**
- * Is the match at `offset` sitting inside a PROSE string literal — a string whose
- * content reads like a sentence rather than a structured crypto value or a tight
- * algorithm identifier? Prose is the signature of a *mention* (a log/error/doc
- * that names a primitive), not a use.
+ * Is the match at `offset` sitting inside a MENTION string literal — a label, log
+ * line, error message, or sentence that merely names a primitive, rather than a
+ * structured crypto value or a tight algorithm identifier? A mention is downgraded
+ * to a possible-mention; a value keeps its confidence.
  *
- * A template literal containing an interpolation (`${…}`) is never prose: it
+ * A template literal containing an interpolation (`${…}`) is never a mention: it
  * embeds executable code, and a real crypto call can live inside the `${…}` — so
  * downgrading it would be a recall loss. A match outside any string literal is
  * CODE context and returns false (left to the pattern's base confidence).
  */
-export function isProseStringAt(content: string, spans: Array<[number, number]>, offset: number): boolean {
+export function isMentionStringAt(content: string, spans: Array<[number, number]>, offset: number): boolean {
   let lo = 0;
   let hi = spans.length - 1;
   while (lo <= hi) {
@@ -115,7 +113,7 @@ export function isProseStringAt(content: string, spans: Array<[number, number]>,
     else {
       const literal = content.slice(s, e);
       if (literal.charCodeAt(0) === 96 /* backtick */ && literal.includes("${")) return false;
-      return looksLikeProse(content.slice(s + 1, e - 1)); // strip the quotes
+      return looksLikeMention(content.slice(s + 1, e - 1)); // strip the quotes
     }
   }
   return false;
