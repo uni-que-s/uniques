@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **URL/route slugs and disable directives no longer over-flag (v0.3.8)** — two
+  more false-positive classes the zero-dependency lexical classifier can now
+  resolve, keeping the air-gapped posture intact. A crypto name that is a **URL or
+  route path slug** (`"/api/v2/diffie-hellman/rotate"`,
+  `"https://host/v2/diffie-hellman/rotate"`) names an endpoint, not a use, so it
+  is downgraded to a possible mention — while a Go module import (`"crypto/rsa"`,
+  no leading slash, no scheme) and a real call sharing the line still fire. A
+  crypto key type explicitly **disabled** in config (`"ssh-rsa": false`,
+  `ssh-rsa: off`, `"dsa": "disabled"`) is remediation, not exposure: an explicit
+  disable is the one signal allowed to override the never-downgrade rule for key
+  material, because a turned-off algorithm is not a live exposure. Allow-listed
+  (`["ssh-rsa"]`) and enabled (`"ssh-rsa": true`) values still fire. Two cases
+  moved from the qbench worklist into the gated corpus (now 63 cases at 1.0/1.0);
+  the lone remaining gap — reading an enum member (`SignatureAlgorithm.DSA`) —
+  needs call-vs-reference data flow and is the marker for ENG-01b (tree-sitter
+  AST), the locked-last precision rung.
 - **Dedupe double-counts + PKCS#12 + SSH key files (v0.3.7)** — one construct no
   longer counts twice: `DH_generate_key` was matched by both `dh-openssl-c` and
   `dh-keyexchange`, and a chained `getInstance("RSA").generateKeyPair()` by both

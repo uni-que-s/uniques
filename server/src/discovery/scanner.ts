@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
-import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt } from "./context.js";
+import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt, isDisableDirectiveAt } from "./context.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
 
@@ -268,20 +268,22 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         // mention, not a use, and must not fire. String literals are preserved.
         // Scan EVERY occurrence on the line (matchAll) and classify each by its
         // syntactic context (ENG-01a): a crypto name in a mention string (label/
-        // log/error/doc) is not a use, but the finding is only downgraded to
-        // "low" if *every* occurrence is a mention — a single real call-site or
-        // structured value keeps it as-is.
+        // log/error/doc/URL slug) is not a use, and a config key turned off
+        // (`"ssh-rsa": false`) is not exposure. A finding is downgraded only if
+        // *every* occurrence qualifies — a single real call-site or structured
+        // value keeps it as-is.
         const regex = GLOBAL_REGEX.get(pattern.id)!;
         regex.lastIndex = 0;
         let matched = false;
         let mention = true;
+        let disabled = true;
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
-          if (!isMentionStringAt(normalized, stringSpans, lineStart[i] + occ.index)) {
-            mention = false;
-            break;
-          }
+          const off = lineStart[i] + occ.index;
+          if (mention && !isMentionStringAt(normalized, stringSpans, off)) mention = false;
+          if (disabled && !isDisableDirectiveAt(normalized, stringSpans, off, off + occ[0].length)) disabled = false;
+          if (!mention && !disabled) break;
         }
         if (!matched) continue;
 
@@ -297,7 +299,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

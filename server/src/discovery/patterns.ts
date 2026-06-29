@@ -740,14 +740,26 @@ const KEY_MATERIAL = new Set<string>([
  *
  * ── POLICY SEAM ──────────────────────────────────────────────────────────────
  * This is the one knob worth a human's judgment: how aggressively should context
- * override a pattern's base confidence? Today it only *downgrades* a prose-string
- * match to "low" — it never fabricates or upgrades a finding, so it cannot create
- * a false positive, only reclassify one as a possible mention. A stricter policy
- * (e.g. also downgrade single-token strings for medium patterns) would trade
- * recall for precision; a looser one would surface more as real. Tune here.
+ * override a pattern's base confidence? It only ever *downgrades* a match to
+ * "low" — it never fabricates or upgrades a finding, so it cannot create a false
+ * positive, only reclassify one as a possible mention. Two context signals
+ * downgrade:
+ *  - `mention`: the name sits in a prose string (log/error/doc) or a URL/route
+ *    path slug — a reference, not a use. Respects the never-downgrade rule for
+ *    key material.
+ *  - `disabled`: the name is a config key explicitly turned off (`"ssh-rsa":
+ *    false`). This is the sole signal allowed to override never-downgrade — a
+ *    disabled algorithm is not a live exposure, no matter how concrete the token.
+ * A stricter policy (e.g. also downgrade single-token strings for medium
+ * patterns) would trade recall for precision; a looser one would surface more as
+ * real. Tune here.
  */
-export function resolveConfidence(patternId: string, ctx: { mention: boolean }): Confidence {
+export function resolveConfidence(
+  patternId: string,
+  ctx: { mention: boolean; disabled?: boolean },
+): Confidence {
   const base = confidenceFor(patternId);
+  if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
   if (ctx.mention && !KEY_MATERIAL.has(patternId)) return "low";
   return base;
 }

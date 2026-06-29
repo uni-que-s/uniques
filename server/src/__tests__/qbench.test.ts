@@ -111,7 +111,7 @@ test("qbench-gaps: report the precision worklist (informational — not gated)",
   }
   process.stdout.write(
     `\n  qbench-gaps — ${open.length} open, ${resolved.length} resolved (of ${KNOWN_GAPS.length}).` +
-      (open.length ? `\n    open (option-3 targets): ${open.join(", ")}` : "") +
+      (open.length ? `\n    open (precision worklist — see each fixture's note for the fix path): ${open.join(", ")}` : "") +
       (resolved.length ? `\n    ✓ RESOLVED — promote into QBENCH: ${resolved.join(", ")}` : "") +
       "\n",
   );

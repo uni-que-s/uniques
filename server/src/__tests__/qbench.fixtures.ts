@@ -161,6 +161,26 @@ export const QBENCH: QCase[] = [
     code: `KeyPair kp = KeyPairGenerator.getInstance("RSA").generateKeyPair();\n` },
   { id: "pkcs12-decode", ext: "go", expect: ["pkcs12-keystore"], why: "a PKCS#12 keystore (.pfx/pkcs12.Decode) bundling a private key + cert — was missed",
     code: `pkcs12.Decode(data, "changeit")\n` },
+
+  // ── v0.3.8: route/URL slugs and disable directives no longer count as exposure
+  //    (path/URL classifier + disable-directive override of never-downgrade) ──
+  { id: "route-slug-dh", ext: "ts", expect: [], why: "a REST route string ('/api/v2/diffie-hellman/rotate') names an endpoint — a path slug, not a DH use",
+    code: `const route = "/api/v2/diffie-hellman/rotate";\n` },
+  { id: "url-slug-dh", ext: "ts", expect: [], why: "a URL with a crypto path segment ('https://host/v2/diffie-hellman/rotate') is an endpoint, not a DH use (:// branch)",
+    code: `const url = "https://api.example.com/v2/diffie-hellman/rotate";\n` },
+  { id: "route-slug-single-segment", ext: "ts", expect: [], why: "a single-segment route ('/diffie-hellman') is still a route slug, not a DH use (leading-slash branch, any segment count)",
+    code: `router.get("/diffie-hellman", rotateParams);\n` },
+  { id: "path-keymaterial-stays", ext: "json", expect: ["ssh-rsa-key"], why: "key material named in a path ('/keys/ssh-rsa/import') is NOT downgraded — never-downgrade wins over the path rule",
+    code: `{ "callback": "/keys/ssh-rsa/import/v2" }\n` },
+  { id: "denylist-disabled", ext: "json", expect: [], why: "a config that DISABLES key types ('ssh-rsa': false) is remediation, not exposure (overrides never-downgrade)",
+    code: `{ "ssh-rsa": false, "ecdsa-sha2-nistp256": false }\n` },
+  { id: "yaml-disable-unquoted", ext: "yaml", expect: [], why: "an unquoted YAML disable directive (ssh-rsa: false) — a bare-token key, not in a string span — still downgrades",
+    code: `ssh-rsa: false\n` },
+  // recall guards: the disable/path rules must not over-downgrade real exposure
+  { id: "guard-allowlist-enables", ext: "json", expect: ["ssh-rsa-key"], why: "allow-listing a weak key type (value position, not a disabled key) is real exposure and must still fire",
+    code: `{ "allowedKeyTypes": ["ssh-rsa", "ed25519"] }\n` },
+  { id: "guard-config-enabled-true", ext: "json", expect: ["ssh-rsa-key"], why: "an ENABLED weak key type ('ssh-rsa': true) is not a disable directive and must still fire",
+    code: `{ "ssh-rsa": true }\n` },
 ];
 
 /**
@@ -172,20 +192,17 @@ export const QBENCH: QCase[] = [
  * benchmark or an adversarial probe surfaces a real precision miss.
  */
 export const KNOWN_GAPS: QCase[] = [
-  // ── false positives: string / identifier / config mentions still counted ──
-  // (option-3 target: the call-argument-vs-label distinction the lexical
-  //  classifier can't yet make)
+  // ── false positive the lexical classifier genuinely can't resolve ──
   // (resolved in v0.3.5 and promoted into QBENCH: short label strings, no-stopword
   //  messages, and identifier-substring matches — see mention-*/identifier-* cases)
-  { id: "gap-route-string-dh", ext: "ts", expect: [], gapKind: "fp",
-    why: "a URL/route path string (one slash-joined token, no whitespace word) still flags medium — needs a path/segment rule",
-    code: `const route = "/api/v2/diffie-hellman/rotate";\n` },
+  // (resolved in v0.3.8 and promoted into QBENCH: URL/route path slugs and
+  //  disable-directive config keys — see route-slug-*/denylist-*/yaml-algo-off)
   { id: "gap-enum-ref-dsa", ext: "ts", expect: [], gapKind: "fp",
-    why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation",
+    why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation — needs call-vs-reference data flow (ENG-01b / tree-sitter AST, the locked-last rung)",
     code: `const x = SignatureAlgorithm.DSA;\n` },
-  { id: "gap-denylist-config", ext: "json", expect: [], gapKind: "fp",
-    why: "a deny-list config that DISABLES key types is flagged as exposure (value-bearing patterns never downgrade)",
-    code: `{ "ssh-rsa": false, "ecdsa-sha2-nistp256": false }\n` },
+  { id: "gap-windows-path-dh", ext: "py", expect: [], gapKind: "fp",
+    why: "a Windows backslash path naming a primitive is a path reference, not a use — the path classifier covers POSIX '/' and '://' but not backslash paths (rarer, and '\\' is escape-ambiguous in source); deferred",
+    code: `PARAMS_FILE = "C:\\\\certs\\\\diffie-hellman.pem"\n` },
   // (resolved in v0.3.7 and promoted into QBENCH / a dedicated test: the two
   //  overlapping-pattern double-counts, PKCS#12 keystores, and the
   //  authorized_keys/known_hosts no-extension filename gate)
