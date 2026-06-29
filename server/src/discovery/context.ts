@@ -51,6 +51,10 @@ export function lexStringSpans(content: string, language: string): Array<[number
     }
     if (quote) {
       if (ch === "\\") { k++; continue; }          // skip the escaped character
+      // A `'`/`"` literal can't span a newline (an unterminated one is a misparse,
+      // e.g. a quote inside a regex char-class `/["']/`); reset so a bogus span
+      // never swallows later lines. Backticks legitimately span lines.
+      if (ch === "\n" && quote !== "`") { quote = ""; continue; }
       if (ch === quote) { spans.push([quoteStart, k + 1]); quote = ""; }
       continue;
     }
@@ -197,4 +201,49 @@ export function isDisableDirectiveAt(
   while (j < content.length && !DELIM.has(content[j])) j++;
   const val = content.slice(pos, j).replace(/^["']+|["']+$/g, "").toLowerCase();
   return DISABLE_VALUES.has(val);
+}
+
+// An enum / class constant read: an identifier, a dot, an ALL-CAPS member
+// (`SignatureAlgorithm.DSA`, `Cipher.DES`). Method calls (`dsa.generate`,
+// `RSA.Create`) have a lower/Pascal-case member and fail this; bare tokens
+// (`DES`, `new DSA`) have no dotted form. The match TEXT must be exactly this
+// shape, which is why it isolates the enum-constant arms from every call-site.
+const ENUM_CONST_READ = /^[A-Za-z_$][\w$]*\.[A-Z][A-Z0-9_]*$/;
+
+/**
+ * Is the match a bare READ of an algorithm enum/class constant — a reference,
+ * not an operation? `const x = SignatureAlgorithm.DSA;` and
+ * `if (algo == SignatureAlgorithm.DSA)` name DSA but do not sign with it; the
+ * actual use would be a keygen/sign call elsewhere. So this occurrence is a
+ * possible mention, not exposure.
+ *
+ * Deliberately narrow — the zero-dependency stand-in for the call-vs-reference
+ * data flow a full AST (ENG-01b) would give, scoped so it cannot swallow a real
+ * use:
+ *  - the match text itself is `Receiver.CONSTANT` (see ENUM_CONST_READ) — this
+ *    alone excludes `dsa.generate`, `RSA.Create`, and bare-token matches;
+ *  - the next char is neither `(` nor `.` — so an invocation (`X.DSA(…)`) and a
+ *    fluent member access (`X.DSA.sign(…)`, where the operation is one `.method`
+ *    away) both keep their confidence; and
+ *  - it is the RHS of a plain assignment (`lhs = X.DSA`). A comparison
+ *    (`== X.DSA`, `!= X.DSA`) is deliberately left at base confidence — it may
+ *    guard a real use, so it is too ambiguous to downgrade without data flow. An
+ *    argument-position use (`signWith(SignatureAlgorithm.DSA, key)`, preceded by
+ *    `(`/`,`) likewise keeps its confidence and still fires.
+ *
+ * Known limit (the reason a full AST/ENG-01b would do better): this is purely
+ * local — it cannot trace a variable, so `const a = SignatureAlgorithm.DSA;` is
+ * a possible mention even if `a` is later passed to a signer. That data-flow case
+ * is the deliberate trade for staying zero-dependency.
+ */
+export function isEnumConstRefAt(content: string, start: number, end: number, matchText: string): boolean {
+  if (!ENUM_CONST_READ.test(matchText)) return false;
+  if (content[end] === "(" || content[end] === ".") return false; // invocation or fluent member access, not a bare read
+  let p = start - 1;
+  while (p >= 0 && (content[p] === " " || content[p] === "\t")) p--;
+  if (p < 0 || content[p] !== "=") return false;
+  // Only a plain assignment `=` qualifies; exclude comparison operators that end
+  // in `=` (`==` `!=` `<=` `>=`) — those are references that may guard a use.
+  const before = content[p - 1];
+  return before !== "=" && before !== "!" && before !== "<" && before !== ">";
 }

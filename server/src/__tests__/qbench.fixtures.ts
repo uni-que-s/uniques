@@ -194,6 +194,23 @@ export const QBENCH: QCase[] = [
     code: `diffie-hellman: false\n` },
   { id: "yaml-dh-comment", ext: "yaml", expect: [], why: "diffie-hellman only in a YAML '#' comment is masked — no finding even with config coverage",
     code: `# legacy diffie-hellman support was removed\nkeyExchange: ml-kem\n` },
+
+  // ── v0.3.10: enum-constant references downgraded (zero-dep call-vs-reference) ──
+  { id: "enum-ref-dsa-assign", ext: "ts", expect: [], why: "a bare enum read assigned to a variable (= SignatureAlgorithm.DSA) is a reference, not a signing use — downgraded to a possible mention",
+    code: `const x = SignatureAlgorithm.DSA;\n` },
+  // recall guards: the enum-ref rule must NOT swallow real DSA/DES uses
+  { id: "guard-dsa-method-call", ext: "ts", expect: ["dsa-usage"], why: "a real keygen call (dsa.generate(...)) has a lower-case member — fails the enum-const shape and still fires",
+    code: `const k = dsa.generate(params);\n` },
+  { id: "guard-dsa-enum-arg", ext: "java", expect: ["dsa-usage"], why: "passing the enum to a signer (signWith(SignatureAlgorithm.DSA, key)) is an argument-position use — not a bare read, still fires",
+    code: `signer.signWith(SignatureAlgorithm.DSA, key);\n` },
+  { id: "guard-dsa-fluent-sign", ext: "ts", expect: ["dsa-usage"], why: "a fluent signing call (SignatureAlgorithm.DSA.sign(...)) is a real use — the trailing '.' keeps it at base confidence (not a bare read)",
+    code: `sig = SignatureAlgorithm.DSA.sign(payload, key);\n` },
+  { id: "guard-des-fluent-encrypt", ext: "js", expect: ["sym-des-3des"], why: "a fluent DES encrypt (Cipher.DES.encrypt(...)) is a real use — trailing '.' keeps it actionable",
+    code: `out = Cipher.DES.encrypt(plaintext);\n` },
+  { id: "guard-enum-ref-compare-stays", ext: "ts", expect: ["dsa-usage"], why: "a comparison (== SignatureAlgorithm.DSA) is left at base confidence — it may guard a real use, too ambiguous to downgrade without data flow",
+    code: `if (algo == SignatureAlgorithm.DSA) { sign(); }\n` },
+  { id: "regex-quote-no-mask-leak", ext: "ts", expect: [], why: "a regex with quote chars (/[\"']/) must not leak the comment-masker's string state into the next line — the following comment names a primitive and must stay masked",
+    code: `const s = raw.replace(/^["']+|["']+$/g, "");\n// legacy diffie-hellman support was removed\n` },
 ];
 
 /**
@@ -205,17 +222,18 @@ export const QBENCH: QCase[] = [
  * benchmark or an adversarial probe surfaces a real precision miss.
  */
 export const KNOWN_GAPS: QCase[] = [
-  // ── false positive the lexical classifier genuinely can't resolve ──
-  // (resolved in v0.3.5 and promoted into QBENCH: short label strings, no-stopword
-  //  messages, and identifier-substring matches — see mention-*/identifier-* cases)
-  // (resolved in v0.3.8 and promoted into QBENCH: URL/route path slugs and
-  //  disable-directive config keys — see route-slug-*/denylist-*/yaml-* cases)
-  // (resolved in v0.3.9 and promoted into QBENCH: Windows drive paths — see
-  //  windows-path-dh; the broadened DH-on-config recall is in the same section)
-  { id: "gap-enum-ref-dsa", ext: "ts", expect: [], gapKind: "fp",
-    why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation — needs call-vs-reference data flow (ENG-01b / tree-sitter AST, the locked-last rung). This is the SOLE remaining gap: rung 3 (lexical classifier) is exhausted.",
-    code: `const x = SignatureAlgorithm.DSA;\n` },
-  // (resolved in v0.3.7 and promoted into QBENCH / a dedicated test: the two
-  //  overlapping-pattern double-counts, PKCS#12 keystores, and the
-  //  authorized_keys/known_hosts no-extension filename gate)
+  // ── EMPTY — the precision worklist is cleared as of v0.3.10. ──
+  // Every gap surfaced by qbench or an adversarial probe has been resolved and
+  // promoted into the gated QBENCH corpus:
+  //  - v0.3.5: short label strings, no-stopword messages, identifier substrings
+  //    (see mention-*/identifier-* cases)
+  //  - v0.3.7: overlapping-pattern double-counts, PKCS#12, the no-extension SSH
+  //    filename gate
+  //  - v0.3.8: URL/route path slugs and disable-directive config keys
+  //    (route-slug-*/denylist-*/yaml-disable-*)
+  //  - v0.3.9: Windows drive paths (windows-path-dh) + DH-on-config recall
+  //  - v0.3.10: bare enum-constant references (enum-ref-dsa-*), the zero-dep
+  //    stand-in for the call-vs-reference data flow a full AST would give
+  // Add a new gap here the moment a benchmark run or probe surfaces a real miss;
+  // the informational qbench-gaps check will flag it until it is resolved.
 ];
