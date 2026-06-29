@@ -92,6 +92,33 @@ function looksLikeMention(inner: string): boolean {
 }
 
 /**
+ * Does a string literal read like a URL or an absolute path/route, where the
+ * crypto name is a path *slug* rather than a cryptographic value? A REST route
+ * (`/api/v2/diffie-hellman/rotate`) or a URL (`https://host/v2/ecdsa/sign`)
+ * names an endpoint; it is not a use of the primitive.
+ *
+ * Deliberately narrow to avoid two recall traps the worklist flagged:
+ *  - A Go module import is a string too (`"crypto/rsa"`), but it has NO leading
+ *    slash and NO scheme — so it is NOT downgraded and a real Go crypto import
+ *    still fires.
+ *  - A cipher list (`ECDHE-RSA-AES128-GCM-SHA256 …`) carries whitespace and no
+ *    leading slash, so it is untouched.
+ * The rule: a URL is any string containing `://`; an absolute path/route is a
+ * whitespace-free string that starts with `/` (a route slug `/diffie-hellman`, a
+ * path hierarchy `/api/v2/dh/rotate`, or a scheme-relative host `//svc/dh`). A
+ * non-KEY_MATERIAL crypto name is never a *use* inside such a string — uses are
+ * code call-sites — so the leading-slash signal is safe for recall, and key
+ * material stays protected by the never-downgrade rule it folds into. (Windows
+ * backslash paths are not yet covered — tracked in the qbench worklist.)
+ */
+function looksLikePathOrUrl(inner: string): boolean {
+  const t = inner.trim();
+  if (t.length < 2 || /\s/.test(t)) return false; // routes/URLs carry no whitespace
+  if (t.includes("://")) return true; // any scheme://… URL
+  return t[0] === "/"; // absolute path or route slug
+}
+
+/**
  * Is the match at `offset` sitting inside a MENTION string literal — a label, log
  * line, error message, or sentence that merely names a primitive, rather than a
  * structured crypto value or a tight algorithm identifier? A mention is downgraded
@@ -113,8 +140,60 @@ export function isMentionStringAt(content: string, spans: Array<[number, number]
     else {
       const literal = content.slice(s, e);
       if (literal.charCodeAt(0) === 96 /* backtick */ && literal.includes("${")) return false;
-      return looksLikeMention(content.slice(s + 1, e - 1)); // strip the quotes
+      const inner = content.slice(s + 1, e - 1); // strip the quotes
+      return looksLikeMention(inner) || looksLikePathOrUrl(inner);
     }
   }
   return false;
+}
+
+/** Config values that turn an algorithm OFF. Compared case-insensitively after
+ *  stripping surrounding quotes. */
+const DISABLE_VALUES = new Set([
+  "false", "0", "null", "off", "no", "none", "disabled", "disable", "deny", "denied", "never",
+]);
+
+/**
+ * Is the match at `[start, end)` a config KEY explicitly assigned a DISABLING
+ * value — `"ssh-rsa": false`, `dsa: off`, `weakCiphers = none`? Such a directive
+ * turns the algorithm off; counting it as live exposure is backwards (the team
+ * did the right thing by disabling it).
+ *
+ * This is the ONE signal allowed to override the never-downgrade rule for key
+ * material: an explicit disable is the strongest possible evidence the primitive
+ * is not in use. It is scoped tightly to key position — only a token immediately
+ * followed (across an optional closing quote and whitespace) by `:`/`=` then a
+ * disabling literal qualifies. A value-position token (`cipher = "ssh-rsa"`, an
+ * allow-list array element) is NOT a key, so it still fires; an enabling value
+ * (`"ssh-rsa": true`) is not disabling, so it still fires.
+ */
+export function isDisableDirectiveAt(
+  content: string,
+  spans: Array<[number, number]>,
+  start: number,
+  end: number,
+): boolean {
+  // If the token sits inside a string literal (a quoted JSON/YAML key), the key
+  // ends at that span's closing quote; otherwise the key is the bare token.
+  let pos = end;
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [s, e] = spans[mid];
+    if (start < s) hi = mid - 1;
+    else if (start >= e) lo = mid + 1;
+    else { pos = e; break; } // start is inside this span
+  }
+  const isSpace = (c: string) => c === " " || c === "\t";
+  while (pos < content.length && isSpace(content[pos])) pos++;
+  if (content[pos] !== ":" && content[pos] !== "=") return false;
+  pos++;
+  while (pos < content.length && isSpace(content[pos])) pos++;
+  // Read the value token up to the next delimiter, strip quotes, lowercase.
+  let j = pos;
+  const DELIM = new Set([" ", "\t", "\n", ",", ";", "}", "]", ")"]);
+  while (j < content.length && !DELIM.has(content[j])) j++;
+  const val = content.slice(pos, j).replace(/^["']+|["']+$/g, "").toLowerCase();
+  return DISABLE_VALUES.has(val);
 }
