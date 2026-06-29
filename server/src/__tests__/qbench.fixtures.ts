@@ -181,6 +181,19 @@ export const QBENCH: QCase[] = [
     code: `{ "allowedKeyTypes": ["ssh-rsa", "ed25519"] }\n` },
   { id: "guard-config-enabled-true", ext: "json", expect: ["ssh-rsa-key"], why: "an ENABLED weak key type ('ssh-rsa': true) is not a disable directive and must still fire",
     code: `{ "ssh-rsa": true }\n` },
+
+  // ── v0.3.9: Windows path FP cleared + DH detected in config languages ──
+  { id: "windows-path-dh", ext: "py", expect: [], why: "a Windows drive path naming a primitive ('C:\\\\certs\\\\diffie-hellman.pem') is a path reference, not a use (drive-letter branch)",
+    code: `PARAMS_FILE = "C:\\\\certs\\\\diffie-hellman.pem"\n` },
+  { id: "yaml-dh-config-value", ext: "yaml", expect: ["dh-keyexchange"], why: "a key-exchange config naming diffie-hellman is a real DH posture — now detected on config languages (was a recall miss)",
+    code: `keyExchange: diffie-hellman\n` },
+  { id: "json-dh-config-value", ext: "json", expect: ["dh-keyexchange"], why: "a quoted DH config value ('keyExchange': 'diffie-hellman') fires — single tight token, not a mention/disable/path",
+    code: `{ "keyExchange": "diffie-hellman" }\n` },
+  // recall guards for the broadened DH coverage: the classifier must still downgrade non-uses on config
+  { id: "yaml-dh-disabled", ext: "yaml", expect: [], why: "a disabled DH directive (diffie-hellman: false) on config is remediation, not exposure",
+    code: `diffie-hellman: false\n` },
+  { id: "yaml-dh-comment", ext: "yaml", expect: [], why: "diffie-hellman only in a YAML '#' comment is masked — no finding even with config coverage",
+    code: `# legacy diffie-hellman support was removed\nkeyExchange: ml-kem\n` },
 ];
 
 /**
@@ -196,13 +209,12 @@ export const KNOWN_GAPS: QCase[] = [
   // (resolved in v0.3.5 and promoted into QBENCH: short label strings, no-stopword
   //  messages, and identifier-substring matches — see mention-*/identifier-* cases)
   // (resolved in v0.3.8 and promoted into QBENCH: URL/route path slugs and
-  //  disable-directive config keys — see route-slug-*/denylist-*/yaml-algo-off)
+  //  disable-directive config keys — see route-slug-*/denylist-*/yaml-* cases)
+  // (resolved in v0.3.9 and promoted into QBENCH: Windows drive paths — see
+  //  windows-path-dh; the broadened DH-on-config recall is in the same section)
   { id: "gap-enum-ref-dsa", ext: "ts", expect: [], gapKind: "fp",
-    why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation — needs call-vs-reference data flow (ENG-01b / tree-sitter AST, the locked-last rung)",
+    why: "reading an enum member (SignatureAlgorithm.DSA) is a reference, not a signing operation — needs call-vs-reference data flow (ENG-01b / tree-sitter AST, the locked-last rung). This is the SOLE remaining gap: rung 3 (lexical classifier) is exhausted.",
     code: `const x = SignatureAlgorithm.DSA;\n` },
-  { id: "gap-windows-path-dh", ext: "py", expect: [], gapKind: "fp",
-    why: "a Windows backslash path naming a primitive is a path reference, not a use — the path classifier covers POSIX '/' and '://' but not backslash paths (rarer, and '\\' is escape-ambiguous in source); deferred",
-    code: `PARAMS_FILE = "C:\\\\certs\\\\diffie-hellman.pem"\n` },
   // (resolved in v0.3.7 and promoted into QBENCH / a dedicated test: the two
   //  overlapping-pattern double-counts, PKCS#12 keystores, and the
   //  authorized_keys/known_hosts no-extension filename gate)
