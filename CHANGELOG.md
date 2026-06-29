@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dedupe double-counts + PKCS#12 + SSH key files (v0.3.7)** — one construct no
+  longer counts twice: `DH_generate_key` was matched by both `dh-openssl-c` and
+  `dh-keyexchange`, and a chained `getInstance("RSA").generateKeyPair()` by both
+  `rsa-java-keypairgen` and `rsa-keygen-openssl`; each now reports once (the
+  redundant arms were removed at the source). New: **PKCS#12 keystores**
+  (`.pfx`/`.p12`, `pkcs12.Decode`), and well-known **SSH key files with no
+  extension** (`authorized_keys`, `known_hosts`, `id_*.pub`) are now scanned
+  (they were skipped by the extension map). Pattern count 52 → 53.
 - **Recall expansion — formerly-missed real crypto now detected (v0.3.6)** —
   five qbench-confirmed false negatives are fixed: **Go ECDSA** (`crypto/ecdsa` /
   `ecdsa.GenerateKey`) and **Go DSA** (`dsa.GenerateKey`, which the case-sensitive

@@ -18,7 +18,9 @@ export const PATTERNS: CryptoPattern[] = [
     regex: /\b(?:generateKeyPair(?:Sync)?|RSA\.generate|rsa_generate_key|RSA_generate_key|new RSACryptoServiceProvider)\b[\s\S]{0,40}?\b(?:rsa|RSA)?\b/,
     quantumVulnerable: true,
     baseSeverity: "high",
-    languages: ["javascript", "typescript", "python", "go", "java", "csharp", "c"],
+    // Java/Kotlin/Scala RSA keygen is covered by rsa-java-keypairgen; excluding
+    // them here stops `getInstance("RSA").generateKeyPair()` double-counting.
+    languages: ["javascript", "typescript", "python", "go", "csharp", "c"],
     pqcReplacement: "ML-KEM (Kyber) for key exchange, ML-DSA (Dilithium) for signatures",
   },
   {
@@ -201,7 +203,7 @@ export const PATTERNS: CryptoPattern[] = [
     family: "DH",
     algorithm: "Diffie-Hellman",
     description: "Classical Diffie-Hellman key exchange",
-    regex: /\b(?:createDiffieHellman|DH_generate_key|dh\.generate|DHParameterSpec|diffie[-_ ]?hellman)\b/i,
+    regex: /\b(?:createDiffieHellman|dh\.generate|DHParameterSpec|diffie[-_ ]?hellman)\b/i,
     quantumVulnerable: true,
     baseSeverity: "high",
     languages: ["javascript", "typescript", "python", "go", "java", "c"],
@@ -642,6 +644,20 @@ export const PATTERNS: CryptoPattern[] = [
     baseSeverity: "medium",
     languages: ["pem", "config", "any"],
     pqcReplacement: "Re-issue as a hybrid or PQC (ML-DSA) X.509 certificate per NIST PQC migration",
+  },
+  // PKCS#12 keystore (.pfx/.p12) — bundles an RSA/EC private key + cert chain.
+  // The library/API token or a quoted keystore path; trailing \b on `pkcs12`
+  // keeps it off identifiers like `pkcs12Loader`.
+  {
+    id: "pkcs12-keystore",
+    family: "Asymmetric",
+    algorithm: "PKCS#12 keystore (key + cert)",
+    description: "PKCS#12 / PFX keystore reference",
+    regex: /\bpkcs12\b|["'][^"']*\.p(?:fx|12)["']/i,
+    quantumVulnerable: true,
+    baseSeverity: "medium",
+    languages: ["go", "csharp", "java", "javascript", "typescript", "python", "config", "yaml", "any"],
+    pqcReplacement: "Re-issue the keystore's key and certificate with PQC (ML-DSA / ML-KEM)",
   },
 ];
 

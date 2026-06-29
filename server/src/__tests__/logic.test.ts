@@ -145,9 +145,25 @@ test("risk weights: invalid JSON falls back to defaults", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (52)", () => {
+test("patterns: patternCount matches the database length and health endpoint (53)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 52);
+  assert.equal(patternCount(), 53);
+});
+
+test("scanner: well-known SSH key files with no extension are scanned (authorized_keys)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "qv-sshfile-"));
+  try {
+    // No extension — would be skipped by languageFor without the filename allowlist.
+    writeFileSync(join(dir, "authorized_keys"),
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgExampleRsaKeyData bob@host\n");
+    const assets = scanDirectory(dir, "sshfile").assets;
+    assert.ok(
+      assets.some((a) => a.file === "authorized_keys" && a.patternId === "ssh-rsa-key"),
+      "an ssh-rsa key in authorized_keys must be detected",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {

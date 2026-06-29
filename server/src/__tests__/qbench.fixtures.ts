@@ -153,6 +153,14 @@ export const QBENCH: QCase[] = [
     code: `crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);\n` },
   { id: "x509-cert", ext: "pem", expect: ["x509-cert-body"], why: "a deployed X.509 certificate body (RSA/ECC public key + signature) — was missed",
     code: `-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBa\n-----END CERTIFICATE-----\n` },
+
+  // ── v0.3.7: overlapping-pattern double-counts collapsed + PKCS#12 detected ──
+  { id: "dh-single-count", ext: "c", expect: ["dh-openssl-c"], why: "DH_generate_key now fires only dh-openssl-c (removed from dh-keyexchange) — one finding, not two",
+    code: `DH_generate_key(dh);\n` },
+  { id: "java-keygen-single-count", ext: "java", expect: ["rsa-java-keypairgen"], why: "chained getInstance('RSA').generateKeyPair() now fires only rsa-java-keypairgen (java dropped from rsa-keygen-openssl)",
+    code: `KeyPair kp = KeyPairGenerator.getInstance("RSA").generateKeyPair();\n` },
+  { id: "pkcs12-decode", ext: "go", expect: ["pkcs12-keystore"], why: "a PKCS#12 keystore (.pfx/pkcs12.Decode) bundling a private key + cert — was missed",
+    code: `pkcs12.Decode(data, "changeit")\n` },
 ];
 
 /**
@@ -178,22 +186,7 @@ export const KNOWN_GAPS: QCase[] = [
   { id: "gap-denylist-config", ext: "json", expect: [], gapKind: "fp",
     why: "a deny-list config that DISABLES key types is flagged as exposure (value-bearing patterns never downgrade)",
     code: `{ "ssh-rsa": false, "ecdsa-sha2-nistp256": false }\n` },
-  // ── false positives: overlapping patterns double-count one construct ───────
-  // (fix: dedupe same-(file,line,family) matches to the most specific pattern)
-  { id: "gap-dh-double-count", ext: "c", expect: ["dh-openssl-c"], gapKind: "fp",
-    why: "DH_generate_key matches both dh-openssl-c and dh-keyexchange — one call counted twice",
-    code: `DH_generate_key(dh);\n` },
-  { id: "gap-java-keygen-double-count", ext: "java", expect: ["rsa-java-keypairgen"], gapKind: "fp",
-    why: "chained KeyPairGenerator.getInstance('RSA').generateKeyPair() matches rsa-java-keypairgen AND rsa-keygen-openssl",
-    code: `KeyPair kp = KeyPairGenerator.getInstance("RSA").generateKeyPair();\n` },
-  // ── false negatives: real crypto APIs / formats not yet covered ───────────
-  // (next build: recall-expansion patterns)
-  // (resolved in v0.3.6 and promoted into QBENCH: Go ECDSA/DSA keygen, OpenSSL
-  //  EVP_PKEY_keygen, Web Crypto ECDSA, and X.509 certificate bodies)
-  { id: "gap-fn-authorized-keys-filename", ext: "noext-authorized_keys", expect: ["ssh-rsa-key"], gapKind: "fn",
-    why: "the canonical SSH key files (authorized_keys/known_hosts) have no extension, so are skipped entirely",
-    code: `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgExampleRsaKeyData bob@host\n` },
-  { id: "gap-fn-pkcs12", ext: "go", expect: ["pkcs12-keystore"], gapKind: "fn",
-    why: "a .pfx/.p12 keystore (pkcs12.Decode) bundling a private key + cert is never detected",
-    code: `data, _ := os.ReadFile("identity.pfx")\npkcs12.Decode(data, "changeit")\n` },
+  // (resolved in v0.3.7 and promoted into QBENCH / a dedicated test: the two
+  //  overlapping-pattern double-counts, PKCS#12 keystores, and the
+  //  authorized_keys/known_hosts no-extension filename gate)
 ];

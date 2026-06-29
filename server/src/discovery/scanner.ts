@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative, sep } from "node:path";
+import { basename, extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
 import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt } from "./context.js";
@@ -117,9 +117,16 @@ function isNonProductionDir(name: string): boolean {
 const MAX_FILE_BYTES = 2_000_000;
 const NULL_BYTE = "\x00";
 
+// Well-known SSH key files have NO extension, so they'd be skipped by the
+// extension map — but they hold real ssh-rsa/ecdsa key material.
+const SSH_KEY_FILES = new Set([
+  "authorized_keys", "known_hosts", "id_rsa.pub", "id_dsa.pub", "id_ecdsa.pub", "id_ed25519.pub",
+]);
+
 function languageFor(file: string): string | null {
   const ext = extname(file).toLowerCase();
   if (ext in EXT_LANG) return EXT_LANG[ext];
+  if (SSH_KEY_FILES.has(basename(file))) return "config";
   if (file.endsWith("Dockerfile") || file.endsWith(".dockerfile")) return "config";
   return null;
 }
