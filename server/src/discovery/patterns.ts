@@ -576,6 +576,73 @@ export const PATTERNS: CryptoPattern[] = [
     languages: ["c", "cpp"],
     pqcReplacement: "ML-KEM (Kyber)",
   },
+
+  // ---------------------------------- recall expansion (qbench-confirmed misses)
+  // Go elliptic-curve keygen — the EC analogue of go-crypto-rsa, previously
+  // invisible (only `crypto/rsa` was covered).
+  {
+    id: "go-ecdsa",
+    family: "ECC",
+    algorithm: "ECDSA (Go crypto)",
+    description: "Go crypto/ecdsa import or key generation",
+    regex: /\bcrypto\/ecdsa\b|\becdsa\.GenerateKey\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["go"],
+    pqcReplacement: "ML-DSA (Dilithium) / SLH-DSA",
+  },
+  // Go DSA keygen — stdlib uses capital-G `GenerateKey`/`GenerateParameters`,
+  // which the case-sensitive dsa-usage matcher missed.
+  {
+    id: "go-dsa",
+    family: "DSA",
+    algorithm: "DSA (Go crypto)",
+    description: "Go crypto/dsa import or key generation",
+    regex: /\bcrypto\/dsa\b|\bdsa\.Generate(?:Key|Parameters)\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["go"],
+    pqcReplacement: "ML-DSA (Dilithium)",
+  },
+  // OpenSSL 3.x generic keygen entry point (used for RSA/EC/DSA) — algorithm is
+  // set on the context, so the family is unspecified-asymmetric.
+  {
+    id: "evp-pkey-keygen",
+    family: "Asymmetric",
+    algorithm: "Asymmetric keygen (OpenSSL EVP_PKEY)",
+    description: "OpenSSL EVP_PKEY generic key generation",
+    regex: /\bEVP_PKEY_keygen(?:_init)?\b/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["c", "cpp"],
+    pqcReplacement: "Identify the algorithm and migrate to ML-KEM (Kyber) / ML-DSA (Dilithium)",
+  },
+  // Web Crypto elliptic-curve algorithm spec (`name: "ECDSA"` / `"ECDH"`) — a real
+  // generateKey call-site; the sibling of rsa-webcrypto, which only covered RSA.
+  {
+    id: "ecc-webcrypto",
+    family: "ECC",
+    algorithm: "ECDSA/ECDH (Web Crypto)",
+    description: "Web Crypto elliptic-curve algorithm identifier",
+    regex: /["']?name["']?\s*:\s*["'](?:ECDSA|ECDH)["']/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["javascript", "typescript", "json"],
+    pqcReplacement: "ML-DSA (Dilithium) signatures, ML-KEM (Kyber) key agreement",
+  },
+  // X.509 certificate body — the DER carries an RSA/ECC public key + signature.
+  // Public material, so medium; key material (never downgraded).
+  {
+    id: "x509-cert-body",
+    family: "Asymmetric",
+    algorithm: "X.509 certificate (algorithm in body)",
+    description: "X.509 certificate PEM block",
+    regex: /-----BEGIN CERTIFICATE-----/,
+    quantumVulnerable: true,
+    baseSeverity: "medium",
+    languages: ["pem", "config", "any"],
+    pqcReplacement: "Re-issue as a hybrid or PQC (ML-DSA) X.509 certificate per NIST PQC migration",
+  },
 ];
 
 const KEY_BITS_RE = /\b(512|768|1024|2048|3072|4096|256|384|521|128)\b/;
@@ -641,6 +708,7 @@ const KEY_MATERIAL = new Set<string>([
   "pkcs8-encrypted-pem",
   "pgp-public-block",
   "jwk-asymmetric-key",
+  "x509-cert-body",
   "ssh-rsa-key",
   "ssh-ecdsa-key",
   "tls-rsa-cert",

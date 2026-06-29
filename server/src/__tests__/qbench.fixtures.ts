@@ -141,6 +141,18 @@ export const QBENCH: QCase[] = [
     code: `class TripleDESLegacyAdapter {}\n` },
   { id: "identifier-envvar-3des", ext: "ts", expect: [], why: "an env-var name (TRIPLEDES_FALLBACK_DISABLED) is not a cipher use (trailing-\\b fix)",
     code: `const v = process.env.TRIPLEDES_FALLBACK_DISABLED;\n` },
+
+  // ── v0.3.6: recall expansion — real uses/formats that were silently missed ──
+  { id: "go-ecdsa-keygen", ext: "go", expect: ["go-ecdsa"], why: "Go ECDSA key generation — was missed (only crypto/rsa was covered)",
+    code: `k, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)\n` },
+  { id: "go-dsa-keygen", ext: "go", expect: ["go-dsa"], why: "Go DSA key generation (capital-G GenerateKey) — was missed (case-sensitive dsa-usage)",
+    code: `dsa.GenerateKey(priv, rand.Reader)\n` },
+  { id: "evp-pkey-keygen", ext: "c", expect: ["evp-pkey-keygen"], why: "OpenSSL 3.x generic EVP_PKEY_keygen entry point — was missed",
+    code: `EVP_PKEY_keygen(ctx, &pkey);\n` },
+  { id: "webcrypto-ecdsa", ext: "ts", expect: ["ecc-webcrypto"], why: "Web Crypto ECDSA generateKey call — was only flagged low via the bare curve name",
+    code: `crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);\n` },
+  { id: "x509-cert", ext: "pem", expect: ["x509-cert-body"], why: "a deployed X.509 certificate body (RSA/ECC public key + signature) — was missed",
+    code: `-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBa\n-----END CERTIFICATE-----\n` },
 ];
 
 /**
@@ -176,15 +188,8 @@ export const KNOWN_GAPS: QCase[] = [
     code: `KeyPair kp = KeyPairGenerator.getInstance("RSA").generateKeyPair();\n` },
   // ── false negatives: real crypto APIs / formats not yet covered ───────────
   // (next build: recall-expansion patterns)
-  { id: "gap-fn-go-ecdsa", ext: "go", expect: ["ecc-go"], gapKind: "fn",
-    why: "Go crypto/ecdsa + ecdsa.GenerateKey is missed (no Go ECDSA pattern)",
-    code: `import "crypto/ecdsa"\nfunc f() { ecdsa.GenerateKey(elliptic.P256(), rand.Reader) }\n` },
-  { id: "gap-fn-webcrypto-ecdsa", ext: "ts", expect: ["ecc-webcrypto"], gapKind: "fn",
-    why: "a real Web Crypto subtle.generateKey({name:'ECDSA'}) call only flags low (no ECDSA Web Crypto pattern)",
-    code: `crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);\n` },
-  { id: "gap-fn-x509-cert-body", ext: "pem", expect: ["x509-cert-body"], gapKind: "fn",
-    why: "a deployed X.509 certificate body (BEGIN CERTIFICATE, base64 DER) is never detected",
-    code: `-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBa\n-----END CERTIFICATE-----\n` },
+  // (resolved in v0.3.6 and promoted into QBENCH: Go ECDSA/DSA keygen, OpenSSL
+  //  EVP_PKEY_keygen, Web Crypto ECDSA, and X.509 certificate bodies)
   { id: "gap-fn-authorized-keys-filename", ext: "noext-authorized_keys", expect: ["ssh-rsa-key"], gapKind: "fn",
     why: "the canonical SSH key files (authorized_keys/known_hosts) have no extension, so are skipped entirely",
     code: `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgExampleRsaKeyData bob@host\n` },

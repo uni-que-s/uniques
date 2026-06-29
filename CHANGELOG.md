@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Recall expansion — formerly-missed real crypto now detected (v0.3.6)** —
+  five qbench-confirmed false negatives are fixed: **Go ECDSA** (`crypto/ecdsa` /
+  `ecdsa.GenerateKey`) and **Go DSA** (`dsa.GenerateKey`, which the case-sensitive
+  matcher missed), **OpenSSL `EVP_PKEY_keygen`** (the 3.x generic keygen),
+  **Web Crypto ECDSA/ECDH** (`name: "ECDSA"` — was only a low curve-name mention),
+  and **X.509 certificate bodies** (`-----BEGIN CERTIFICATE-----` — real RSA/ECC
+  public key + signature). Pattern count 47 → 52; the cases moved from the qbench
+  worklist into the gated corpus.
 - **Mention classifier — label / log / identifier false positives downgraded
   (v0.3.5)** — the per-occurrence classifier now treats a crypto name inside a
   *label or message* string (≥2 words with a natural-language word, e.g.
