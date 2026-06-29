@@ -21,7 +21,7 @@ risk once a cryptographically-relevant quantum computer exists.
 
 ## Features
 
-- **Cryptographic asset discovery** — a 47-pattern, language-agnostic scanner
+- **Cryptographic asset discovery** — a 52-pattern, language-agnostic scanner
   detects RSA, ECC (incl. Ed25519/X25519), DSA, Diffie-Hellman, legacy symmetric
   (DES/3DES/AES-128), broken hashes (MD5/SHA-1), RSA/EC/DSA private-key PEMs (incl.
   PGP key blocks), JWT/JOSE signing algorithms (RS/ES/PS), Web Crypto RSA, SSH key
