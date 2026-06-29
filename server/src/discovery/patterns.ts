@@ -251,7 +251,11 @@ export const PATTERNS: CryptoPattern[] = [
     family: "RSA",
     algorithm: "RSA (X.509)",
     description: "X.509 certificate signed with RSA",
-    regex: /\b(?:sha256WithRSAEncryption|sha1WithRSAEncryption|signatureAlgorithm.*RSA|ssl_certificate.*\.(?:crt|pem))\b/,
+    // RSA must sit IN the signatureAlgorithm value (no comma/newline between), so
+    // a PQC line like `signatureAlgorithm: ML-DSA-65, fallback: RSA-PSS` is not
+    // mislabeled RSA. The old `ssl_certificate.*\.(crt|pem)` arm was dropped — a
+    // cert *path* carries no algorithm, so it flagged PQC certs as RSA.
+    regex: /\b(?:sha256WithRSAEncryption|sha1WithRSAEncryption|signatureAlgorithm[^,\n]{0,40}\bRSA)\b/,
     quantumVulnerable: true,
     baseSeverity: "high",
     languages: ["config", "nginx", "yaml", "pem"],
@@ -281,6 +285,61 @@ export const PATTERNS: CryptoPattern[] = [
     baseSeverity: "critical",
     languages: ["pem", "config", "any"],
     pqcReplacement: "ML-DSA (Dilithium)",
+  },
+  // OpenSSH-format private key — the DEFAULT `ssh-keygen` output since OpenSSH
+  // 7.8 (2018). Wraps an RSA/ECDSA/Ed25519 key; algorithm is in the body, so the
+  // family is unspecified-asymmetric. Prime harvest-now-decrypt-later material.
+  {
+    id: "openssh-pem-private-key",
+    family: "Asymmetric",
+    algorithm: "OpenSSH private key (algorithm in body)",
+    description: "OpenSSH-format private key block",
+    regex: /-----BEGIN OPENSSH PRIVATE KEY-----/,
+    quantumVulnerable: true,
+    baseSeverity: "critical",
+    languages: ["pem", "config", "any"],
+    pqcReplacement:
+      "Identify the wrapped key's algorithm and re-issue with the matching NIST PQC scheme (ML-DSA / ML-KEM)",
+  },
+  // Encrypted PKCS#8 — sibling of pkcs8-pem-private-key; the `ENCRYPTED` keyword
+  // before `PRIVATE KEY` slipped past the plain-PKCS#8 matcher.
+  {
+    id: "pkcs8-encrypted-pem",
+    family: "Asymmetric",
+    algorithm: "Encrypted private key (PKCS#8)",
+    description: "Encrypted PKCS#8 private key PEM block",
+    regex: /-----BEGIN ENCRYPTED PRIVATE KEY-----/,
+    quantumVulnerable: true,
+    baseSeverity: "critical",
+    languages: ["pem", "config", "any"],
+    pqcReplacement:
+      "Identify the key's algorithm and re-issue with the matching NIST PQC scheme (ML-DSA for signing, ML-KEM for key exchange)",
+  },
+  // PGP/GPG public key block (commonly RSA/DSA) — a harvestable verification /
+  // encryption identity; sibling of rsa-pgp-private-block.
+  {
+    id: "pgp-public-block",
+    family: "Asymmetric",
+    algorithm: "PGP public key (algorithm in body)",
+    description: "PGP/GPG public key block",
+    regex: /-----BEGIN PGP PUBLIC KEY BLOCK-----/,
+    quantumVulnerable: true,
+    baseSeverity: "medium",
+    languages: ["pem", "config", "any"],
+    pqcReplacement: "Re-issue the PGP identity with ML-DSA (Dilithium) once OpenPGP PQC is finalized",
+  },
+  // JWK asymmetric key (`"kty":"RSA"` / `"kty":"EC"`) — concrete key material
+  // (modulus/exponent or curve point), common in JWKS endpoints and config.
+  {
+    id: "jwk-asymmetric-key",
+    family: "Asymmetric",
+    algorithm: "JWK asymmetric key (RSA/EC)",
+    description: "JSON Web Key with an asymmetric key type",
+    regex: /"kty"\s*:\s*"(?:RSA|EC)"/,
+    quantumVulnerable: true,
+    baseSeverity: "high",
+    languages: ["json", "yaml", "javascript", "typescript", "any"],
+    pqcReplacement: "Rotate to a PQC key (ML-DSA / ML-KEM) once JOSE PQC algorithms are standardized",
   },
   // JOSE/JWT signing algorithms imply RSA (RS*/PS*) or ECDSA (ES*) keys.
   // Case-sensitive and bounded so AES256 / arbitrary IDs don't false-match.
@@ -576,6 +635,10 @@ const KEY_MATERIAL = new Set<string>([
   "rsa-pgp-private-block",
   "ecc-pem-header",
   "dsa-pem-header",
+  "openssh-pem-private-key",
+  "pkcs8-encrypted-pem",
+  "pgp-public-block",
+  "jwk-asymmetric-key",
   "ssh-rsa-key",
   "ssh-ecdsa-key",
   "tls-rsa-cert",

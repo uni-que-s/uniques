@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`qbench` precision benchmark + precision/recall fixes (v0.3.4)** — a labeled
+  corpus + harness scores detection **precision and recall** over real call-sites
+  and known traps, gating regressions at 1.0 on every build ("more precise on
+  every build" as a tracked metric), with a worklist of known gaps. Building it,
+  plus an adversarial probe of 34 CLI-verified cases, surfaced and **fixed** real
+  gaps: four key-material formats that were silently missed are now detected —
+  **OpenSSH private keys** (the default `ssh-keygen` output), **encrypted PKCS#8**,
+  **PGP public blocks**, and **JWK** (`"kty":"RSA"`/`"EC"`); and a PQC
+  certificate (`signatureAlgorithm: ML-DSA-…`, or a `dilithium.pem` path) is no
+  longer mislabeled "RSA (X.509)" (the `tls-rsa-cert` matcher was greedily
+  matching unrelated "RSA" on the line / asserting RSA for any cert path).
+  Pattern count 43 → 47. Remaining verified gaps (string/identifier false
+  positives, overlapping-pattern double-counts, and uncovered APIs like Go
+  ECDSA/DSA and Web Crypto ECDSA) are tracked in the benchmark worklist.
 - **GitHub Action supports the baseline ratchet + "adopt in CI" docs (v0.3.3)** —
   the published Docker action gains a `baseline` input, so `fail-on` gates only on
   findings new since a committed baseline. README now has a copy-pasteable
