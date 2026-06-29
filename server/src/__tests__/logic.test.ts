@@ -145,9 +145,9 @@ test("risk weights: invalid JSON falls back to defaults", () => {
 });
 
 // ------------------------------------------------------------- pattern db
-test("patterns: patternCount matches the database length and health endpoint (43)", () => {
+test("patterns: patternCount matches the database length and health endpoint (47)", () => {
   assert.equal(patternCount(), PATTERNS.length);
-  assert.equal(patternCount(), 43);
+  assert.equal(patternCount(), 47);
 });
 
 test("patterns: every pattern has a non-empty PQC replacement and a unique id", () => {
