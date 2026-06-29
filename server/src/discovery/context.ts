@@ -103,19 +103,20 @@ function looksLikeMention(inner: string): boolean {
  *    still fires.
  *  - A cipher list (`ECDHE-RSA-AES128-GCM-SHA256 …`) carries whitespace and no
  *    leading slash, so it is untouched.
- * The rule: a URL is any string containing `://`; an absolute path/route is a
- * whitespace-free string that starts with `/` (a route slug `/diffie-hellman`, a
- * path hierarchy `/api/v2/dh/rotate`, or a scheme-relative host `//svc/dh`). A
+ * The rule covers three path/URL shapes (all whitespace-free): a URL is any
+ * string containing `://`; a POSIX path/route starts with `/` (a route slug
+ * `/diffie-hellman`, a hierarchy `/api/v2/dh/rotate`, a scheme-relative host
+ * `//svc/dh`); a Windows path starts with a drive letter (`C:\…`, `C:/…`). A
  * non-KEY_MATERIAL crypto name is never a *use* inside such a string — uses are
- * code call-sites — so the leading-slash signal is safe for recall, and key
- * material stays protected by the never-downgrade rule it folds into. (Windows
- * backslash paths are not yet covered — tracked in the qbench worklist.)
+ * code call-sites — so these signals are safe for recall, and key material stays
+ * protected by the never-downgrade rule this folds into.
  */
 function looksLikePathOrUrl(inner: string): boolean {
   const t = inner.trim();
   if (t.length < 2 || /\s/.test(t)) return false; // routes/URLs carry no whitespace
   if (t.includes("://")) return true; // any scheme://… URL
-  return t[0] === "/"; // absolute path or route slug
+  if (t[0] === "/") return true; // POSIX absolute path or route slug
+  return /^[A-Za-z]:[\\/]/.test(t); // Windows drive path (C:\… or C:/…)
 }
 
 /**

@@ -206,7 +206,12 @@ export const PATTERNS: CryptoPattern[] = [
     regex: /\b(?:createDiffieHellman|dh\.generate|DHParameterSpec|diffie[-_ ]?hellman)\b/i,
     quantumVulnerable: true,
     baseSeverity: "high",
-    languages: ["javascript", "typescript", "python", "go", "java", "c"],
+    // Includes config languages (yaml/json/terraform/conf): a key-exchange config
+    // naming `diffie-hellman` is a real DH posture, just like ssh-rsa in IaC. The
+    // per-occurrence classifier keeps this honest — a disabled directive
+    // (`diffie-hellman: false`), a route/URL slug, a comment, or a prose mention
+    // all downgrade to a possible mention; only a live config value stays medium.
+    languages: ["javascript", "typescript", "python", "go", "java", "c", "yaml", "json", "config", "terraform"],
     pqcReplacement: "ML-KEM (Kyber)",
   },
 

@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Windows-path false positive cleared + Diffie-Hellman detected in config (v0.3.9)**
+  — closes the last lexical precision-worklist gap and a recall miss. The path
+  classifier now also recognizes **Windows drive paths** (`"C:\\certs\\diffie-hellman.pem"`,
+  `C:/…`), so a crypto name that is a backslash-path segment is a possible mention,
+  not a use (key material in a path still stays actionable). And **`dh-keyexchange`
+  now runs on config languages** (YAML/JSON/Terraform/conf): a real key-exchange
+  config naming `diffie-hellman` (e.g. `keyExchange: diffie-hellman`) was previously
+  invisible and is now detected as a medium finding — while the per-occurrence
+  classifier keeps it honest (a disabled directive `diffie-hellman: false`, a
+  route/URL slug, a `#`/`//` comment, or a prose mention all downgrade to a possible
+  mention). After this, the qbench precision worklist is down to a single gap —
+  reading an enum member (`SignatureAlgorithm.DSA`) — which needs call-vs-reference
+  data flow (ENG-01b / tree-sitter AST); the zero-dependency lexical-classifier rung
+  is exhausted. Corpus now 70 gated cases at 1.0/1.0.
 - **URL/route slugs and disable directives no longer over-flag (v0.3.8)** — two
   more false-positive classes the zero-dependency lexical classifier can now
   resolve, keeping the air-gapped posture intact. A crypto name that is a **URL or
