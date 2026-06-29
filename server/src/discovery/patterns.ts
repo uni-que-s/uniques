@@ -214,7 +214,9 @@ export const PATTERNS: CryptoPattern[] = [
     family: "SymmetricLegacy",
     algorithm: "DES/3DES",
     description: "DES or Triple-DES symmetric cipher",
-    regex: /\b(?:des-ede3|des3|3des|DESede|Cipher\.DES|TripleDES|createCipher(?:iv)?\(\s*['"]des)/i,
+    // Trailing \b so a token like `TripleDESLegacyAdapter` (identifier) or
+    // `TRIPLEDES_DISABLED` (env var) doesn't match the bare `TripleDES` arm.
+    regex: /\b(?:des-ede3|des3|3des|DESede|Cipher\.DES|TripleDES|createCipher(?:iv)?\(\s*['"]des)\b/i,
     quantumVulnerable: true,
     baseSeverity: "high",
     languages: ["javascript", "typescript", "python", "go", "java", "csharp"],
@@ -660,9 +662,9 @@ const KEY_MATERIAL = new Set<string>([
  * (e.g. also downgrade single-token strings for medium patterns) would trade
  * recall for precision; a looser one would surface more as real. Tune here.
  */
-export function resolveConfidence(patternId: string, ctx: { proseString: boolean }): Confidence {
+export function resolveConfidence(patternId: string, ctx: { mention: boolean }): Confidence {
   const base = confidenceFor(patternId);
-  if (ctx.proseString && !KEY_MATERIAL.has(patternId)) return "low";
+  if (ctx.mention && !KEY_MATERIAL.has(patternId)) return "low";
   return base;
 }
 
