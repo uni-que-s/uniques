@@ -3,7 +3,7 @@ import { PATTERNS } from "./patterns.js";
 import { VERSION } from "../version.js";
 
 const PATTERN_BY_ID = new Map(PATTERNS.map((p) => [p.id, p]));
-const INFO_URI = "https://github.com/DemigodDSK/quantumvault";
+const INFO_URI = "https://github.com/uni-que-s/uniques";
 
 /** SARIF result level from the finding's risk priority. */
 function levelFor(asset: CryptoAsset): "error" | "warning" | "note" {

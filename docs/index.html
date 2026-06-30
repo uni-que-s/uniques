@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>QuantumVault — Find the cryptography quantum computers will break</title>
-<meta name="description" content="QuantumVault discovers quantum-vulnerable cryptography across your codebase, scores it for post-quantum migration priority, tracks remediation, and proves compliance — closing the loop on the harvest-now, decrypt-later threat." />
-<meta name="theme-color" content="#7c3aed" />
-<meta property="og:title" content="QuantumVault — Quantum-safe cryptography platform" />
-<meta property="og:description" content="Discover → prioritize → track → prove compliance for the harvest-now, decrypt-later threat to RSA/ECC." />
+<title>UniQueS — the Universal Quantum Scanner</title>
+<meta name="description" content="UniQueS discovers quantum-vulnerable cryptography across every language in your codebase, scores it for post-quantum migration, and generates the CBOM regulators require — all on-prem, so your source never leaves your network." />
+<meta name="theme-color" content="#3d8fd6" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<meta property="og:title" content="UniQueS — the Universal Quantum Scanner" />
+<meta property="og:description" content="Find quantum-vulnerable cryptography in any codebase and prove post-quantum readiness with a standards CBOM — on-prem, your source never leaves your network." />
 <meta property="og:type" content="website" />
 <style>
   :root{
     --bg:#0a0a0f; --panel:#12121b; --panel2:#171723; --line:#262638;
     --ink:#e9e9f1; --muted:#a0a0b8; --faint:#6f6f88;
-    --accent:#a78bfa; --accent2:#7c3aed; --accent-ink:#ede9fe;
+    --accent:#3d8fd6; --accent2:#1f5e9e; --accent-ink:#dbeafe;
     --ok:#34d399; --warn:#fbbf24; --crit:#fb7185;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -32,32 +33,31 @@
     backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
   .nav{display:flex;align-items:center;gap:18px;height:60px}
   .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
-  .brand .dot{width:22px;height:22px;border-radius:6px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 0 18px rgba(124,58,237,.55)}
+  .brand .logo{height:26px;width:auto;display:block}
+  footer .brand .logo{height:22px}
   .nav .spacer{flex:1}
   .nav a.navlink{color:var(--muted);font-size:14px}
   .nav a.navlink:hover{color:var(--ink);text-decoration:none}
   .btn{display:inline-block;padding:9px 16px;border-radius:9px;font-weight:600;font-size:14px;
     border:1px solid var(--line);color:var(--ink)}
   .btn:hover{text-decoration:none;border-color:var(--accent)}
-  .btn.primary{background:linear-gradient(135deg,var(--accent2),#6d28d9);border-color:transparent;
-    color:#fff;box-shadow:0 6px 24px rgba(124,58,237,.35)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent2),#1f5e9e);border-color:transparent;
+    color:#fff;box-shadow:0 6px 24px rgba(61,143,214,.35)}
   @media(max-width:680px){.nav a.navlink{display:none}}
 
   /* hero */
   .hero{padding:84px 0 56px;position:relative;overflow:hidden}
   .hero::before{content:"";position:absolute;inset:-40% -10% auto -10%;height:480px;
-    background:radial-gradient(60% 60% at 50% 0%,rgba(124,58,237,.22),transparent 70%);
+    background:radial-gradient(60% 60% at 50% 0%,rgba(61,143,214,.22),transparent 70%);
     pointer-events:none}
   .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--accent);border:1px solid var(--line);
     background:var(--panel);padding:6px 12px;border-radius:999px}
   .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);
-    box-shadow:0 0 0 0 rgba(167,139,250,.6);animation:p 2.2s infinite}
-  @keyframes p{0%{box-shadow:0 0 0 0 rgba(167,139,250,.5)}70%{box-shadow:0 0 0 9px rgba(167,139,250,0)}100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}}
+    box-shadow:0 0 0 0 rgba(61,143,214,.6);animation:p 2.2s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(61,143,214,.5)}70%{box-shadow:0 0 0 9px rgba(61,143,214,0)}100%{box-shadow:0 0 0 0 rgba(61,143,214,0)}}
   h1{font-size:clamp(34px,5.4vw,58px);line-height:1.05;margin:22px 0 0;letter-spacing:-.02em;font-weight:800}
-  h1 .grad{background:linear-gradient(110deg,#c4b5fd,#7c3aed 60%,#a78bfa);
+  h1 .grad{background:linear-gradient(110deg,#5aa6ea,#1f5e9e 60%,#3d8fd6);
     -webkit-background-clip:text;background-clip:text;color:transparent}
   .sub{font-size:clamp(16px,2vw,20px);color:var(--muted);max-width:680px;margin:20px 0 0}
   .cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:32px}
@@ -80,7 +80,7 @@
   .timeline{border-left:2px solid var(--line);padding-left:18px;display:flex;flex-direction:column;gap:16px}
   .tl{position:relative}
   .tl::before{content:"";position:absolute;left:-25px;top:4px;width:10px;height:10px;border-radius:50%;
-    background:var(--accent2);box-shadow:0 0 12px rgba(124,58,237,.6)}
+    background:var(--accent2);box-shadow:0 0 12px rgba(61,143,214,.6)}
   .tl b{display:block;color:var(--ink);font-size:14px}
   .tl span{color:var(--faint);font-size:13px}
   @media(max-width:760px){.threat{grid-template-columns:1fr}}
@@ -95,7 +95,7 @@
   .card h3{margin:0 0 8px;font-size:16.5px}
   .card p{margin:0;color:var(--muted);font-size:14.5px}
   .card .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:14px;
-    background:rgba(124,58,237,.14);border:1px solid var(--line);color:var(--accent);font-family:var(--mono);
+    background:rgba(61,143,214,.14);border:1px solid var(--line);color:var(--accent);font-family:var(--mono);
     font-weight:700;font-size:15px}
 
   /* stats */
@@ -130,13 +130,13 @@
   .tier-name{font-size:17px;font-weight:700;color:var(--ink)}
   .tier-tag{font-size:12.5px;color:var(--accent);margin:4px 0 14px;font-family:var(--mono)}
   .card.featured{border-color:var(--accent);
-    box-shadow:0 0 0 1px var(--accent2),0 12px 40px rgba(124,58,237,.20)}
+    box-shadow:0 0 0 1px var(--accent2),0 12px 40px rgba(61,143,214,.20)}
   .tiers ul{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:8px}
   .tiers li{color:var(--muted);font-size:13.5px;padding-left:18px;position:relative}
   .tiers li::before{content:"→";position:absolute;left:0;color:var(--accent)}
   .tiers code{font-family:var(--mono);font-size:12.5px;color:var(--accent-ink)}
   .access{margin-top:28px;text-align:center;border:1px solid var(--line);border-radius:16px;
-    padding:34px 28px;background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.16),transparent 70%),var(--panel)}
+    padding:34px 28px;background:radial-gradient(80% 120% at 50% 0%,rgba(61,143,214,.16),transparent 70%),var(--panel)}
   .access h3{margin:0 0 6px;font-size:21px}
   .access p{color:var(--muted);max-width:580px;margin:0 auto 22px}
   .access .priv{display:block;margin-top:14px;font-size:13px;color:var(--faint)}
@@ -144,14 +144,14 @@
   @media(max-width:680px){.access-grid{grid-template-columns:1fr}}
   .access-card{border:1px solid var(--line);border-radius:16px;padding:30px 26px;text-align:center;background:var(--panel)}
   .access-card.buy{border-color:var(--accent);
-    background:radial-gradient(90% 130% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel)}
+    background:radial-gradient(90% 130% at 50% 0%,rgba(61,143,214,.18),transparent 70%),var(--panel)}
   .access-card h3{margin:0 0 6px;font-size:19px}
   .access-card p{color:var(--muted);font-size:14px;margin:0 auto 16px;max-width:340px}
   .access-card .price{font-family:var(--mono);color:var(--accent-ink);font-size:13px;margin-bottom:16px}
 
   /* product showcase */
   .shot{margin-top:30px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0c0c14;
-    box-shadow:0 24px 70px rgba(0,0,0,.5),0 0 0 1px rgba(124,58,237,.12)}
+    box-shadow:0 24px 70px rgba(0,0,0,.5),0 0 0 1px rgba(61,143,214,.12)}
   .shot-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:#12121b}
   .shot-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
   .shot-bar .r{background:#ff5f57}.shot-bar .y{background:#febc2e}.shot-bar .g{background:#28c840}
@@ -175,7 +175,7 @@
   @media(max-width:640px){.shot-kpis{grid-template-columns:1fr}.shot-hide{display:none}}
 
   /* final cta */
-  .final{background:radial-gradient(80% 120% at 50% 0%,rgba(124,58,237,.18),transparent 70%),var(--panel);
+  .final{background:radial-gradient(80% 120% at 50% 0%,rgba(61,143,214,.18),transparent 70%),var(--panel);
     border:1px solid var(--line);border-radius:18px;padding:46px 30px;text-align:center}
   .final h2{margin:0 0 8px}
   .final p{color:var(--muted);max-width:560px;margin:0 auto 24px}
@@ -189,7 +189,7 @@
 <body>
 <header>
   <div class="wrap nav">
-    <span class="brand"><span class="dot"></span> QuantumVault</span>
+    <span class="brand"><img src="logo.png" alt="" class="logo" /> UniQueS</span>
     <span class="spacer"></span>
     <a class="navlink" href="#threat">The threat</a>
     <a class="navlink" href="#features">What it does</a>
@@ -198,7 +198,7 @@
     <a class="navlink" href="#platform">Platform</a>
     <a class="navlink" href="#access">Pricing</a>
     <a class="navlink" href="demo/">Live demo</a>
-    <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">View on GitHub</a>
+    <a class="btn primary" href="https://github.com/uni-que-s/uniques">View on GitHub</a>
   </div>
 </header>
 
@@ -208,13 +208,14 @@
     <div class="wrap">
       <span class="eyebrow"><span class="pulse"></span> Post-quantum readiness</span>
       <h1>Find the cryptography<br><span class="grad">quantum computers will break.</span></h1>
-      <p class="sub">QuantumVault discovers quantum-vulnerable cryptographic assets across your
-        codebase, scores them for migration priority, tracks remediation to completion, and
-        generates auditor-ready compliance reports — so the inventory becomes a worklist, not a worry.</p>
+      <p class="sub">UniQueS is the universal quantum scanner. It discovers quantum-vulnerable
+        cryptographic assets across every language in your codebase, scores them for migration
+        priority, tracks remediation, and generates the standards CBOM auditors expect — all
+        on-prem, so your source never leaves your network.</p>
       <div class="cta">
         <a class="btn primary" href="demo/">See it live — no install &rarr;</a>
         <a class="btn" href="#adopt">Scan a repo in one command</a>
-        <a class="btn" href="https://github.com/DemigodDSK/quantumvault">Read the docs</a>
+        <a class="btn" href="https://github.com/uni-que-s/uniques">Read the docs</a>
       </div>
       <div class="loop">
         <b>Discover</b> <span class="arw">→</span> <b>Prioritize</b> <span class="arw">→</span>
@@ -238,8 +239,8 @@
           <p class="big">You can't migrate what you can't see. Most organizations have no
             inventory of where RSA, ECC, and legacy crypto live across their code, configs,
             certs, and keys.</p>
-          <p>QuantumVault builds that inventory automatically — across 25+ file types and a
-            34-pattern detection engine — then turns it into a prioritized, trackable migration
+          <p>UniQueS builds that inventory automatically — across 25+ file types and a
+            53-pattern detection engine — then turns it into a prioritized, trackable migration
             plan mapped to the compliance frameworks auditors actually ask about.</p>
         </div>
         <div class="timeline">
@@ -255,9 +256,9 @@
   <section>
     <div class="wrap">
       <div class="stats">
-        <div class="stat"><div class="n">34</div><div class="l">detection patterns</div></div>
-        <div class="stat"><div class="n">5</div><div class="l">compliance frameworks</div></div>
-        <div class="stat"><div class="n">0</div><div class="l">native dependencies</div></div>
+        <div class="stat"><div class="n">53</div><div class="l">detection patterns</div></div>
+        <div class="stat"><div class="n">7</div><div class="l">compliance frameworks</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">data leaves your network</div></div>
         <div class="stat"><div class="n">1</div><div class="l">command to run it all</div></div>
       </div>
     </div>
@@ -271,7 +272,7 @@
       <p class="lead">Not just a scanner — an inventory, a risk model, a worklist, and an audit trail.</p>
       <div class="grid">
         <div class="card"><div class="ic">01</div><h3>Cryptographic discovery</h3>
-          <p>A 34-pattern, language-agnostic scanner finds RSA, ECC (incl. Ed25519/X25519), DSA,
+          <p>A 53-pattern, language-agnostic scanner finds RSA, ECC (incl. Ed25519/X25519), DSA,
             Diffie-Hellman, legacy symmetric (DES/3DES/AES-128), broken hashes (MD5/SHA-1),
             private-key PEMs, JWT/JOSE algorithms, and X.509 certs across 25+ file types.</p></div>
         <div class="card"><div class="ic">02</div><h3>Risk scoring</h3>
@@ -286,8 +287,8 @@
           <p>Every scan is diffed against the last one, flagging findings introduced and removed —
             catching, e.g., a PR that adds a fresh RSA usage before it merges.</p></div>
         <div class="card"><div class="ic">05</div><h3>Compliance automation</h3>
-          <p>Maps findings to FISMA, CISA, FedRAMP, SOC 2, and PCI-DSS controls with pass/gap/fail
-            status, then exports auditor-ready JSON and print-to-PDF HTML reports.</p></div>
+          <p>Maps findings to FISMA, CISA, FedRAMP, SOC 2, PCI-DSS, CNSA 2.0, and NIST CSF 2.0
+            controls as a control-gap view, then exports auditor-ready JSON and print-to-PDF HTML reports.</p></div>
         <div class="card"><div class="ic">06</div><h3>Standards-based exports</h3>
           <p>SARIF 2.1.0 for GitHub code-scanning, a CycloneDX 1.6 CBOM (Cryptography Bill of
             Materials), and filtered CSV for SIEM, spreadsheets, or tickets.</p></div>
@@ -304,7 +305,7 @@
         <div>
           <h3>Run the full platform</h3>
           <p class="hint">Dashboard + API, one command. No external database.</p>
-<pre><span class="c"># from quantumvault/</span>
+<pre><span class="c"># from the repo root</span>
 docker compose up --build
 <span class="c"># dashboard → http://localhost:8080</span>
 <span class="c"># API       → http://localhost:4000</span></pre>
@@ -312,7 +313,7 @@ docker compose up --build
         <div>
           <h3>Gate PRs with the GitHub Action</h3>
           <p class="hint">Surface findings as code-scanning alerts; fail on high+.</p>
-<pre><span class="k">- uses:</span> DemigodDSK/quantumvault@v0.1.0
+<pre><span class="k">- uses:</span> uni-que-s/uniques@v0.1.0
   <span class="k">with:</span>
     <span class="k">path:</span> .
     <span class="k">fail-on:</span> high
@@ -353,11 +354,11 @@ docker compose up --build
     <div class="wrap">
       <span class="kicker">The platform</span>
       <h2>Continuous post-quantum assurance.</h2>
-      <p class="lead">Point QuantumVault at your repositories and it re-scans them on a schedule —
+      <p class="lead">Point UniQueS at your repositories and it re-scans them on a schedule —
         maintaining a living CBOM and flagging new quantum-vulnerable crypto the moment it lands.</p>
       <div class="shot">
         <div class="shot-bar"><i class="r"></i><i class="y"></i><i class="g"></i>
-          <span class="shot-url">quantumvault · Continuous Monitoring</span></div>
+          <span class="shot-url">uniques · Continuous Monitoring</span></div>
         <div class="shot-body">
           <div class="shot-kpis">
             <div class="shot-kpi"><div class="l">Active monitors</div><div class="n">3</div></div>
@@ -402,25 +403,25 @@ docker compose up --build
     <div class="wrap">
       <span class="kicker">From open source to enterprise</span>
       <h2>Start free. Scale to org-wide assurance.</h2>
-      <p class="lead">The scanner is free and MIT-licensed — forever. The platform
-        adds continuous, organization-wide monitoring and auditor-ready compliance
-        evidence for teams under a post-quantum mandate (DORA, PCI-DSS 4.0, NIS2,
-        FedRAMP).</p>
+      <p class="lead">The scanner is free and MIT-licensed — forever. The on-prem platform
+        adds the dashboard, continuous monitoring, and auditor-ready compliance evidence —
+        with a free 30-day trial and a simple annual license, all running inside your network
+        (post-quantum mandates: DORA, PCI-DSS 4.0, NIS2, FedRAMP, CNSA 2.0).</p>
       <div class="grid tiers">
         <div class="card">
           <div class="tier-name">Open Source</div>
           <div class="tier-tag">Free · MIT · available now</div>
           <ul>
-            <li>34-pattern scanner, CLI &amp; GitHub Action</li>
+            <li>53-pattern scanner, CLI &amp; GitHub Action</li>
             <li>Risk-scored findings &amp; posture grade</li>
             <li>SARIF, CBOM &amp; CSV export</li>
             <li><code>--fail-on</code> CI gating</li>
           </ul>
-          <a class="btn" href="https://github.com/DemigodDSK/quantumvault">Use it now</a>
+          <a class="btn" href="https://github.com/uni-que-s/uniques">Use it now</a>
         </div>
         <div class="card">
           <div class="tier-name">Team</div>
-          <div class="tier-tag">Early access</div>
+          <div class="tier-tag">$990/yr · 30-day trial</div>
           <ul>
             <li>Continuous, scheduled multi-repo scans</li>
             <li>Central CBOM inventory + drift over time</li>
@@ -429,7 +430,7 @@ docker compose up --build
         </div>
         <div class="card featured">
           <div class="tier-name">Business</div>
-          <div class="tier-tag">Early access</div>
+          <div class="tier-tag">$4,990/yr · 30-day trial</div>
           <ul>
             <li>Everything in Team, plus:</li>
             <li>Auditor-ready compliance evidence packs</li>
@@ -439,7 +440,7 @@ docker compose up --build
         </div>
         <div class="card">
           <div class="tier-name">Enterprise &amp; Gov</div>
-          <div class="tier-tag">Early access</div>
+          <div class="tier-tag">from $25k/yr</div>
           <ul>
             <li>Self-hosted / FedRAMP-ready deployment</li>
             <li>SLAs &amp; audit support</li>
@@ -453,18 +454,19 @@ docker compose up --build
           <p>A fixed-fee engagement: we inventory your cryptography, rank it for
             post-quantum migration, and deliver an auditor-ready report + CBOM.</p>
           <div class="price">from $2,500 · delivered in days</div>
-          <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Quantum+Readiness+Assessment+request&body=Company%3A%0AContact+email%3A%0AApprox+repos+%2F+estate+size%3A%0ACompliance+drivers+%28FISMA%2FFedRAMP%2FPCI%2FDORA%2Fother%29%3A%0APreferred+tier+%28Starter+%242.5k+%2F+Standard+%247.5k+%2F+Enterprise%29%3A">Book an assessment</a>
+          <div style="margin:-4px 0 16px;font-size:12.5px;font-weight:600;color:var(--accent)">★ Founding offer — first 3 only: $1,500, or free for a design partner</div>
+          <a class="btn primary" href="https://github.com/uni-que-s/uniques/issues/new?title=Quantum+Readiness+Assessment+request&body=Company%3A%0AContact+email%3A%0AApprox+repos+%2F+estate+size%3A%0ACompliance+drivers+%28FISMA%2FFedRAMP%2FPCI%2FDORA%2Fother%29%3A%0APreferred+tier+%28Starter+%242.5k+%2F+Standard+%247.5k+%2F+Enterprise%29%3A">Book an assessment</a>
         </div>
         <div class="access-card">
           <h3>Become a design partner</h3>
           <p>Shaping the platform with a few regulated teams — early access, roadmap
             influence, and locked-in pricing in exchange for honest feedback.</p>
           <div class="price">free · limited spots</div>
-          <a class="btn" href="https://github.com/DemigodDSK/quantumvault/issues/new?title=Early+access+%2F+design+partner+request&body=Company%3A%0AYour+role%3A%0AApprox+engineers%3A%0AWhat%27s+driving+your+PQC+timeline+%28mandate%2Faudit%2Fother%29%3A%0AAnything+else%3A">Apply for early access</a>
+          <a class="btn" href="https://github.com/uni-que-s/uniques/issues/new?title=Early+access+%2F+design+partner+request&body=Company%3A%0AYour+role%3A%0AApprox+engineers%3A%0AWhat%27s+driving+your+PQC+timeline+%28mandate%2Faudit%2Fother%29%3A%0AAnything+else%3A">Apply for early access</a>
         </div>
       </div>
       <p class="priv" style="text-align:center">Prefer to talk privately? Email
-        <a href="mailto:dattasai293@gmail.com?subject=QuantumVault%20inquiry">dattasai293@gmail.com</a>.</p>
+        <a href="mailto:dattasai293@gmail.com?subject=UniQueS%20inquiry">dattasai293@gmail.com</a>.</p>
     </div>
   </section>
 
@@ -473,11 +475,11 @@ docker compose up --build
     <div class="wrap">
       <div class="final">
         <h2>Know your quantum exposure today.</h2>
-        <p>QuantumVault is open source under the MIT license. Clone it, scan a repo, and see your
+        <p>UniQueS is open source under the MIT license. Clone it, scan a repo, and see your
           posture grade in minutes.</p>
         <div class="cta" style="justify-content:center">
-          <a class="btn primary" href="https://github.com/DemigodDSK/quantumvault">Get started on GitHub</a>
-          <a class="btn" href="https://github.com/DemigodDSK/quantumvault/blob/main/SECURITY.md">Security policy</a>
+          <a class="btn primary" href="https://github.com/uni-que-s/uniques">Get started on GitHub</a>
+          <a class="btn" href="https://github.com/uni-que-s/uniques/blob/main/SECURITY.md">Security policy</a>
         </div>
       </div>
     </div>
@@ -486,12 +488,12 @@ docker compose up --build
 
 <footer>
   <div class="wrap frow">
-    <span class="brand"><span class="dot"></span> QuantumVault</span>
+    <span class="brand"><img src="logo.png" alt="" class="logo" /> UniQueS</span>
     <span class="spacer"></span>
-    <a href="https://github.com/DemigodDSK/quantumvault">GitHub</a>
-    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/CHANGELOG.md">Changelog</a>
-    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/SECURITY.md">Security</a>
-    <a href="https://github.com/DemigodDSK/quantumvault/blob/main/LICENSE">MIT License</a>
+    <a href="https://github.com/uni-que-s/uniques">GitHub</a>
+    <a href="https://github.com/uni-que-s/uniques/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/uni-que-s/uniques/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/uni-que-s/uniques/blob/main/LICENSE">MIT License</a>
   </div>
   <div class="wrap" style="margin-top:14px;color:var(--faint);font-size:13px">
     Discover → prioritize → track → prove compliance — for the harvest-now, decrypt-later threat.

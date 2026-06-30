@@ -4,11 +4,26 @@ import { createApp } from "./app.js";
 import { store } from "./store/store.js";
 import { db } from "./store/db.js";
 import { startScheduler, stopScheduler } from "./monitor/scheduler.js";
+import { activateLicense, getLicenseStatus } from "./license/service.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
 
 const app = createApp();
+
+// Headless license activation: if QV_LICENSE is set (e.g. by install.sh / compose
+// env), apply it on boot so a self-hosted deploy can be licensed without touching
+// the UI. Idempotent; a bad key warns but never blocks startup (the operator can
+// still activate via the dashboard). The trial runs automatically when unset.
+if (process.env.QV_LICENSE?.trim()) {
+  try {
+    const s = activateLicense(process.env.QV_LICENSE.trim());
+    console.log(`[license] ${s.message}`);
+  } catch (err) {
+    console.warn(`[license] QV_LICENSE ignored — ${(err as Error).message}. Activate a valid key in the dashboard.`);
+  }
+}
+console.log(`[license] ${getLicenseStatus().message}`);
 
 // Seed an initial scan over the bundled sample target on first boot only, so the
 // dashboard is populated out of the box. On later boots the persisted scan is

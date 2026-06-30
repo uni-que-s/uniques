@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Grace → read-only trial enforcement (v0.4.1)** — instead of a hard lock at
+  expiry, the platform now gives a **7-day grace window** (full access, loud renew
+  banner) and then settles into a **read-only resting state**: a lapsed buyer can
+  still *view* their existing inventory (GET), but new scans and mutations are
+  gated (402). Seeing your own crypto exposure converts better than a wall. Tunable
+  via `QV_GRACE_DAYS`; health/auth/license stay open; the CLI is unaffected.
+
+### Fixed
+
+- **Two field-precision classifier gaps (v0.4.1)** — surfaced by a precision scan
+  of real OSS repos and fixed with qbench staying 100%/100% (now 80 cases):
+  - **Python-docstring false positives** — a crypto name inside a `"""…"""`
+    docstring (e.g. paramiko's "…uses Diffie-Hellman…") was ranked actionable
+    because the tokenizer reset at the first newline. `lexStringSpans` /
+    `maskComments` now recognize triple-quoted strings, so docstring crypto is a
+    low-confidence mention (incl. key-material tokens like `ssh-rsa` named only as
+    a doc example — the never-downgrade rule now yields inside a docstring).
+  - **Java/Kotlin JOSE-alg recall** — a pure RSA/ECDSA signing library (jwtk/jjwt)
+    reported **zero** exposure because `RS256`/`ES256` are base-low (to avoid
+    flagging `["RS256"]` config labels). A bare JOSE-alg token in *code* (a typed
+    constant declaration `SignatureAlgorithm RS256 = …`) is now upgraded to
+    actionable, while a string-value label stays a low mention — jjwt goes from 0
+    to 60 actionable findings.
+
+### Added
+
+- **On-prem license gate + 30-day trial (v0.4.0)** — the commercial v0.1 of the
+  product. The self-hosted **platform** (dashboard, scans, compliance, monitoring,
+  exports) now runs a 30-day trial that auto-starts on first boot, then locks with
+  a clear in-app prompt until a license key is activated. Keys are **offline
+  Ed25519 signed tokens** verified against an embedded public key — **no
+  phone-home**, so it works air-gapped, consistent with "your source never leaves
+  your network." The **free CLI scanner is never gated**. New: `GET /api/license`
+  + `POST /api/license/activate`, a dashboard trial/renewal banner, headless
+  activation via `QV_LICENSE`, founder-only `scripts/gen-license-keypair.ts` +
+  `scripts/issue-license.ts`, and a one-command `./install.sh`. The trial clock is
+  the local DB volume (an accepted v0.1 limit — the signed key, not the trial, is
+  the control for paid use). Enforcement is a graceful soft-lock; health/auth/
+  license endpoints stay reachable so an instance is always recoverable by
+  entering a key.
+
 - **Enum-constant references downgraded — precision worklist cleared (v0.3.10)** —
   the zero-dependency stand-in for the call-vs-reference data flow a full AST would
   give, and the final qbench worklist gap. A bare read of an algorithm enum/class
@@ -305,7 +346,7 @@ First public release. QuantumVault closes the full
 - **CI-native CLI** — `quantumvault` scans any path with table / `--json` /
   `--sarif` / `--cbom` / `--csv` output and `--fail-on <severity>` to gate
   pipelines by exit code.
-- **GitHub Action** — self-contained Docker action (`DemigodDSK/quantumvault`)
+- **GitHub Action** — self-contained Docker action (`uni-que-s/uniques`)
   that emits SARIF for code-scanning and optionally gates pull requests; this
   repo dogfoods it via a self-scan workflow.
 - **Server API** — Express + TypeScript with auth (scrypt + session tokens),
@@ -315,7 +356,7 @@ First public release. QuantumVault closes the full
 - **Persistence** — Node's built-in `node:sqlite`, so there are no native
   dependencies and no external database to run.
 - **Packaging** — `docker compose` one-command stack and pre-built GHCR images
-  (`ghcr.io/demigoddsk/quantumvault-server`, `-web`) published on every push to
+  (`ghcr.io/uni-que-s/quantumvault-server`, `-web`) published on every push to
   `main`.
 
 ### Security
@@ -326,5 +367,5 @@ First public release. QuantumVault closes the full
   `SIGTERM`/`SIGINT`, and returns a JSON error envelope that never leaks 5xx
   internals.
 
-[Unreleased]: https://github.com/DemigodDSK/quantumvault/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/DemigodDSK/quantumvault/releases/tag/v0.1.0
+[Unreleased]: https://github.com/uni-que-s/uniques/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/uni-que-s/uniques/releases/tag/v0.1.0

@@ -51,7 +51,7 @@ This routes the report directly and confidentially to the maintainers.
 
 In scope: the QuantumVault server API, web dashboard, CLI, discovery/scanning
 engine, risk and compliance modules, auth/session handling, the published Docker
-images (`ghcr.io/demigoddsk/quantumvault-*`), and the GitHub Action
+images (`ghcr.io/uni-que-s/quantumvault-*`), and the GitHub Action
 (`action.yml` / `action.Dockerfile`).
 
 Out of scope: vulnerabilities in third-party dependencies (report those upstream,

@@ -27,13 +27,13 @@ interface Args {
 
 const SEVERITY_RANK: Record<Severity, number> = { critical: 4, high: 3, medium: 2, low: 1 };
 
-const HELP = `QuantumVault — quantum-safe cryptography scanner
+const HELP = `UniQueS — universal quantum scanner (finds quantum-vulnerable cryptography)
 
 Usage: quantumvault <path> [options]
 
 Scans a directory for quantum-vulnerable cryptographic assets (RSA, ECC, DSA,
 Diffie-Hellman, legacy symmetric/hashes, key material) and reports risk-scored
-findings. Reuses the same engine as the QuantumVault platform.
+findings. Reuses the same engine as the UniQueS platform.
 
 Options:
   --json            Output findings as JSON

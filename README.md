@@ -1,23 +1,26 @@
-# QuantumVault
+# UniQueS — the Universal Quantum Scanner
 
-[![CI](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml/badge.svg)](https://github.com/DemigodDSK/quantumvault/actions/workflows/ci.yml)
-[![Live site](https://img.shields.io/badge/live%20site-demigoddsk.github.io%2Fquantumvault-2563eb)](https://demigoddsk.github.io/quantumvault/)
+[![CI](https://github.com/uni-que-s/uniques/actions/workflows/ci.yml/badge.svg)](https://github.com/uni-que-s/uniques/actions/workflows/ci.yml)
+[![Live site](https://img.shields.io/badge/live%20site-uni-que-s.github.io%2Funiques-2563eb)](https://uni-que-s.github.io/uniques/)
 
-### 🔗 [**See it live → demigoddsk.github.io/quantumvault**](https://demigoddsk.github.io/quantumvault/)
+### 🔗 [**See it live → uni-que-s.github.io/uniques**](https://uni-que-s.github.io/uniques/)
 
-Overview, product showcase, and a [**zero-install live demo**](https://demigoddsk.github.io/quantumvault/demo/) — the real dashboard running fully in your browser, no install or backend required.
+Overview, product showcase, and a [**zero-install live demo**](https://uni-que-s.github.io/uniques/demo/) — the real dashboard running fully in your browser, no install or backend required.
 
 > **Find the quantum-vulnerable cryptography in your codebase and produce the CBOM regulators now require — running entirely on-prem, so your source never leaves your network.**
 
-**Quantum-safe cryptography platform.** QuantumVault discovers quantum-vulnerable
-cryptographic assets across a codebase, scores them for post-quantum migration
-priority, tracks remediation to completion, and auto-generates control-gap /
-audit-evidence reports mapped to FISMA, CISA, FedRAMP, SOC 2, PCI-DSS, CNSA 2.0,
-and NIST CSF 2.0.
+**A cryptography discovery & inventory scanner — not a vault.** UniQueS finds the
+quantum-vulnerable cryptographic assets (RSA, ECC, DSA, Diffie-Hellman, legacy
+symmetric/hashes, key material) hiding across your codebase, scores them for
+post-quantum migration priority, tracks remediation to completion, and generates
+the standards **CBOM** plus control-gap / audit-evidence reports mapped to FISMA,
+CISA, FedRAMP, SOC 2, PCI-DSS, CNSA 2.0, and NIST CSF 2.0.
 
-It closes the full loop — **discover → prioritize → track → prove compliance** —
-for the "harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at
-risk once a cryptographically-relevant quantum computer exists.
+It doesn't *make* you quantum-safe — it tells you, honestly, where you aren't yet.
+It closes the loop — **discover → prioritize → track → prove** — for the
+"harvest-now, decrypt-later" threat that puts today's RSA/ECC traffic at risk once
+a cryptographically-relevant quantum computer exists. Everything runs on-prem; your
+source never leaves your network.
 
 ## Features
 
@@ -98,10 +101,16 @@ thing to swap to scale out (e.g. Postgres + Elasticsearch).
 ## Quick start — Docker (one command)
 
 ```bash
-# from quantumvault/
+# from the repo root
+./install.sh                      # checks Docker, builds, waits for health, prints the URL
+# — or, equivalently —
 docker compose up --build
 # dashboard: http://localhost:8080   API: http://localhost:4000
 ```
+
+`./install.sh` is the friendliest path: it verifies Docker, brings the stack up,
+waits until the API is healthy, and prints where to go. It starts on the free
+**30-day trial** (no key needed); pass `--license UQS1.…` to license it headlessly.
 
 The web tier (nginx) proxies `/api` to the server on the compose network. Data
 persists in the `qv-data` volume. The server image bundles `git` so repo scanning
@@ -112,14 +121,35 @@ works inside the container.
 Every push to `main` publishes images (tagged `latest` and the commit SHA):
 
 ```
-ghcr.io/demigoddsk/quantumvault-server
-ghcr.io/demigoddsk/quantumvault-web
+ghcr.io/uni-que-s/quantumvault-server
+ghcr.io/uni-que-s/quantumvault-web
 ```
+
+## Licensing & the 30-day trial
+
+The **CLI scanner is free and open source (MIT) — forever, never gated.** The
+self-hosted **platform** (dashboard, continuous monitoring, compliance reporting,
+report exports) runs a **30-day trial** that starts automatically on first boot,
+then asks for a license key.
+
+- **Offline & air-gapped.** License keys are Ed25519-signed tokens verified against
+  a public key baked into the build — **no phone-home, ever.** It works on a
+  network island, consistent with "your source never leaves your network."
+- **Activate** a key in the dashboard banner, or headlessly via the `QV_LICENSE`
+  environment variable (`./install.sh --license UQS1.…` or compose env).
+- **At expiry**, a 7-day **grace** window keeps full access (with a loud renew
+  banner), then the platform settles into a **read-only resting state**: your
+  existing inventory stays viewable, but new scans and changes are blocked until a
+  key is activated. `/api/health`, sign-in, and license activation always stay
+  reachable, so an instance is never bricked. The CLI keeps working regardless.
+- **Pricing** (annual, on-prem): Team, Business, and Enterprise tiers — see
+  [the pricing page](https://uni-que-s.github.io/#pricing). Keys are issued per
+  organization; there is no per-machine activation server to call.
 
 ## Run locally (dev)
 
 ```bash
-# from quantumvault/
+# from the repo root
 npm run install:all
 
 # terminal 1 — API on :4000 (runs a real seed scan over sample-target on boot)
@@ -138,7 +168,7 @@ risk breakdown and set its remediation status.
 The same engine ships as a CLI for CI pipelines and local checks:
 
 ```bash
-# from quantumvault/server  (dev: npm run cli -- <args>;  built: quantumvault <args>)
+# from the repo rootserver  (dev: npm run cli -- <args>;  built: quantumvault <args>)
 npm run cli -- ./path/to/repo                 # human-readable summary
 npm run cli -- ./path/to/repo --sarif > out.sarif   # GitHub code-scanning
 npm run cli -- . --fail-on high               # exit 1 if any finding is >= high
@@ -198,7 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DemigodDSK/quantumvault@v0.3.3   # pin to a release tag (or a commit SHA)
+      - uses: uni-que-s/uniques@v0.3.3   # pin to a release tag (or a commit SHA)
         with:
           path: .
           fail-on: high          # optional: fail the PR on a high+ finding
@@ -223,7 +253,7 @@ quantumvault . --write-baseline quantumvault-baseline.json
 ```
 
 ```yaml
-      - uses: DemigodDSK/quantumvault@v0.3.3
+      - uses: uni-que-s/uniques@v0.3.3
         with:
           path: .
           fail-on: high

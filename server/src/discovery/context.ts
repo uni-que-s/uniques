@@ -21,6 +21,25 @@ export const C_STYLE = new Set([
 ]);
 /** Languages whose comments are `#` line. */
 export const HASH_STYLE = new Set(["python", "ruby", "yaml", "config", "terraform", "php"]);
+/** Languages with triple-quoted string literals that legitimately span newlines
+ *  (Python docstrings `"""…"""` / `'''…'''`, Scala/Kotlin raw strings). Without
+ *  this, the single-quote tokenizer resets at the first newline and a crypto name
+ *  in a docstring is misread as live code instead of a prose mention. */
+export const TRIPLE_QUOTE = new Set(["python", "scala", "kotlin"]);
+
+/** Consume a triple-quoted string starting at `k` (where the opening triple is);
+ *  returns the index just past the closing triple (or end-of-content). */
+export function tripleQuoteEnd(content: string, k: number, q: string): number {
+  let j = k + 3;
+  while (j < content.length && !(content[j] === q && content[j + 1] === q && content[j + 2] === q)) j++;
+  return j < content.length ? j + 3 : content.length;
+}
+/** Is `content` starting a triple quote (`"""` or `'''`) at index k? */
+export function tripleQuoteAt(content: string, k: number): string | null {
+  const ch = content[k];
+  if ((ch === '"' || ch === "'") && content[k + 1] === ch && content[k + 2] === ch) return ch;
+  return null;
+}
 
 /**
  * Return the [start, end) offsets of every string-literal span in `content`,
@@ -38,6 +57,7 @@ export function lexStringSpans(content: string, language: string): Array<[number
   if (HASH_STYLE.has(language)) lineMarkers.push("#");
   const blockComments = C_STYLE.has(language);
 
+  const triple = TRIPLE_QUOTE.has(language);
   const spans: Array<[number, number]> = [];
   let inBlock = false;
   let quote = "";
@@ -59,6 +79,14 @@ export function lexStringSpans(content: string, language: string): Array<[number
       continue;
     }
     if (blockComments && ch === "/" && content[k + 1] === "*") { k++; inBlock = true; continue; }
+    // Triple-quoted (multi-line) string: a Python docstring etc. The whole block
+    // is one span so a crypto name inside it is classified as a prose mention.
+    if (triple && tripleQuoteAt(content, k)) {
+      const end = tripleQuoteEnd(content, k, ch);
+      spans.push([k, end]);
+      k = end - 1;
+      continue;
+    }
     if (ch === '"' || ch === "'" || ch === "`") { quote = ch; quoteStart = k; continue; }
     if (lineMarkers.some((m) => content.startsWith(m, k))) {
       while (k < content.length && content[k] !== "\n") k++; // skip to end of line
@@ -148,6 +176,46 @@ export function isMentionStringAt(content: string, spans: Array<[number, number]
       const inner = content.slice(s + 1, e - 1); // strip the quotes
       return looksLikeMention(inner) || looksLikePathOrUrl(inner);
     }
+  }
+  return false;
+}
+
+/**
+ * Is the match at `offset` a bare CODE token — i.e. NOT inside any string literal?
+ * Used to upgrade a JOSE-algorithm identifier (`SignatureAlgorithm RS256 = …`, a
+ * real typed declaration) above its conservative base confidence, while a token
+ * that only ever appears as a string value (`["RS256"]`, a config list) stays a
+ * low-confidence mention.
+ */
+export function isCodeTokenAt(spans: Array<[number, number]>, offset: number): boolean {
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [s, e] = spans[mid];
+    if (offset < s) hi = mid - 1;
+    else if (offset >= e) lo = mid + 1;
+    else return false; // inside a string span
+  }
+  return true;
+}
+
+/**
+ * Is the match at `offset` inside a TRIPLE-QUOTED docstring (`"""…"""`/`'''…'''`)?
+ * A docstring is unambiguously prose, so even key-material tokens (`ssh-rsa` named
+ * as an example in a `:param` doc) are mentions there — unlike an authorized_keys
+ * file or config, which is never a docstring. Lets the never-downgrade rule yield
+ * for documentation without exposing real key files.
+ */
+export function isInTripleQuoteAt(content: string, spans: Array<[number, number]>, offset: number): boolean {
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [s, e] = spans[mid];
+    if (offset < s) hi = mid - 1;
+    else if (offset >= e) lo = mid + 1;
+    else return tripleQuoteAt(content, s) !== null;
   }
   return false;
 }

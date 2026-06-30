@@ -18,8 +18,35 @@ import { assetsToSarif } from "../discovery/sarif.js";
 import { openApiDocument } from "../openapi.js";
 import { getRiskWeights } from "../risk/scorer.js";
 import { ASSET_STATUSES, type AssetStatus } from "../types.js";
+import { getLicenseStatus } from "../license/service.js";
 
 export const api = Router();
+
+// Paths served regardless of license state: liveness, the API contract, and the
+// license endpoints themselves (so an operator can always check status and
+// activate a key). `/license` + `/license/activate` are handled by a router
+// mounted ahead of this one; listed here for clarity / defense in depth.
+const LICENSE_OPEN_PATHS = new Set(["/health", "/openapi.json", "/license", "/license/activate"]);
+
+// License gate. The free CLI is never gated (it doesn't go through the server);
+// here we gate the *platform*. ENFORCEMENT POLICY (founder's call): expiry cascades
+// active → grace (full access, loud banner) → read-only RESTING STATE, where a
+// lapsed buyer can still VIEW their inventory (GET) but can't run new scans or
+// mutate data — seeing your own exposure converts better than a hard wall. Reads
+// stay open in read-only; only writes (POST/PATCH/PUT/DELETE) 402. health/auth/
+// license are always open so an instance is recoverable by entering a key.
+const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+api.use((req, res, next) => {
+  if (req.method === "OPTIONS" || LICENSE_OPEN_PATHS.has(req.path)) return next();
+  const status = getLicenseStatus();
+  if (status.active) return next();
+  if (status.readOnly && READ_METHODS.has(req.method)) return next();
+  res.status(402).json({
+    error: status.readOnly ? "license_required_for_writes" : "license_required",
+    message: status.message,
+    license: status,
+  });
+});
 
 // Scanning clones/walks a whole codebase, so it's far more costly than a normal
 // request. Throttle per org (not per IP) so one tenant's bulk scanning can't

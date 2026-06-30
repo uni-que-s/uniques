@@ -2,6 +2,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import cors from "cors";
 import { api } from "./routes/api.js";
 import { authRouter } from "./routes/auth.js";
+import { licenseRouter } from "./routes/license.js";
 import { withAuth } from "./auth/middleware.js";
 import { corsOptions, securityHeaders } from "./security.js";
 import { requestLogger } from "./logging.js";
@@ -23,6 +24,9 @@ export function createApp(): Express {
   app.use(express.json());
   app.use("/api", withAuth);
   app.use("/api/auth", authRouter);
+  // License status/activation is mounted before the gated `api` router so it
+  // stays reachable even when the trial has lapsed and no key is active.
+  app.use("/api/license", licenseRouter);
   app.use("/api", api);
 
   // Unmatched API routes get a JSON 404 rather than Express's default HTML.

@@ -2,7 +2,19 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
 import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
-import { C_STYLE, HASH_STYLE, lexStringSpans, isMentionStringAt, isDisableDirectiveAt, isEnumConstRefAt } from "./context.js";
+import {
+  C_STYLE,
+  HASH_STYLE,
+  TRIPLE_QUOTE,
+  lexStringSpans,
+  isMentionStringAt,
+  isDisableDirectiveAt,
+  isEnumConstRefAt,
+  isCodeTokenAt,
+  isInTripleQuoteAt,
+  tripleQuoteAt,
+  tripleQuoteEnd,
+} from "./context.js";
 
 const IGNORE_FILE = ".quantumvaultignore";
 
@@ -176,7 +188,8 @@ export function maskComments(content: string, language: string): string {
   if (C_STYLE.has(language)) lineMarkers.push("//");
   if (HASH_STYLE.has(language)) lineMarkers.push("#");
   const blockComments = C_STYLE.has(language);
-  if (lineMarkers.length === 0 && !blockComments) return content;
+  const triple = TRIPLE_QUOTE.has(language);
+  if (lineMarkers.length === 0 && !blockComments && !triple) return content;
 
   let out = "";
   let inBlock = false;
@@ -201,6 +214,15 @@ export function maskComments(content: string, language: string): string {
       continue;
     }
     if (blockComments && ch === "/" && content[k + 1] === "*") { out += "  "; k++; inBlock = true; continue; }
+    // Preserve a triple-quoted string verbatim (it's a string, not a comment) so a
+    // crypto name inside a docstring still matches and is classified as a mention —
+    // and a stray `#`/quote inside it can't be misread as a comment.
+    if (triple && tripleQuoteAt(content, k)) {
+      const end = tripleQuoteEnd(content, k, ch);
+      out += content.slice(k, end);
+      k = end - 1;
+      continue;
+    }
     if (ch === '"' || ch === "'" || ch === "`") { quote = ch; out += ch; continue; }
     const isLineComment = lineMarkers.some((m) => content.startsWith(m, k));
     if (isLineComment) {
@@ -285,6 +307,8 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         let mention = true;
         let disabled = true;
         let enumRef = true;
+        let docstring = true; // every occurrence sits inside a triple-quoted docstring
+        let codeToken = false; // any occurrence is a bare code token (not in a string)
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
@@ -293,6 +317,8 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           if (mention && !isMentionStringAt(normalized, stringSpans, off)) mention = false;
           if (disabled && !isDisableDirectiveAt(normalized, stringSpans, off, endOff)) disabled = false;
           if (enumRef && !isEnumConstRefAt(normalized, off, endOff, occ[0])) enumRef = false;
+          if (docstring && !isInTripleQuoteAt(normalized, stringSpans, off)) docstring = false;
+          if (!codeToken && isCodeTokenAt(stringSpans, off)) codeToken = true;
           if (!mention && !disabled && !enumRef) break;
         }
         if (!matched) continue;
@@ -309,7 +335,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

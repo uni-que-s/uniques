@@ -7,6 +7,7 @@ import Compliance from "./pages/Compliance";
 import Monitoring from "./pages/Monitoring";
 import History from "./pages/History";
 import AuthModal from "./components/AuthModal";
+import LicenseBanner from "./components/LicenseBanner";
 import { useAuth } from "./lib/auth";
 import { getHealth } from "./lib/api";
 
@@ -29,7 +30,7 @@ function VersionTag() {
       });
   }, []);
   return (
-    <div className="px-2 text-[10px] text-slate-600" title={`QuantumVault v${info.version}`}>
+    <div className="px-2 text-[10px] text-slate-600" title={`UniQueS v${info.version}`}>
       <span className="font-mono text-slate-500">v{info.version}</span>
       {info.patterns != null && <span> · {info.patterns} patterns</span>}
     </div>
@@ -80,11 +81,11 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
     <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-slate-800 bg-slate-950/80 px-4 py-6">
       <div className="flex items-center gap-2 px-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 text-lg font-black text-slate-950">
-          Q
+          U
         </div>
         <div>
-          <div className="text-sm font-bold tracking-tight text-white">QuantumVault</div>
-          <div className="text-[10px] uppercase tracking-widest text-slate-500">Quantum-Safe</div>
+          <div className="text-sm font-bold tracking-tight text-white">UniQueS</div>
+          <div className="text-[10px] uppercase tracking-widest text-slate-500">Universal Quantum Scanner</div>
         </div>
       </div>
 
@@ -129,7 +130,7 @@ function DemoBanner() {
         — read-only, populated by scanning real OSS libraries (auth0/node-jsonwebtoken, pyjwt, golang-jwt, paramiko).
       </span>
       <a
-        href="https://github.com/DemigodDSK/quantumvault"
+        href="https://github.com/uni-que-s/uniques"
         className="font-semibold text-white underline decoration-violet-400 underline-offset-2 hover:text-violet-200"
       >
         Install it to scan your own code →
@@ -143,7 +144,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Sidebar onSignIn={() => setAuthOpen(true)} />
-      {IS_DEMO && <DemoBanner />}
+      {IS_DEMO ? <DemoBanner /> : <LicenseBanner />}
       <main className="ml-60 px-8 py-7">
         <Routes>
           <Route path="/" element={<Dashboard onRequireAuth={() => setAuthOpen(true)} />} />

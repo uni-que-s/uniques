@@ -98,6 +98,11 @@ db.exec(`
     run_count        INTEGER NOT NULL DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS app_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_assets_scan ON assets(scan_id);
   CREATE INDEX IF NOT EXISTS idx_assets_org ON assets(org_id);
   CREATE INDEX IF NOT EXISTS idx_scans_org ON scans(org_id);

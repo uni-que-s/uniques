@@ -3,6 +3,9 @@ services:
     build: ./server
     environment:
       - QV_DB_PATH=/app/data/quantumvault.db
+      # On-prem license key. Leave unset for the 30-day trial; set it (or pass
+      # QV_LICENSE in your shell / .env) to license the platform headlessly.
+      - QV_LICENSE=${QV_LICENSE:-}
       # API is same-origin behind nginx, so allow-any is safe by default. If you
       # expose port 4000 directly, lock it down to your dashboard origin(s):
       # - QV_CORS_ORIGIN=https://app.quantumvault.example

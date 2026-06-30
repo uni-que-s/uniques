@@ -40,6 +40,23 @@ export interface Health {
 }
 export const getHealth = () => http.get<Health>("/health").then((r) => r.data);
 
+/** License/trial state of the self-hosted platform (from /api/license). */
+export interface LicenseStatus {
+  state: "licensed" | "trial" | "grace" | "readonly";
+  active: boolean;
+  /** Read-only resting state: existing data is viewable, new scans/mutations blocked. */
+  readOnly: boolean;
+  edition: string | null;
+  org: string | null;
+  expiresAt: string | null;
+  daysRemaining: number;
+  reason: "licensed" | "trial" | "trial_grace" | "license_grace" | "trial_readonly" | "license_readonly";
+  message: string;
+}
+export const getLicense = () => http.get<LicenseStatus>("/license").then((r) => r.data);
+export const activateLicense = (key: string) =>
+  http.post<LicenseStatus>("/license/activate", { key }).then((r) => r.data);
+
 export const signup = (email: string, password: string, orgName?: string) =>
   http.post<{ token: string; user: AuthUser }>("/auth/signup", { email, password, orgName }).then((r) => r.data);
 export const login = (email: string, password: string) =>

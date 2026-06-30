@@ -762,14 +762,26 @@ const KEY_MATERIAL = new Set<string>([
  * patterns) would trade recall for precision; a looser one would surface more as
  * real. Tune here.
  */
+// JOSE algorithm-identifier patterns whose base confidence is deliberately "low"
+// (the token can be a config label, e.g. `["RS256"]`). But when the SAME token is
+// a bare CODE identifier — a typed constant declaration like
+// `SignatureAlgorithm RS256 = …` in a Java/Kotlin crypto library — it is a real
+// use, not a label, so it earns "medium". A token that only ever appears as a
+// string value is NOT upgraded (stays a low possible-mention).
+const CODE_TOKEN_UPGRADE = new Set<string>(["jwt-rsa-alg", "jwt-ecdsa-alg"]);
+
 export function resolveConfidence(
   patternId: string,
-  ctx: { mention: boolean; disabled?: boolean; enumRef?: boolean },
+  ctx: { mention: boolean; disabled?: boolean; enumRef?: boolean; codeToken?: boolean; docstring?: boolean },
 ): Confidence {
   const base = confidenceFor(patternId);
   if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
   if (ctx.enumRef) return "low"; // a bare enum-constant read is a reference, not a use
-  if (ctx.mention && !KEY_MATERIAL.has(patternId)) return "low";
+  if (ctx.codeToken && CODE_TOKEN_UPGRADE.has(patternId)) return "medium"; // bare code JOSE alg = real use
+  // A prose mention downgrades — for key material only when it's inside a
+  // triple-quoted docstring (unambiguous prose; an authorized_keys file or config
+  // is never a docstring, so real keys keep their never-downgrade protection).
+  if (ctx.mention && (!KEY_MATERIAL.has(patternId) || ctx.docstring)) return "low";
   return base;
 }
 
