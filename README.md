@@ -1,4 +1,4 @@
-# UniQueS — the Universal Quantum Scanner
+# UniQueS — The Universal Quantum Scanner
 
 [![CI](https://github.com/uni-que-s/uniques/actions/workflows/ci.yml/badge.svg)](https://github.com/uni-que-s/uniques/actions/workflows/ci.yml)
 [![Live site](https://img.shields.io/badge/live%20site-uni-que-s.github.io%2Funiques-2563eb)](https://uni-que-s.github.io/uniques/)
