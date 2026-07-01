@@ -81,11 +81,13 @@ function daysUntil(fromISO: string, toISO: string): number {
   return Math.round((Date.parse(`${toISO}T00:00:00Z`) - Date.parse(`${fromISO}T00:00:00Z`)) / DAY_MS);
 }
 
-/** Auto-start the trial clock on first read; returns its start time in ms. */
-function trialStartMs(): number {
+/** Auto-start the trial clock on first read; returns its start time in ms. Uses
+ *  the caller's `now` so a fresh trial's start == now exactly (otherwise a stray
+ *  internal `new Date()` a millisecond later rounds daysRemaining up to 31). */
+function trialStartMs(now: Date): number {
   let ts = getMeta(META_TRIAL_START);
   if (!ts) {
-    ts = new Date().toISOString();
+    ts = now.toISOString();
     setMeta(META_TRIAL_START, ts);
   }
   return Date.parse(ts);
@@ -104,7 +106,7 @@ interface Entitlement {
 /** The currently-governing entitlement: an activated, verifiable license if one
  *  is stored; otherwise the (auto-started) trial. A stored key that no longer
  *  verifies is ignored — we fall back to the trial rather than failing open. */
-function currentEntitlement(): Entitlement {
+function currentEntitlement(now: Date): Entitlement {
   const stored = getMeta(META_LICENSE_KEY);
   if (stored) {
     const payload = verifyLicenseToken(stored);
@@ -115,7 +117,7 @@ function currentEntitlement(): Entitlement {
       return { kind: "license", edition: payload.edition, org: payload.org, expiryMs, expiresAt: payload.expires };
     }
   }
-  const expiryMs = trialStartMs() + TRIAL_DAYS * DAY_MS;
+  const expiryMs = trialStartMs(now) + TRIAL_DAYS * DAY_MS;
   return { kind: "trial", edition: "trial", org: null, expiryMs, expiresAt: isoDate(expiryMs) };
 }
 
@@ -127,7 +129,7 @@ function currentEntitlement(): Entitlement {
  *              scans and mutations are blocked. The free CLI is never affected.
  */
 export function getLicenseStatus(now: Date = new Date()): LicenseStatus {
-  const ent = currentEntitlement();
+  const ent = currentEntitlement(now);
   const nowMs = now.getTime();
   const graceEndMs = ent.expiryMs + GRACE_DAYS * DAY_MS;
   const isLic = ent.kind === "license";

@@ -1,17 +1,20 @@
-import { createPublicKey, verify as cryptoVerify, type KeyObject } from "node:crypto";
-import { licensePublicKeyPem } from "./keys.js";
+import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
+import { licensePublicKey } from "./keys.js";
 
 /**
- * License token wire format (compact, offline-verifiable, no dependencies):
+ * License token wire format (compact, offline-verifiable, POST-QUANTUM):
  *
- *     UQS1.<payloadB64url>.<signatureB64url>
+ *     UQS2.<payloadB64url>.<signatureB64url>
  *
  * - `payloadB64url` is base64url(JSON.stringify(LicensePayload)).
- * - The Ed25519 signature covers the exact ASCII bytes `UQS1.<payloadB64url>`,
- *   so the version prefix and payload are both bound — you cannot swap the prefix
- *   or mutate a single byte of the payload without invalidating the signature.
+ * - The signature is **ML-DSA-65 (FIPS 204)** — a NIST post-quantum lattice
+ *   signature — over the exact ASCII bytes `UQS2.<payloadB64url>`, so the version
+ *   prefix and the entire payload are bound: you cannot swap the prefix or mutate
+ *   a byte of the payload without invalidating the signature. No RSA/ECC anywhere.
+ * - `UQS2` = ML-DSA. (`UQS1` was the pre-1.0 Ed25519 scheme and is no longer
+ *   accepted — a UQS1 token simply fails the prefix check.)
  */
-export const LICENSE_TOKEN_PREFIX = "UQS1";
+export const LICENSE_TOKEN_PREFIX = "UQS2";
 
 export interface LicensePayload {
   /** Unique license id — for support, renewals, and (future) revocation lists. */
@@ -28,18 +31,9 @@ export interface LicensePayload {
   expires: string;
 }
 
-// Ed25519 signatures are always exactly 64 bytes — used as a cheap early reject.
-const ED25519_SIG_BYTES = 64;
+// ML-DSA-65 signatures are a fixed 3309 bytes — used as a cheap early reject.
+const ML_DSA_SIG_BYTES = 3309;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-// Cache the parsed KeyObject, re-deriving only if the active PEM changes (the env
-// override can differ between processes / tests).
-let cached: { pem: string; key: KeyObject } | null = null;
-function publicKey(): KeyObject {
-  const pem = licensePublicKeyPem();
-  if (!cached || cached.pem !== pem) cached = { pem, key: createPublicKey(pem) };
-  return cached.key;
-}
 
 /** base64url → string, for issuing (the issuer encodes the payload the same way). */
 export function encodePayload(payload: LicensePayload): string {
@@ -47,11 +41,11 @@ export function encodePayload(payload: LicensePayload): string {
 }
 
 /**
- * Verify a license token's signature against the active public key and return the
- * decoded payload — ONLY if the signature is authentic. Deliberately does NOT
- * check expiry: callers apply their own policy, which keeps a genuine-but-expired
- * key distinguishable from a forgery. Never throws; any malformed, mistyped, or
- * tampered input returns null.
+ * Verify a license token's ML-DSA signature against the active public key and
+ * return the decoded payload — ONLY if the signature is authentic. Deliberately
+ * does NOT check expiry: callers apply their own policy, which keeps a
+ * genuine-but-expired key distinguishable from a forgery. Never throws; any
+ * malformed, mistyped, or tampered input returns null.
  */
 export function verifyLicenseToken(token: unknown): LicensePayload | null {
   if (typeof token !== "string") return null;
@@ -61,12 +55,12 @@ export function verifyLicenseToken(token: unknown): LicensePayload | null {
   if (prefix !== LICENSE_TOKEN_PREFIX || !payloadB64 || !sigB64) return null;
 
   const sig = Buffer.from(sigB64, "base64url");
-  if (sig.length !== ED25519_SIG_BYTES) return null;
+  if (sig.length !== ML_DSA_SIG_BYTES) return null;
 
   const signingInput = Buffer.from(`${prefix}.${payloadB64}`, "utf8");
   let authentic = false;
   try {
-    authentic = cryptoVerify(null, signingInput, publicKey(), sig);
+    authentic = ml_dsa65.verify(new Uint8Array(sig), new Uint8Array(signingInput), licensePublicKey());
   } catch {
     return null; // malformed key / signature bytes
   }
@@ -89,7 +83,7 @@ function isLicensePayload(p: unknown): p is LicensePayload {
     typeof o.org === "string" &&
     typeof o.edition === "string" &&
     typeof o.seats === "number" &&
-    Number.isFinite(o.seats) &&
+    Number.isInteger(o.seats) &&
     typeof o.issued === "string" &&
     ISO_DATE.test(o.issued) &&
     typeof o.expires === "string" &&

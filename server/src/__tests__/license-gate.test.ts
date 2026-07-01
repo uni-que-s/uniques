@@ -6,13 +6,14 @@ import type { Server } from "node:http";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { generateKeyPairSync, sign } from "node:crypto";
+import { randomBytes } from "node:crypto";
+import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
 
 // Force the trial to be already-expired (length 0) so the gate's locked path is
-// exercised on a fresh instance, and pin a test signing key so we can mint a
-// real key to unlock it.
-const issuer = generateKeyPairSync("ed25519");
-process.env.QV_LICENSE_PUBKEY = issuer.publicKey.export({ type: "spki", format: "pem" }).toString();
+// exercised on a fresh instance, and pin a test ML-DSA signing key so we can mint
+// a real key to unlock it.
+const issuer = ml_dsa65.keygen(new Uint8Array(randomBytes(32)));
+process.env.QV_LICENSE_PUBKEY = Buffer.from(issuer.publicKey).toString("base64");
 process.env.QV_TRIAL_DAYS = "0";
 process.env.QV_GRACE_DAYS = "0"; // skip grace → land straight in the read-only resting state
 process.env.QV_LOG = "off";
@@ -32,9 +33,8 @@ function mintKey(): string {
     expires: new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10),
   };
   const b64 = encodePayload(payload);
-  const sig = sign(null, Buffer.from(`${LICENSE_TOKEN_PREFIX}.${b64}`, "utf8"), issuer.privateKey).toString(
-    "base64url",
-  );
+  const sigInput = new Uint8Array(Buffer.from(`${LICENSE_TOKEN_PREFIX}.${b64}`, "utf8"));
+  const sig = Buffer.from(ml_dsa65.sign(sigInput, issuer.secretKey)).toString("base64url");
   return `${LICENSE_TOKEN_PREFIX}.${b64}.${sig}`;
 }
 

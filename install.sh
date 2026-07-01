@@ -2,9 +2,10 @@
 #
 # UniQueS — one-command on-prem install.
 #
-#   ./install.sh                      # start with the free 30-day trial
-#   ./install.sh --license UQS1.xxx   # start fully licensed
-#   QV_LICENSE=UQS1.xxx ./install.sh  # same, via environment
+#   ./install.sh                        # start with the free 30-day trial
+#   ./install.sh --license UQS2.xxx     # start fully licensed
+#   ./install.sh --license-file key.txt # read the key from a file (post-quantum keys are large)
+#   QV_LICENSE=UQS2.xxx ./install.sh    # same, via environment
 #
 # Brings up the self-hosted stack (server + dashboard) with Docker Compose, waits
 # for it to come healthy, applies a license key if given, and prints where to go.
@@ -19,7 +20,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --license) LICENSE="${2:-}"; shift 2 ;;
     --license=*) LICENSE="${1#*=}"; shift ;;
-    -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --license-file) LICENSE="$(tr -d '[:space:]' < "${2:?--license-file needs a path}")"; shift 2 ;;
+    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -75,6 +77,6 @@ cat <<EOF
 Next:
   • Open the dashboard and scan a repository — your source never leaves this host.
   • No key yet? You're on the 30-day trial. Activate later in the dashboard,
-    or re-run:  ./install.sh --license UQS1.your-key
+    or re-run:  ./install.sh --license-file your-key.txt
   • Stop / start:  ${COMPOSE[*]} down   |   ${COMPOSE[*]} up -d
 EOF

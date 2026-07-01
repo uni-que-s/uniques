@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Post-quantum license signing (v0.5.0)** — the product now signs its own license
+  keys with **ML-DSA-65 (FIPS 204)**, the NIST post-quantum lattice signature —
+  replacing the Ed25519 (elliptic-curve) signing used in v0.4.x. The consequence
+  is the point: **UniQueS's own codebase now contains no quantum-vulnerable
+  cryptography, so scanning our repo comes back clean** (we eat our own dog food —
+  the only crypto scanner whose own product is already post-quantum). Uses
+  **`@noble/post-quantum`** — a pure-JS implementation, **no native/WASM
+  dependency**, so the zero-native-dependency / air-gap posture is fully
+  preserved and licensing still works offline with no phone-home. Token prefix is
+  now `UQS2`; pre-1.0 `UQS1` (Ed25519) keys are no longer accepted. Post-quantum
+  signatures are large, so license keys are now ~4.5 KB (the dashboard key box is
+  a textarea; `install.sh` accepts `--license-file`). The 32-byte signing seed
+  (`server/.license-signing-seed`, gitignored) deterministically regenerates the
+  keypair for the founder-only issuer.
+
 ### Added
 
 - **Grace → read-only trial enforcement (v0.4.1)** — instead of a hard lock at

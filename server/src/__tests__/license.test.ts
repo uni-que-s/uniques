@@ -3,16 +3,17 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { generateKeyPairSync, sign, type KeyObject } from "node:crypto";
+import { randomBytes } from "node:crypto";
+import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
 import type { LicensePayload } from "../license/verify.js";
 
 // --- Test signing identity -------------------------------------------------
-// Pin a throwaway keypair as the verification key (env override) and sign test
-// tokens with its private half. This exercises the real verify path without ever
-// needing the founder's private .pem — so it runs in CI where that file is absent.
-const issuer = generateKeyPairSync("ed25519");
-const foreign = generateKeyPairSync("ed25519"); // a different, untrusted signer
-process.env.QV_LICENSE_PUBKEY = issuer.publicKey.export({ type: "spki", format: "pem" }).toString();
+// Pin a throwaway ML-DSA keypair as the verification key (env override) and sign
+// test tokens with its secret half. This exercises the real verify path without
+// ever needing the founder's signing seed — so it runs in CI where it's absent.
+const issuer = ml_dsa65.keygen(new Uint8Array(randomBytes(32)));
+const foreign = ml_dsa65.keygen(new Uint8Array(randomBytes(32))); // a different, untrusted signer
+process.env.QV_LICENSE_PUBKEY = Buffer.from(issuer.publicKey).toString("base64");
 process.env.QV_TRIAL_DAYS = "30";
 process.env.QV_DB_PATH = join(mkdtempSync(join(tmpdir(), "qv-lic-")), "lic.db");
 
@@ -23,7 +24,7 @@ const { db } = await import("../store/db.js");
 const DAY = 86_400_000;
 const isoIn = (days: number) => new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
 
-function mint(over: Partial<LicensePayload> = {}, signer: KeyObject = issuer.privateKey): string {
+function mint(over: Partial<LicensePayload> = {}, secretKey: Uint8Array = issuer.secretKey): string {
   const payload: LicensePayload = {
     id: "lic_test01",
     org: "Acme Bank",
@@ -34,8 +35,8 @@ function mint(over: Partial<LicensePayload> = {}, signer: KeyObject = issuer.pri
     ...over,
   };
   const b64 = encodePayload(payload);
-  const sigInput = Buffer.from(`${LICENSE_TOKEN_PREFIX}.${b64}`, "utf8");
-  return `${LICENSE_TOKEN_PREFIX}.${b64}.${sign(null, sigInput, signer).toString("base64url")}`;
+  const sigInput = new Uint8Array(Buffer.from(`${LICENSE_TOKEN_PREFIX}.${b64}`, "utf8"));
+  return `${LICENSE_TOKEN_PREFIX}.${b64}.${Buffer.from(ml_dsa65.sign(sigInput, secretKey)).toString("base64url")}`;
 }
 
 beforeEach(() => {
@@ -60,12 +61,12 @@ test("verify: rejects a tampered payload", () => {
 });
 
 test("verify: rejects a token signed by an untrusted key (key substitution)", () => {
-  assert.equal(verifyLicenseToken(mint({}, foreign.privateKey)), null);
+  assert.equal(verifyLicenseToken(mint({}, foreign.secretKey)), null);
 });
 
 test("verify: rejects a swapped version prefix", () => {
   const tok = mint();
-  assert.equal(verifyLicenseToken("UQS2" + tok.slice(4)), null);
+  assert.equal(verifyLicenseToken("UQS9" + tok.slice(4)), null);
 });
 
 test("verify: rejects malformed / mistyped input without throwing", () => {
@@ -138,6 +139,6 @@ test("activate: refuses an already-expired key", () => {
 });
 
 test("activate: refuses a forged / invalid key", () => {
-  assert.throws(() => activateLicense(mint({}, foreign.privateKey)), /not valid/i);
+  assert.throws(() => activateLicense(mint({}, foreign.secretKey)), /not valid/i);
   assert.throws(() => activateLicense("garbage"), /not valid/i);
 });

@@ -79,12 +79,13 @@ export default function LicenseBanner() {
 
       {open && (
         <div className="mx-auto mt-2 flex max-w-2xl flex-wrap items-center justify-center gap-2">
-          <input
+          <textarea
             value={key}
             onChange={(e) => setKey(e.target.value)}
-            placeholder="UQS1.…"
+            placeholder="Paste your UQS2.… key (post-quantum keys are long)"
             spellCheck={false}
-            className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1 font-mono text-[11px] text-slate-100 placeholder:text-slate-600 focus:border-indigo-400 focus:outline-none"
+            rows={2}
+            className="min-w-0 flex-1 resize-y rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1 font-mono text-[11px] leading-tight text-slate-100 placeholder:text-slate-600 focus:border-indigo-400 focus:outline-none"
           />
           <button
             onClick={onActivate}

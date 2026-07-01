@@ -110,7 +110,7 @@ docker compose up --build
 
 `./install.sh` is the friendliest path: it verifies Docker, brings the stack up,
 waits until the API is healthy, and prints where to go. It starts on the free
-**30-day trial** (no key needed); pass `--license UQS1.…` to license it headlessly.
+**30-day trial** (no key needed); pass `--license UQS2.…` to license it headlessly.
 
 The web tier (nginx) proxies `/api` to the server on the compose network. Data
 persists in the `qv-data` volume. The server image bundles `git` so repo scanning
@@ -132,11 +132,16 @@ self-hosted **platform** (dashboard, continuous monitoring, compliance reporting
 report exports) runs a **30-day trial** that starts automatically on first boot,
 then asks for a license key.
 
-- **Offline & air-gapped.** License keys are Ed25519-signed tokens verified against
-  a public key baked into the build — **no phone-home, ever.** It works on a
-  network island, consistent with "your source never leaves your network."
-- **Activate** a key in the dashboard banner, or headlessly via the `QV_LICENSE`
-  environment variable (`./install.sh --license UQS1.…` or compose env).
+- **Post-quantum & air-gapped.** License keys are signed with **ML-DSA-65
+  (FIPS 204)** — the NIST post-quantum signature — and verified against a public
+  key baked into the build, with **no phone-home, ever.** So the product's own
+  crypto is already post-quantum (scan our repo — it's clean), and licensing works
+  on a network island. Uses pure-JS `@noble/post-quantum` (no native dependency),
+  so the air-gap posture holds. (Post-quantum signatures are large — keys are
+  ~4.5 KB.)
+- **Activate** a key in the dashboard banner, headlessly via the `QV_LICENSE`
+  environment variable, or `./install.sh --license-file key.txt` (handy for the
+  larger PQC keys).
 - **At expiry**, a 7-day **grace** window keeps full access (with a loud renew
   banner), then the platform settles into a **read-only resting state**: your
   existing inventory stays viewable, but new scans and changes are blocked until a

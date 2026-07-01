@@ -1,6 +1,6 @@
 {
   "name": "quantumvault-server",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "bin": {
@@ -14,6 +14,7 @@
     "test": "node --experimental-sqlite --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
+    "@noble/post-quantum": "^0.6.1",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   },
