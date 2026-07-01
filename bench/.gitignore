@@ -1,0 +1,5 @@
+# Downloaded corpora and clones are fetched by the harnesses, never vendored.
+sard/juliet-java/
+sard/juliet-java.zip
+repos/clones/
+*.scan.json

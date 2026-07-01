@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing unreleased._
 
+## [0.6.0] - 2026-07-01
+
+### Added
+
+- **Independent, reproducible benchmarks (`bench/`).** Two external accuracy
+  measurements, so the numbers we quote are auditable rather than self-graded — with
+  a written scope boundary and a `qbench`-is-a-gate-not-a-benchmark disclaimer:
+  - **NIST SARD / Juliet** (`bench/sard/`): recall against the official U.S. NIST
+    Software Assurance Reference Dataset (CWE-327 broken crypto, CWE-328 reversible
+    hash). **68/68 = 100% in-scope recall** (DES / 3DES / MD5 / SHA-1). Honest scope:
+    Juliet is the *classical* threat model and contains no RSA/ECC — a high score
+    there is necessary, not sufficient, for PQC-discovery quality.
+  - **Reproducible public-repo corpus** (`bench/repos/`): precision on nine pinned,
+    well-known repositories (caddy, gitea, gin, openssh, jjwt, node-jsonwebtoken,
+    pyca/cryptography, paramiko, syncthing), every actionable finding hand-labeled
+    TP/FP against the cited source and adversarially re-verified, with the labels
+    published for audit. **86.1% precision as independently adjudicated → 92.4%**
+    after the fix below. A framework that delegates crypto (gin) returns **0
+    findings — the negative control**.
+
+### Fixed
+
+- **NIST SARD exposed a real recall bug (now fixed):** three patterns had a trailing
+  `\b` that a closing quote can never satisfy, silently dropping `createHash('md5')`,
+  `MessageDigest.getInstance("MD5"/"SHA-1")`, and Java `getInstance("DES")` — plus a
+  `"SHA1"`-vs-`"SHA-1"` mismatch. `hash-md5-sha1` and `sym-des-3des` restructured so
+  call-shape arms don't require a trailing boundary; DES-via-getInstance added.
+  qbench never caught these because we never wrote those exact fixtures — the case
+  for an external corpus, in one result.
+- **The repo corpus exposed the i18n false-positive class (now fixed):** a crypto
+  name or key-armor header inside a **localization catalog** (`options/locale/
+  locale_*.json` etc.) is UI placeholder text, not a use or a real key — and it
+  dominated gitea's FPs across every non-English locale, where the Latin-only prose
+  rule couldn't recognize the surrounding text. New `isLocaleResourceFile` downgrades
+  matches in translation catalogs to possible mentions (real keys never ship in a
+  locale file). gitea precision rose 58.3% → 94.6%.
+
+Remaining benchmark FP classes (type annotations, prose in interpolated templates,
+denylist-removal calls, INI `;` comments) are documented and measured in
+`KNOWN_GAPS`, not gated. qbench is now **107 cases at 1.0/1.0**.
+
 ## [0.5.2] - 2026-07-01
 
 ### Fixed

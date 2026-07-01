@@ -1,0 +1,62 @@
+{
+ "cmd/dev/stvanity/main.go:13": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Real `import \"crypto/rsa\"`; RSA is genuinely used at line 184 (`case *rsa.PrivateKey:` in cert-saving type switch), so this is an actual RSA dependency, not a coincidence."
+ },
+ "cmd/dev/stvanity/main.go:10": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Real `import \"crypto/ecdsa\"` in a cert-generation tool that calls ecdsa.GenerateKey; genuine ECDSA use."
+ },
+ "cmd/dev/stvanity/main.go:90": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Actual ECDSA P-384 key generation: `ecdsa.GenerateKey(elliptic.P384(), rand.Reader)`."
+ },
+ "cmd/stdiscosrv/apisrv.go:394": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "PEM `-----BEGIN CERTIFICATE-----` header constant used to reconstruct a client X.509 cert that is then pem.Decode'd (line 423) and parsed to derive a device ID; real X.509 certificate handling. Borderline (a string constant, not an operation) but unambiguously part of live cert parsing."
+ },
+ "lib/signature/signature.go:12": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Real `import \"crypto/ecdsa\"` in the signature package whose GenerateKeys() calls ecdsa.GenerateKey; genuine ECDSA use."
+ },
+ "lib/signature/signature.go:30": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Actual ECDSA P-521 key generation: `ecdsa.GenerateKey(elliptic.P521(), rand.Reader)`."
+ },
+ "lib/signature/signature_test.go:18": {
+  "label": "TP",
+  "algorithm": "ECDSA/ECDH (EC key)",
+  "patternId": "ecc-pem-header",
+  "reason": "A complete, real EC PRIVATE KEY in PEM (genuine ECDSA P-521 material) used as a test fixture; per rubric a fixture with real key material is TP."
+ },
+ "lib/tlsutil/tlsutil.go:13": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Real `import \"crypto/rsa\"`; RSA genuinely used at line 269 (`case *rsa.PrivateKey:`) in the TLS cert public-key extraction; actual RSA dependency."
+ },
+ "lib/tlsutil/tlsutil.go:10": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Real `import \"crypto/ecdsa\"` in TLS certificate generation code that calls ecdsa.GenerateKey; genuine ECDSA use."
+ },
+ "lib/tlsutil/tlsutil.go:105": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Actual ECDSA P-256 key generation for TLS certs: `ecdsa.GenerateKey(elliptic.P256(), rand.Reader)`."
+ }
+}

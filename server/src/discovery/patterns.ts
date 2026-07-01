@@ -221,9 +221,12 @@ export const PATTERNS: CryptoPattern[] = [
     family: "SymmetricLegacy",
     algorithm: "DES/3DES",
     description: "DES or Triple-DES symmetric cipher",
-    // Trailing \b so a token like `TripleDESLegacyAdapter` (identifier) or
-    // `TRIPLEDES_DISABLED` (env var) doesn't match the bare `TripleDES` arm.
-    regex: /\b(?:des-ede3|des3|3des|DESede|Cipher\.DES|TripleDES|createCipher(?:iv)?\(\s*['"]des)\b/i,
+    // Bare-token arms keep \b boundaries (so `TripleDESLegacyAdapter` /
+    // `TRIPLEDES_DISABLED` don't match); the call-shape arms — `createCipher('des…`
+    // and `getInstance("DES")` (Java, surfaced by NIST SARD CWE-327) — carry their
+    // own delimiters and must NOT sit inside a trailing \b that a closing quote
+    // can never satisfy.
+    regex: /\b(?:des-ede3|des3|3des|DESede|Cipher\.DES|TripleDES)\b|createCipher(?:iv)?\(\s*['"]des|getInstance\(\s*"DES"/i,
     quantumVulnerable: true,
     baseSeverity: "high",
     languages: ["javascript", "typescript", "python", "go", "java", "csharp"],
@@ -247,7 +250,12 @@ export const PATTERNS: CryptoPattern[] = [
     family: "HashLegacy",
     algorithm: "MD5/SHA-1",
     description: "Broken/legacy hash function",
-    regex: /\b(?:createHash\(\s*['"](?:md5|sha1)['"]|hashlib\.(?:md5|sha1)|MessageDigest\.getInstance\(\s*"(?:MD5|SHA-1)"|md5sum)\b/i,
+    // The call-shape arms end in a quote, so they must NOT sit inside a trailing \b
+    // (a `"`→`)` position is never a word boundary — this silently dropped
+    // createHash('md5') and MessageDigest.getInstance("MD5") entirely, surfaced by
+    // NIST SARD CWE-328). Only the bare `md5sum`/`hashlib` tokens keep boundaries.
+    // `SHA-?1` matches both "SHA-1" and Java's "SHA1".
+    regex: /createHash\(\s*['"](?:md5|sha1)['"]|\bhashlib\.(?:md5|sha1)\b|MessageDigest\.getInstance\(\s*"(?:MD5|SHA-?1)"|\bmd5sum\b/i,
     quantumVulnerable: true,
     baseSeverity: "medium",
     languages: ["javascript", "typescript", "python", "java"],
@@ -789,10 +797,12 @@ export function resolveConfidence(
     cryptoContext?: boolean;
     bareKeyName?: boolean;
     proseMention?: boolean;
+    localeFile?: boolean;
   },
 ): Confidence {
   const base = confidenceFor(patternId);
   if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
+  if (ctx.localeFile) return "low"; // i18n/localization catalog value — UI text, never a use or key
   if (ctx.enumRef) return "low"; // a bare enum-constant read is a reference, not a use
   // An ambiguous SHAPE (`dh.generate`, `new DSA`, a bare `des3`/`md5sum`/`pkcs12`
   // token, a `.p12` filename) in a file that shows NO real crypto anywhere is a

@@ -1,0 +1,77 @@
+{
+  "description": "Pinned public OSS repositories for the UniQueS precision benchmark. Each is cloned at the exact ref/commit below, scanned, and every actionable finding is hand-labeled in bench/repos/labels/<slug>.json. The set deliberately mixes crypto-dense libraries, real application code, and a near-negative control (a framework that delegates crypto to the stdlib).",
+  "repos": [
+    {
+      "slug": "caddy",
+      "repo": "caddyserver/caddy",
+      "ref": "v2.11.4",
+      "commit": "e2eee6a7fce366321294c9c2a79f3146891dcbdf",
+      "lang": "Go",
+      "kind": "application (web server)"
+    },
+    {
+      "slug": "gitea",
+      "repo": "go-gitea/gitea",
+      "ref": "v1.26.4",
+      "commit": "95ba37d9af58db7d9163f9e92e07b5eb4f792bbc",
+      "lang": "Go",
+      "kind": "application (web app)"
+    },
+    {
+      "slug": "gin",
+      "repo": "gin-gonic/gin",
+      "ref": "v1.12.0",
+      "commit": "73726dc606796a025971fe451f0aa6f1b9b847f6",
+      "lang": "Go",
+      "kind": "framework (near-negative control)"
+    },
+    {
+      "slug": "openssh",
+      "repo": "openssh/openssh-portable",
+      "ref": "V_10_3_P1",
+      "commit": "2d98db98331803cbb820211b2fb0d31a6e71e58e",
+      "lang": "C",
+      "kind": "library (SSH)"
+    },
+    {
+      "slug": "jjwt",
+      "repo": "jwtk/jjwt",
+      "ref": "0.13.0",
+      "commit": "a757addce04f6b6d8086beeee8dafcf670550a5b",
+      "lang": "Java",
+      "kind": "library (JWT)"
+    },
+    {
+      "slug": "jsonwebtoken",
+      "repo": "auth0/node-jsonwebtoken",
+      "ref": "v9.0.3",
+      "commit": "ed59e76ea37a80f54b833668c02a5271984dcba3",
+      "lang": "JavaScript",
+      "kind": "library (JWT)"
+    },
+    {
+      "slug": "pyca-cryptography",
+      "repo": "pyca/cryptography",
+      "ref": "49.0.0",
+      "commit": "e300bbe2f1bec75e5ee7e0ab7b196958831b3db6",
+      "lang": "Python",
+      "kind": "library (crypto)"
+    },
+    {
+      "slug": "paramiko",
+      "repo": "paramiko/paramiko",
+      "ref": "3.5.1",
+      "commit": "ed8b09751ff20340332d4b1bb2b10e32aedc57ff",
+      "lang": "Python",
+      "kind": "library (SSH)"
+    },
+    {
+      "slug": "syncthing",
+      "repo": "syncthing/syncthing",
+      "ref": "v2.1.1",
+      "commit": "6be1ff84802810ebf6ab5a5169f865333607a8a5",
+      "lang": "Go",
+      "kind": "application (TLS/certs)"
+    }
+  ]
+}

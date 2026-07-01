@@ -6,6 +6,11 @@
 # are already skipped by default.
 server/src/discovery/patterns.ts
 server/src/discovery/cryptoRef.ts
+server/src/discovery/context.ts
 server/src/compliance/reporter.ts
 server/src/report/assessment.ts
 server/src/cli.ts
+# The benchmark suite vendors NO product crypto — it holds detection-rule text,
+# per-finding labels for OTHER repos, and corpora fetched at runtime. Not part of
+# the product's own cryptographic posture.
+bench

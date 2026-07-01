@@ -1,0 +1,362 @@
+{
+ "docs/development/custom-vectors/cast5/generate_cast5.py:62": {
+  "label": "FP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "Match is on the substring of a test-vector FILE PATH string ('tests/.../AES/CTR/aes-128-ctr.txt') assigned to ctr_path; no AES-128 operation here."
+ },
+ "docs/development/custom-vectors/rsa-oaep-sha2/generate_rsa_oaep_sha2.py:25": {
+  "label": "TP",
+  "algorithm": "RSA",
+  "patternId": "rsa-python-cryptography",
+  "reason": "Real RSA key generation: rsa.generate_private_key(65537, 2048)."
+ },
+ "docs/development/custom-vectors/secp256k1/generate_secp256k1.py:13": {
+  "label": "TP",
+  "algorithm": "MD5/SHA-1",
+  "patternId": "hash-md5-sha1",
+  "reason": "Real mapping to the SHA-1 hash implementation (hashlib.sha1) in a hash-type dispatch table."
+ },
+ "src/cryptography/hazmat/decrepit/ciphers/algorithms.py:29": {
+  "label": "TP",
+  "algorithm": "DES/3DES",
+  "patternId": "sym-des-3des",
+  "reason": "Defines the TripleDES (3DES) block-cipher primitive class."
+ },
+ "src/cryptography/hazmat/decrepit/ciphers/algorithms.py:30": {
+  "label": "TP",
+  "algorithm": "DES/3DES",
+  "patternId": "sym-des-3des",
+  "reason": "The name attribute '3DES' of the real TripleDES cipher class declaration."
+ },
+ "src/cryptography/hazmat/primitives/_serialization.py:78": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Gates hmac_hash to the PKCS12 serialization format; real PKCS#12 keystore config logic in the encryption builder."
+ },
+ "src/cryptography/hazmat/primitives/_serialization.py:95": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Gates key_cert_algorithm to the PKCS12 format; real PKCS#12 keystore config logic."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:18": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Abstract API method to generate a DSA private key."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:34": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Declares the DSAPrivateKey type (the DSA key primitive)."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:82": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Return-type annotation on __copy__ dunder; a type reference, not a DSA operation or material."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:88": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Return-type annotation on __deepcopy__ dunder; type reference only, no DSA operation."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:94": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Backwards-compat type alias assignment (DSAPrivateKeyWithSerialization = DSAPrivateKey); an identifier alias, not an operation/material."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:95": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Registers the concrete Rust/OpenSSL DSA private-key implementation against the ABC — wires up the real DSA implementation."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/dsa.py:177": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Bare return-type annotation line (') -> DSAPrivateKey:'); type reference only."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/ec.py:328": {
+  "label": "TP",
+  "algorithm": "ECDSA/ECDH (Python)",
+  "patternId": "ecc-python",
+  "reason": "Binds EC private-key generation (generate_private_key = rust_openssl.ec.generate_private_key)."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/ec.py:342": {
+  "label": "TP",
+  "algorithm": "ECDSA/ECDH (Python)",
+  "patternId": "ecc-python",
+  "reason": "Real EC private-key derivation: rust_openssl.ec.derive_private_key(private_value, curve)."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/rsa.py:170": {
+  "label": "TP",
+  "algorithm": "RSA",
+  "patternId": "rsa-python-cryptography",
+  "reason": "Real RSA private-key generation: rust_openssl.rsa.generate_private_key(public_exponent, key_size)."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/types.py:49": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Member of a typing.Union of allowed private-key types; type annotation, no DSA operation."
+ },
+ "src/cryptography/hazmat/primitives/asymmetric/types.py:60": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Member of CertificateIssuerPrivateKeyTypes typing.Union; type annotation only."
+ },
+ "src/cryptography/hazmat/primitives/ciphers/algorithms.py:27": {
+  "label": "TP",
+  "algorithm": "DES/3DES",
+  "patternId": "sym-des-3des",
+  "reason": "Re-export import of the actual TripleDES (3DES) cipher class into the public ciphers namespace."
+ },
+ "src/cryptography/hazmat/primitives/ciphers/algorithms.py:50": {
+  "label": "TP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "Defines the AES128 block-cipher class (key_sizes=frozenset([128]))."
+ },
+ "src/cryptography/hazmat/primitives/ciphers/algorithms.py:95": {
+  "label": "TP",
+  "algorithm": "DES/3DES",
+  "patternId": "sym-des-3des",
+  "reason": "References the real TripleDES cipher class as the first arg of utils.deprecated(TripleDES, ...)."
+ },
+ "src/cryptography/hazmat/primitives/ciphers/algorithms.py:102": {
+  "label": "FP",
+  "algorithm": "DES/3DES",
+  "patternId": "sym-des-3des",
+  "reason": "The name= display-label string kwarg inside the deprecation-warning call metadata; a label, not a cipher operation."
+ },
+ "src/cryptography/hazmat/primitives/ciphers/modes.py:69": {
+  "label": "TP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "Runtime isinstance check against algorithms.AES128 to reject XTS mode; real cipher-mode validation referencing the AES128 primitive."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs12.py:11": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Imports the actual Rust PKCS#12 implementation module (pkcs12 as rust_pkcs12)."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs12.py:36": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Member of the PKCS12PrivateKeyTypes typing.Union; type annotation, no DSA operation."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs12.py:57": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "DSAPrivateKey listed in an accepted-types tuple; type reference only, no DSA operation."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs12.py:152": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "DSAPrivateKey listed in another accepted-types tuple; type reference only."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs7.py:43": {
+  "label": "FP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "type[algorithms.AES128] inside a typing.Union alias (ContentEncryptionAlgorithm); type annotation, not a cipher operation."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs7.py:248": {
+  "label": "TP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "Runtime validation set membership check ({algorithms.AES128, algorithms.AES256}) constraining the S/MIME content encryption cipher; real crypto config."
+ },
+ "src/cryptography/hazmat/primitives/serialization/pkcs7.py:273": {
+  "label": "TP",
+  "algorithm": "AES-128",
+  "patternId": "sym-aes128",
+  "reason": "Sets the DEFAULT content-encryption algorithm to AES128 (self._content_encryption_algorithm or algorithms.AES128); real cipher-selection config."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:60": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "Defines the SSH 'ssh-rsa' key-type wire identifier constant used for SSH RSA key parsing/serialization."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:61": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Defines the SSH 'ssh-dss' DSA key-type wire identifier constant."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:62": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "Defines the SSH ECDSA NIST P-256 key-type identifier ('ecdsa-sha2-nistp256')."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:63": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "Defines the SSH ECDSA NIST P-384 key-type identifier."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:64": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "Defines the SSH ECDSA NIST P-521 key-type identifier."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:69": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "Defines the SK (security-key) SSH ECDSA P-256 key-type identifier ('sk-ecdsa-sha2-nistp256@openssh.com')."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:78": {
+  "label": "TP",
+  "algorithm": "OpenSSH private key (algorithm in body)",
+  "patternId": "openssh-pem-private-key",
+  "reason": "Defines the OpenSSH private-key PEM boundary marker used to detect/parse OpenSSH private keys."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:149": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Runtime isinstance dispatch of DSA keys to the _SSH_DSA key type during SSH serialization; real DSA key handling."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:411": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Signature of load_private whose body genuinely constructs a DSA private key (DSAParameterNumbers/DSAPublicNumbers/private_key())."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:439": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Parameter of encode_private which serializes a real DSA private key to OpenSSH wire format."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:500": {
+  "label": "TP",
+  "algorithm": "ECDSA/ECDH (Python)",
+  "patternId": "ecc-python",
+  "reason": "Real EC private-key derivation from parsed SSH data: ec.derive_private_key(secret, self.curve)."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:679": {
+  "label": "FP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Member of the SSHPrivateKeyTypes typing.Union list; type annotation, no DSA operation."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:787": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Runtime isinstance detection of a DSA private key (to emit the deprecation warning) during SSH key load; real DSA key handling."
+ },
+ "src/cryptography/hazmat/primitives/serialization/ssh.py:805": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "Runtime isinstance check on a DSA private key in _serialize_ssh_private_key; real DSA key handling."
+ },
+ "src/cryptography/x509/extensions.py:72": {
+  "label": "TP",
+  "algorithm": "MD5/SHA-1",
+  "patternId": "hash-md5-sha1",
+  "reason": "Real SHA-1 digest computation: hashlib.sha1(data).digest() (used for key identifiers)."
+ },
+ "src/rust/cryptography-key-parsing/src/pbe.rs:88": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Real PKCS#12 KDF invocation deriving the encryption key (cryptography_crypto::pkcs12::kdf(...))."
+ },
+ "src/rust/cryptography-key-parsing/src/pbe.rs:91": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "KDF_ENCRYPTION_KEY_ID constant argument on the live PKCS#12 KDF call; part of the real key-derivation op (though same op as line 88 — double count)."
+ },
+ "src/rust/cryptography-key-parsing/src/pbe.rs:96": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Real PKCS#12 KDF invocation deriving the IV (cryptography_crypto::pkcs12::kdf(...))."
+ },
+ "src/rust/cryptography-key-parsing/src/pbe.rs:99": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "KDF_IV_ID constant argument on the live PKCS#12 IV-derivation KDF call (same op as line 96 — double count)."
+ },
+ "src/rust/cryptography-key-parsing/src/pkcs8.rs:244": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Real PKCS#12 KDF invocation deriving the encryption key in PKCS8 password-based decryption."
+ },
+ "src/rust/cryptography-key-parsing/src/pkcs8.rs:247": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "KDF_ENCRYPTION_KEY_ID arg on the live PKCS#12 KDF call (same op as line 244 — double count)."
+ },
+ "src/rust/cryptography-key-parsing/src/pkcs8.rs:252": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Real PKCS#12 KDF invocation deriving the IV in PKCS8 decryption."
+ },
+ "src/rust/cryptography-key-parsing/src/pkcs8.rs:255": {
+  "label": "TP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "KDF_IV_ID arg on the live PKCS#12 IV-derivation KDF call (same op as line 252 — double count)."
+ },
+ "src/rust/cryptography-x509-verification/src/certificate.rs:31": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded X.509 CA certificate PEM (full base64 body, EC/id-ecPublicKey) parsed as a test vector."
+ },
+ "src/rust/cryptography-x509-verification/src/lib.rs:667": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded self-signed looping CA X.509 certificate PEM with full base64 body."
+ },
+ "src/rust/cryptography-x509-verification/src/ops.rs:110": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded RSA X.509 test certificate PEM ('SSLeay/rsa test CA', full base64 body)."
+ },
+ "src/rust/cryptography-x509/src/lib.rs:19": {
+  "label": "FP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Bare Rust module declaration 'pub mod pkcs12;'; names the implementation module but is not a crypto operation or material."
+ },
+ "src/rust/src/lib.rs:42": {
+  "label": "FP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "Bare Rust module declaration 'mod pkcs12;'; structural, no operation or material."
+ },
+ "src/rust/src/lib.rs:144": {
+  "label": "FP",
+  "algorithm": "PKCS#12 keystore (key + cert)",
+  "patternId": "pkcs12-keystore",
+  "reason": "'use crate::pkcs12::pkcs12;' pymodule re-export wiring; an import statement, not a crypto operation or material."
+ }
+}

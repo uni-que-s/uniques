@@ -15,7 +15,7 @@ const SPEC_VERSION = "1.6";
 // RAM vs. a TEE/HSM), so we report "unknown" rather than assert an environment
 // we never verified — consistent with the tool's no-overclaim posture.
 const EXECUTION_ENVIRONMENT = "unknown";
-// Fixed namespace so the serial number is a deterministic UUIDv5 of the
+// Fixed namespace so the serial number is a deterministic UUID (v8/SHA-256) of the
 // inventory: re-exporting the same findings yields a byte-identical CBOM body.
 const QV_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
 
@@ -25,12 +25,16 @@ export interface CbomMeta {
   toolVersion?: string;
 }
 
-/** RFC 4122 v5 UUID (SHA-1, fixed namespace) — deterministic given `name`. */
-function uuidv5(name: string): string {
+/** Deterministic namespaced UUID (RFC 9562 v8 — the "custom" version — over SHA-256
+ *  of a fixed namespace + `name`). Was RFC 4122 v5, which is SHA-1 by definition;
+ *  moved to SHA-256 so the product itself contains no legacy hash and self-scans
+ *  clean. v8 is a valid UUID, and the serial is used only as a stable identifier,
+ *  so the algorithm change is transparent to CBOM consumers. */
+function deterministicUuid(name: string): string {
   const ns = Buffer.from(QV_NAMESPACE.replace(/-/g, ""), "hex");
-  const bytes = createHash("sha1").update(ns).update(name, "utf8").digest().subarray(0, 16);
-  bytes[6] = (bytes[6] & 0x0f) | 0x50; // version 5
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant
+  const bytes = createHash("sha256").update(ns).update(name, "utf8").digest().subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x80; // version 8 (custom, RFC 9562)
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122/9562 variant
   const h = bytes.toString("hex");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
 }
@@ -42,7 +46,7 @@ function uuidv5(name: string): string {
  * bom-refs and the CBOM diffs cleanly across re-scans.
  */
 function bomRef(a: CryptoAsset): string {
-  const h = createHash("sha1")
+  const h = createHash("sha256")
     .update(`${a.file}|${a.line}|${a.patternId}|${a.algorithm}`)
     .digest("hex");
   return `crypto:${h.slice(0, 12)}`;
@@ -104,7 +108,7 @@ export function assetsToCbom(assets: CryptoAsset[], meta: CbomMeta = {}): Record
   const appRef = `application:${meta.target ?? "scan-target"}`;
   const dependsOn = components.map((c) => c["bom-ref"]);
   // Deterministic serial: identity of the inventory, not the moment of export.
-  const serial = uuidv5(`${meta.target ?? ""}\n${dependsOn.join(",")}`);
+  const serial = deterministicUuid(`${meta.target ?? ""}\n${dependsOn.join(",")}`);
 
   return {
     bomFormat: "CycloneDX",

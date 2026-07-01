@@ -17,6 +17,7 @@ import {
   isAmbiguousMatch,
   isBareSshKeyNameAt,
   isUnquotedPathSlugAt,
+  isLocaleResourceFile,
   tripleQuoteAt,
   tripleQuoteEnd,
 } from "./context.js";
@@ -286,6 +287,9 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
     // docstring ("… not a cryptographic call …") can't vouch for the file — only
     // real crypto code/strings corroborate.
     const cryptoContext = hasCryptoContext(maskedContent);
+    // An i18n / localization resource catalog holds only UI strings — a crypto name
+    // or key-armor header here is placeholder/hint text, never a use or a real key.
+    const localeFile = isLocaleResourceFile(rel);
     // Absolute start offset of each line in `normalized`, so `lineStart[i] +
     // matchColumn` locates a match in the file's string/code segment map.
     const lineStart: number[] = new Array(lines.length);
@@ -357,7 +361,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext, bareKeyName, proseMention }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext, bareKeyName, proseMention, localeFile }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

@@ -1,0 +1,32 @@
+{
+ "lib/validateAsymmetricKey.js:11": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real crypto config: maps ES256 to NIST curve 'prime256v1' (P-256) in the allowedCurves table that the library enforces for ECDSA JWT keys (checked at line 45)."
+ },
+ "lib/validateAsymmetricKey.js:12": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real crypto config: maps ES384 to NIST curve 'secp384r1' (P-384), a genuine ECDSA named-curve declaration enforced by the key validator."
+ },
+ "lib/validateAsymmetricKey.js:13": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real crypto config: maps ES512 to NIST curve 'secp521r1' (P-521), a genuine ECDSA named-curve declaration enforced by the key validator."
+ },
+ "lib/validateAsymmetricKey.js:56": {
+  "label": "FP",
+  "algorithm": "RSA (Web Crypto)",
+  "patternId": "rsa-webcrypto",
+  "reason": "Matched 'RSA-PSS' inside a human-readable throw new Error() message string; the cited line is prose, not a crypto operation. The actual RSA-PSS param check is on the preceding if-line (55), not here."
+ },
+ "lib/validateAsymmetricKey.js:60": {
+  "label": "FP",
+  "algorithm": "RSA (Web Crypto)",
+  "patternId": "rsa-webcrypto",
+  "reason": "Matched 'RSA-PSS' inside an error-message string literal (saltLength diagnostic); the cited line is prose, not a crypto operation. Real saltLength comparison is on the preceding if-line (59)."
+ }
+}

@@ -1,5 +1,12 @@
 /** Single source of truth for the tool version stamped into exports (CBOM tool
- *  metadata, OpenAPI, etc.) and reported by /api/health. 0.5.2 = closed two v0.5.1
+ *  metadata, OpenAPI, etc.) and reported by /api/health. 0.6.0 = INDEPENDENT
+ *  BENCHMARKS (bench/): NIST SARD/Juliet CWE-327/328 recall (68/68 = 100% in-scope)
+ *  + a reproducible 9-repo precision corpus (86.1% as adjudicated → 92.4% after the
+ *  benchmark-driven i18n fix). Both benchmarks drove real engine fixes: SARD exposed
+ *  a trailing-`\b` bug that silently dropped createHash('md5') / MessageDigest /
+ *  getInstance("DES") (recall); the repo corpus exposed the i18n-placeholder FP
+ *  class (a crypto name/armor in a localization catalog is UI text — `isLocale
+ *  ResourceFile` downgrade). qbench 107 @ 1.0/1.0. 0.5.2 = closed two v0.5.1
  *  residual precision gaps: an ssh key-type NAME in prose (a log/label with no
  *  adjacent key bytes) now yields the never-downgrade rule (bareKeyName +
  *  proseMention — a real key line's base64 blob still protects it, and a key named
@@ -28,4 +35,4 @@
  *  (DH/Java) + PKCS#12 + authorized_keys filename gate. 0.3.6 = recall expansion
  *  (Go/EVP/WebCrypto/X.509). 0.3.5 = mention classifier. 0.3.4 = qbench benchmark.
  *  0.3.3 = Action baseline. 0.3.2 = CI ratchet. 0.3.1 = version vis. */
-export const VERSION = "0.5.2";
+export const VERSION = "0.6.0";

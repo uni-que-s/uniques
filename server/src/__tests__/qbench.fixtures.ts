@@ -279,6 +279,17 @@ export const QBENCH: QCase[] = [
     code: `routes:\n  rotate: /api/v2/diffie-hellman/rotate\n` },
   { id: "guard-unquoted-config-real-dh", ext: "yaml", expect: ["dh-keyexchange"], why: "a bare algorithm value (keyExchange: diffie-hellman) is a real DH posture, NOT a path — it still fires",
     code: `security:\n  keyExchange: diffie-hellman\n` },
+
+  // ── i18n / localization catalog values are UI text, not key material (v0.6.0;
+  //    surfaced by the real-repo benchmark on gitea's locale_*.json placeholders,
+  //    across non-English locales the Latin-only mention rule couldn't read). The
+  //    filename (locale_… / a locale-ish path) is the signal. ──
+  { id: "locale-gpg-placeholder", ext: "json", expect: [], why: "a PGP key-armor header inside an i18n placeholder string is UI hint text — a locale catalog never holds a real key (localeFile downgrade beats the pgp key-material never-downgrade)",
+    code: `{ "settings.key_content_gpg_placeholder": "Begins with '-----BEGIN PGP PUBLIC KEY BLOCK-----'" }\n` },
+  { id: "locale-ssh-placeholder-nonlatin", ext: "json", expect: [], why: "a key-type placeholder listing in a NON-English locale (Greek prose the Latin-only mention rule can't recognize) — the locale-file signal downgrades it regardless of language",
+    code: `{ "settings.key_content_ssh_placeholder": "Ξεκινάει με 'ssh-rsa', 'ecdsa-sha2-nistp256'" }\n` },
+  { id: "guard-pgp-real-key-nonlocale", ext: "json", expect: ["pgp-public-block"], why: "a real PGP public-key block in a NON-locale JSON file still fires — the downgrade is scoped to localization catalogs, not all JSON",
+    code: `{ "pubkey": "-----BEGIN PGP PUBLIC KEY BLOCK-----\\nmQINBGAbCdEFEEADx1a2b3c4d5e6f7g8h9i0jQ==\\n-----END PGP PUBLIC KEY BLOCK-----" }\n` },
 ];
 
 /**
@@ -307,4 +318,21 @@ export const KNOWN_GAPS: QCase[] = [
   { id: "gap-ambiguous-in-crypto-file", ext: "js", gapKind: "fp", expect: [],
     why: "an ambiguous shape (dh.generate where dh is a DateHelper) that shares a FILE with real crypto is kept actionable by file-scope corroboration — telling the coincidental receiver from a real DiffieHellman needs data flow (ENG-01b), not lexical file context. Rare in real code (a DateHelper is not named `dh` in a file that also holds a DiffieHellman), so held as the marker for ENG-01b rather than chased lexically.",
     code: `const dh = new DateHelper(tz);\nconst when = dh.generate(schedule);\nconst real = createDiffieHellman(2048);\n` },
+
+  // ── OPEN (v0.6.0) — surfaced by the reproducible public-repo benchmark (bench/).
+  //    Each needs type/data-flow awareness a lexical pass can't cleanly give. ──
+  { id: "gap-type-annotation-ref", ext: "py", gapKind: "fp", expect: [],
+    why: "an algorithm TYPE named in a type annotation (`-> DSAPrivateKey:`, `Union[…, DSAPrivateKey]`, `type[algorithms.AES128]`) is a type reference, not a DSA/AES operation — the FP class from pyca/cryptography. Distinguishing a type position from a use needs the enum-const-ref logic extended to annotations (a lightweight AST), so it is tracked, not gated.",
+    code: `def load(self) -> DSAPrivateKey:\n    return self._key\n` },
+  { id: "gap-prose-in-interpolated-template", ext: "js", gapKind: "fp", expect: [],
+    why: "a crypto name in a NATURAL-LANGUAGE error message that is a template literal WITH an interpolation (`throw new Error(\\`… RSA-PSS … \\${alg}\\`)`) is not downgraded — the template-`${}` case is deliberately left at base confidence because a real call can live in the interpolation. The jsonwebtoken FP class; needs interpolation-vs-prose parsing.",
+    code: "throw new Error(`Invalid RSA-PSS parameters for alg ${alg}`);\n" },
+  { id: "gap-denylist-removal-call", ext: "c", gapKind: "fp", expect: [],
+    why: "an algorithm name passed to a REMOVAL/denylist function (`match_filter_denylist(list, \"diffie-hellman-group1-sha1\")`) is a disable in disguise — the line removes the algorithm for old-client compat, it does not use it. The openssh FP class; needs knowing which callees are denylist sinks (data flow).",
+    code: `match_filter_denylist(list, "diffie-hellman-group1-sha1");\n` },
+  // Two smaller benchmark FP classes are context-dependent and not reproduced as
+  // isolated cases: (a) INI `;;` line comments are not masked (config lang masks
+  // `#`), so an `;; openssl pkcs12 …` example in a crypto-bearing .ini still fires;
+  // (b) a function name echoed in a log string one line below the real call
+  // (openssh sk-dummy skdebug) double-counts. Both tracked in bench/REPORT.md.
 ];

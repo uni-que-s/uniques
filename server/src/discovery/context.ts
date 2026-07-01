@@ -469,6 +469,34 @@ export function isAmbiguousMatch(
  *  name can sit in an unquoted path value, invisible to the string-span classifier). */
 export const CONFIG_LANG = new Set(["yaml", "config", "terraform", "json"]);
 
+/** Data/resource file extensions that hold only translatable UI strings (not code). */
+const LOCALE_DATA_EXT = /\.(?:json|ya?ml|po|pot|properties|arb|xml|strings|resx|ftl)$/i;
+/**
+ * Is this file an i18n / localization RESOURCE catalog — one whose values are UI
+ * strings shown to a user, never code or key material? A crypto name or key-armor
+ * header in such a file ("Begins with -----BEGIN PGP PUBLIC KEY BLOCK-----", a
+ * placeholder listing "ssh-rsa, ecdsa-sha2-nistp256, …") is hint text, not a
+ * cryptographic use — and a real private key never ships inside a translation
+ * catalog. So a match here is a possible mention even for key-material patterns.
+ *
+ * This is the file-scope signal for the i18n false-positive class the real-repo
+ * benchmark surfaced (it dominated gitea's FPs, across every non-English locale
+ * where the natural-language mention rule — Latin-only — could not recognize the
+ * surrounding prose). Scoped to DATA formats in a locale-ish path (or a
+ * locale-named file), so a real code module that merely sits in a `locales/` dir is
+ * NOT swept — only resource catalogs are.
+ */
+export function isLocaleResourceFile(rel: string): boolean {
+  const p = rel.replace(/\\/g, "/").toLowerCase();
+  if (!LOCALE_DATA_EXT.test(p)) return false;
+  const base = p.slice(p.lastIndexOf("/") + 1);
+  if (/(?:^|\/)(?:locale|locales|_locales|i18n|l10n|lang|langs|translation|translations|messages)\//.test(p)) return true;
+  if (/^(?:locale|messages|strings|translation)[._-]/.test(base)) return true;
+  if (/\.(?:po|pot|arb|ftl)$/.test(base)) return true; // gettext / Flutter / Fluent catalogs are locale by nature
+  if (base === "localizable.strings") return true;
+  return false;
+}
+
 /**
  * Is the match an ssh key-TYPE NAME (`ssh-rsa`, `ecdsa-sha2-nistp256`) that is NOT
  * followed by actual key BYTES — i.e. a bare name reference rather than a real key

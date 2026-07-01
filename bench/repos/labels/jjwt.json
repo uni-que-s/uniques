@@ -1,0 +1,362 @@
+{
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:227": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant: `public static final SignatureAlgorithm RS256 = Jwts.get(REGISTRY, \"RS256\")` declaring the RSASSA-PKCS1-v1_5 SHA-256 signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:234": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant declaring RS384 RSA signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:241": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant declaring RS512 RSA signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:252": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant declaring PS256 RSASSA-PSS RSA signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:263": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant declaring PS384 RSASSA-PSS RSA signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:274": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Real public API constant declaring PS512 RSASSA-PSS RSA signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:281": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real public API constant declaring ES256 ECDSA P-256 signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:288": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real public API constant declaring ES384 ECDSA P-384 signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/Jwts.java:295": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Real public API constant declaring ES512 ECDSA P-521 signature algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:65": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant definition with real JCA name SHA256withRSA and 2048-bit key requirement — concrete RSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:70": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant with JCA name SHA384withRSA — concrete RSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:75": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant with JCA name SHA512withRSA — concrete RSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:80": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Enum constant with JCA name SHA256withECDSA and P-256 — concrete ECDSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:85": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Enum constant with JCA name SHA384withECDSA and P-384 — concrete ECDSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:90": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Enum constant with JCA name SHA512withECDSA and P-521 — concrete ECDSA algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:97": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant with JCA name RSASSA-PSS — concrete RSA-PSS algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:104": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant with JCA name RSASSA-PSS — concrete RSA-PSS algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:111": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Enum constant with JCA name RSASSA-PSS — concrete RSA-PSS algorithm config."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:118": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Builds PREFERRED_EC_ALGS list of ECDSA algorithm constants used for runtime key-based algorithm selection."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:600": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Runtime RSA algorithm selection inside `if (key instanceof RSAKey)` — validates key against RS512 signing algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:601": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS512 RSA signature algorithm for a >=4096-bit RSA key at runtime."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:603": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Runtime RSA algorithm selection — validates key against RS384 signing algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:604": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS384 RSA signature algorithm for a >=3072-bit RSA key at runtime."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:605": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Compares RSA key bit length against RS256.minKeyLength in runtime algorithm-selection branch."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:606": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Runtime RSA algorithm selection — validates key against RS256 signing algorithm."
+ },
+ "api/src/main/java/io/jsonwebtoken/SignatureAlgorithm.java:607": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS256 RSA signature algorithm for a >=2048-bit RSA key at runtime."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:87": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Instantiates concrete ES256 ECDSA algorithm impl with 256-bit order and curve OID."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:88": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Instantiates concrete ES384 ECDSA algorithm impl with 384-bit order and curve OID."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:89": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Instantiates concrete ES512 ECDSA algorithm impl (P-521, 521-bit order) with curve OID."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:94": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Iterates ES256/ES384/ES512 ECDSA impls to register them by OID in a static initializer."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:115": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Runtime EC algorithm selection in findByKey — matches key bit length to ES512."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:116": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Returns ES512 ECDSA algorithm for a matching EC key at runtime."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:117": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Runtime EC algorithm selection — matches key bit length to ES384."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:118": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Returns ES384 ECDSA algorithm for a matching EC key at runtime."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:119": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Runtime EC algorithm selection — matches key bit length to ES256."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/EcSignatureAlgorithm.java:120": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Returns ES256 ECDSA algorithm for a matching EC key at runtime."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:76": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete RS256 RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:77": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete RS384 RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:78": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete RS512 RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:79": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete PS256 RSASSA-PSS RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:80": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete PS384 RSASSA-PSS RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:81": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Instantiates concrete PS512 RSASSA-PSS RSA signature algorithm impl."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:87": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RS256 RSA algorithm under its PKCS-v1.5 OID in the lookup map."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:88": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RS384 RSA algorithm under its PKCS-v1.5 OID in the lookup map."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:89": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RS512 RSA algorithm under its PKCS-v1.5 OID in the lookup map."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:128": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns PS512 RSASSA-PSS algorithm for a >=4096-bit RSA-PSS key in findByKey."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:130": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns PS384 RSASSA-PSS algorithm for a >=3072-bit RSA-PSS key in findByKey."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:132": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns PS256 RSASSA-PSS algorithm for a sufficient-length RSA-PSS key in findByKey."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:144": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS512 RSA algorithm for a >=4096-bit RSA key in findByKey selection."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:146": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS384 RSA algorithm for a >=3072-bit RSA key in findByKey selection."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/RsaSignatureAlgorithm.java:148": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Returns RS256 RSA algorithm for a sufficient-length RSA key in findByKey selection."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:38": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.RS256 into the standard JWS signature-algorithm registry used at runtime."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:39": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.RS384 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:40": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.RS512 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:41": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.PS256 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:42": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.PS384 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:43": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": "jwt-rsa-alg",
+  "reason": "Registers RsaSignatureAlgorithm.PS512 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:44": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Registers EcSignatureAlgorithm.ES256 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:45": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Registers EcSignatureAlgorithm.ES384 into the standard JWS registry."
+ },
+ "impl/src/main/java/io/jsonwebtoken/impl/security/StandardSecureDigestAlgorithms.java:46": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "Registers EcSignatureAlgorithm.ES512 into the standard JWS registry."
+ }
+}

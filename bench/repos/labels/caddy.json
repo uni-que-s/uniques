@@ -1,0 +1,146 @@
+{
+ "admin_test.go:943": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "Genuine embedded '-----BEGIN PRIVATE KEY-----' PKCS#8 PEM literal (keyPEM) used by the test; real key material."
+ },
+ "admin_test.go:923": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Genuine embedded X.509 certificate PEM literal (certPEM) with real cert body; real material."
+ },
+ "caddytest/a.caddy.localhost.crt:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Standalone real X.509 certificate file (sha256WithRSAEncryption); genuine cert material."
+ },
+ "caddytest/a.caddy.localhost.key:1": {
+  "label": "TP",
+  "algorithm": "RSA",
+  "patternId": "rsa-pem-header",
+  "reason": "Standalone real '-----BEGIN RSA PRIVATE KEY-----' PKCS#1 RSA private key file; genuine key material."
+ },
+ "caddytest/caddy.localhost.crt:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Standalone real X.509 certificate file; genuine cert material."
+ },
+ "caddytest/caddy.localhost.key:1": {
+  "label": "TP",
+  "algorithm": "RSA",
+  "patternId": "rsa-pem-header",
+  "reason": "Standalone real RSA private key (PKCS#1) file; genuine key material."
+ },
+ "caddytest/integration/acme_test.go:5": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Real 'crypto/ecdsa' import; file genuinely calls ecdsa.GenerateKey(P256) below."
+ },
+ "caddytest/integration/acme_test.go:61": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256(), rand.Reader) — real ECDSA P-256 account key generation."
+ },
+ "caddytest/integration/acme_test.go:77": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 certificate key generation."
+ },
+ "caddytest/integration/acme_test.go:130": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 account key generation."
+ },
+ "caddytest/integration/acme_test.go:146": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 certificate key generation."
+ },
+ "caddytest/integration/acmeserver_test.go:5": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Real 'crypto/ecdsa' import; file genuinely calls ecdsa.GenerateKey(P256) below."
+ },
+ "caddytest/integration/acmeserver_test.go:89": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 account key generation."
+ },
+ "caddytest/integration/acmeserver_test.go:105": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 certificate key generation."
+ },
+ "caddytest/integration/acmeserver_test.go:178": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 account key generation."
+ },
+ "caddytest/integration/acmeserver_test.go:194": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Genuine ecdsa.GenerateKey(elliptic.P256()) — real ECDSA P-256 certificate key generation."
+ },
+ "caddytest/leafcert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Standalone real X.509 certificate PEM file; genuine cert material."
+ },
+ "modules/caddyhttp/celmatcher_test.go:30": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Genuine embedded X.509 certificate PEM literal (clientCert var); real cert material."
+ },
+ "modules/caddyhttp/replacer.go:22": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Production import 'crypto/rsa' genuinely used at line 544 (case *rsa.PublicKey) for TLS client-cert placeholder handling."
+ },
+ "modules/caddyhttp/replacer.go:20": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Production import 'crypto/ecdsa' genuinely used at line 546 (case *ecdsa.PublicKey) for TLS client-cert public-key handling."
+ },
+ "modules/caddyhttp/replacer_test.go:40": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Genuine embedded X.509 certificate PEM literal (clientCert); real cert material."
+ },
+ "modules/caddypki/crypto.go:22": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Production PKI import 'crypto/rsa' genuinely used at lines 129-130 (case *rsa.PublicKey / signer.Public().(*rsa.PublicKey)) for key-type inspection."
+ },
+ "modules/caddypki/crypto.go:20": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Production PKI import 'crypto/ecdsa' genuinely used at lines 137-138 (case *ecdsa.PublicKey) for key-type inspection."
+ },
+ "modules/caddytls/leafpemloader_test.go:15": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Genuine embedded X.509 certificate PEM literal passed to LeafPEMLoader.Certificates; real cert material."
+ }
+}
