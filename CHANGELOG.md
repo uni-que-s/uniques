@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing unreleased._
 
+## [0.5.2] - 2026-07-01
+
+### Fixed
+
+- **An ssh key-type NAME in prose is no longer flagged as key material.** `ssh-rsa`
+  / `ecdsa-sha2-nistp256` appearing in a natural-language log or label ("redacted an
+  ssh-rsa entry from the audit output"), with no adjacent base64 key bytes, is a
+  name reference — the never-downgrade rule now yields for it (`bareKeyName` +
+  `proseMention`). A real key line still carries the blob (so it stays actionable),
+  and a key type named in a URL/route path (`/keys/ssh-rsa/import`) still wins the
+  never-downgrade rule — that deliberate decision is preserved.
+- **An unquoted config path/route slug is now downgraded like the quoted form.** An
+  unquoted YAML/Terraform value that is a URL or route (`rotate:
+  /api/v2/diffie-hellman/rotate`) names an endpoint, not a key exchange; it is not a
+  string span, so the path classifier previously missed it. A bare algorithm value
+  (`keyExchange: diffie-hellman`) is not a path and still fires.
+
+These close two of the three residual gaps documented in v0.5.1's `KNOWN_GAPS`;
+qbench is now **104 cases at 1.0/1.0**. The last gap — a coincidental ambiguous
+shape that shares a *file* with real crypto — needs call-vs-object data flow
+(ENG-01b) and remains tracked, not gated.
+
 ## [0.5.1] - 2026-07-01
 
 ### Changed

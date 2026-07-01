@@ -770,6 +770,13 @@ const KEY_MATERIAL = new Set<string>([
 // string value is NOT upgraded (stays a low possible-mention).
 const CODE_TOKEN_UPGRADE = new Set<string>(["jwt-rsa-alg", "jwt-ecdsa-alg"]);
 
+// SSH key patterns match the key-TYPE NAME (`ssh-rsa`, `ecdsa-sha2-nistp256`). A
+// real key line carries the name PLUS a base64 blob; a bare name in prose does not.
+// These are the KEY_MATERIAL patterns whose never-downgrade protection may yield for
+// a prose mention when the match is a bare name (`bareKeyName`) — a real key line
+// keeps its protection because the blob makes `bareKeyName` false.
+const SSH_KEY_NAME = new Set<string>(["ssh-rsa-key", "ssh-ecdsa-key"]);
+
 export function resolveConfidence(
   patternId: string,
   ctx: {
@@ -780,6 +787,8 @@ export function resolveConfidence(
     docstring?: boolean;
     ambiguous?: boolean;
     cryptoContext?: boolean;
+    bareKeyName?: boolean;
+    proseMention?: boolean;
   },
 ): Confidence {
   const base = confidenceFor(patternId);
@@ -795,9 +804,14 @@ export function resolveConfidence(
   // `ES256` ("east-storage-256") in non-crypto code stays a low possible-mention.
   if (ctx.codeToken && CODE_TOKEN_UPGRADE.has(patternId)) return ctx.cryptoContext ? "medium" : "low";
   // A prose mention downgrades — for key material only when it's inside a
-  // triple-quoted docstring (unambiguous prose; an authorized_keys file or config
-  // is never a docstring, so real keys keep their never-downgrade protection).
-  if (ctx.mention && (!KEY_MATERIAL.has(patternId) || ctx.docstring)) return "low";
+  // triple-quoted docstring (unambiguous prose), or when the match is a bare ssh
+  // key-type NAME appearing in NATURAL-LANGUAGE prose (a log/label) with no adjacent
+  // key bytes (a name reference, not a key). Scoped to prose (`proseMention`) so a
+  // key type named in a URL/route path (`/keys/ssh-rsa/import`) still wins the
+  // never-downgrade rule; a real key line carries the blob, so it never qualifies.
+  const keyMaterialYields =
+    ctx.docstring || (SSH_KEY_NAME.has(patternId) && ctx.bareKeyName && ctx.proseMention);
+  if (ctx.mention && (!KEY_MATERIAL.has(patternId) || keyMaterialYields)) return "low";
   return base;
 }
 

@@ -181,6 +181,30 @@ export function isMentionStringAt(content: string, spans: Array<[number, number]
 }
 
 /**
+ * Is the match at `offset` inside a natural-language PROSE mention string (a log
+ * line, error, label, sentence) — as opposed to a URL/route path slug? This is the
+ * prose-only half of `isMentionStringAt`, used to scope the bare-ssh-key-name yield
+ * so it fires for a key-type name in prose ("redacted an ssh-rsa entry") but NOT for
+ * a name in a path (`/keys/ssh-rsa/import`), which is a deliberate never-downgrade.
+ */
+export function isProseMentionAt(content: string, spans: Array<[number, number]>, offset: number): boolean {
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [s, e] = spans[mid];
+    if (offset < s) hi = mid - 1;
+    else if (offset >= e) lo = mid + 1;
+    else {
+      const literal = content.slice(s, e);
+      if (literal.charCodeAt(0) === 96 /* backtick */ && literal.includes("${")) return false;
+      return looksLikeMention(content.slice(s + 1, e - 1));
+    }
+  }
+  return false;
+}
+
+/**
  * Is the match at `offset` a bare CODE token — i.e. NOT inside any string literal?
  * Used to upgrade a JOSE-algorithm identifier (`SignatureAlgorithm RS256 = …`, a
  * real typed declaration) above its conservative base confidence, while a token
@@ -439,4 +463,47 @@ export function isAmbiguousMatch(
     default:
       return false;
   }
+}
+
+/** Config/IaC languages where an unquoted scalar value is idiomatic (so a crypto
+ *  name can sit in an unquoted path value, invisible to the string-span classifier). */
+export const CONFIG_LANG = new Set(["yaml", "config", "terraform", "json"]);
+
+/**
+ * Is the match an ssh key-TYPE NAME (`ssh-rsa`, `ecdsa-sha2-nistp256`) that is NOT
+ * followed by actual key BYTES — i.e. a bare name reference rather than a real key
+ * line? A genuine SSH public key is `ssh-rsa AAAAB3Nza… user@host`: the name is
+ * immediately followed by whitespace and a long base64 blob. A bare name in a log,
+ * error, or support hint ("redacted an ssh-rsa entry") has no blob. This lets the
+ * mention rule downgrade a key-type NAME in prose while a real key line (blob
+ * present) keeps its KEY_MATERIAL never-downgrade protection.
+ */
+export function isBareSshKeyNameAt(content: string, end: number): boolean {
+  return !/^\s+[A-Za-z0-9+/]{20,}/.test(content.slice(end, end + 96));
+}
+
+/**
+ * Is the match sitting inside an UNQUOTED config value that is a URL or route/path
+ * slug — `route: /api/v2/diffie-hellman/rotate`? The quoted form is already a string
+ * span and downgraded by `looksLikePathOrUrl`; an unquoted YAML/Terraform value is
+ * not a span, so the path classifier never runs on it. Scoped to config/IaC
+ * languages and to a token that STARTS with `/` or contains `://` — a bare
+ * algorithm value (`keyExchange: diffie-hellman`) is NOT a path and still fires.
+ */
+export function isUnquotedPathSlugAt(
+  content: string,
+  spans: Array<[number, number]>,
+  start: number,
+  end: number,
+  language: string,
+): boolean {
+  if (!CONFIG_LANG.has(language)) return false;
+  if (!isCodeTokenAt(spans, start)) return false; // quoted → handled by looksLikePathOrUrl
+  const isWS = (c: string | undefined) => c === undefined || c === " " || c === "\t" || c === "\n" || c === "\r";
+  let a = start;
+  let b = end;
+  while (a > 0 && !isWS(content[a - 1])) a--;
+  while (b < content.length && !isWS(content[b])) b++;
+  const token = content.slice(a, b);
+  return token[0] === "/" || token.includes("://");
 }

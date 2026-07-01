@@ -12,8 +12,11 @@ import {
   isEnumConstRefAt,
   isCodeTokenAt,
   isInTripleQuoteAt,
+  isProseMentionAt,
   hasCryptoContext,
   isAmbiguousMatch,
+  isBareSshKeyNameAt,
+  isUnquotedPathSlugAt,
   tripleQuoteAt,
   tripleQuoteEnd,
 } from "./context.js";
@@ -320,17 +323,24 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         let docstring = true; // every occurrence sits inside a triple-quoted docstring
         let codeToken = false; // any occurrence is a bare code token (not in a string)
         let ambiguous = true; // every occurrence is an ambiguous shape (needs file crypto context)
+        let bareKeyName = true; // every occurrence is a bare ssh key-type NAME (no key bytes)
+        let proseMention = true; // every occurrence is a natural-language prose mention (not a path)
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
           const off = lineStart[i] + occ.index;
           const endOff = off + occ[0].length;
-          if (mention && !isMentionStringAt(normalized, stringSpans, off)) mention = false;
+          // A prose mention OR an unquoted config path/route slug is a reference,
+          // not a use — both downgrade (subject to the never-downgrade rule).
+          if (mention && !isMentionStringAt(normalized, stringSpans, off) &&
+              !isUnquotedPathSlugAt(normalized, stringSpans, off, endOff, language)) mention = false;
           if (disabled && !isDisableDirectiveAt(normalized, stringSpans, off, endOff)) disabled = false;
           if (enumRef && !isEnumConstRefAt(normalized, off, endOff, occ[0])) enumRef = false;
           if (docstring && !isInTripleQuoteAt(normalized, stringSpans, off)) docstring = false;
           if (!codeToken && isCodeTokenAt(stringSpans, off)) codeToken = true;
           if (ambiguous && !isAmbiguousMatch(pattern.id, occ[0], normalized, endOff)) ambiguous = false;
+          if (bareKeyName && !isBareSshKeyNameAt(normalized, endOff)) bareKeyName = false;
+          if (proseMention && !isProseMentionAt(normalized, stringSpans, off)) proseMention = false;
           if (!mention && !disabled && !enumRef && !ambiguous) break;
         }
         if (!matched) continue;
@@ -347,7 +357,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext, bareKeyName, proseMention }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

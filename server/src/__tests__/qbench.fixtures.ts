@@ -269,6 +269,16 @@ export const QBENCH: QCase[] = [
     code: `const c = createCipheriv("des-ede3-cbc", key, iv);\n` },
   { id: "control-p256-cryptokit-real", ext: "swift", expect: ["ecc-swift-cryptokit"], why: "P256.Signing.PrivateKey() alongside a real crypto token (PrivateKey / CryptoKit) is corroborated — a real CryptoKit use",
     code: `import CryptoKit\nlet key = P256.Signing.PrivateKey()\n` },
+
+  // ── v0.5.1 residual gaps, closed in v0.5.2 ──
+  { id: "ssh-rsa-name-in-prose", ext: "js", expect: [], why: "a key-TYPE name ssh-rsa in a natural-language log/label with no adjacent key bytes is a name reference, not a key — the never-downgrade rule yields for prose (bareKeyName + proseMention)",
+    code: `logger.info("redacted an ssh-rsa entry from the audit output");\n` },
+  { id: "guard-ssh-rsa-real-key-in-prose", ext: "js", expect: ["ssh-rsa-key"], why: "a real ssh-rsa key line embedded in a prose string still carries the base64 blob — bareKeyName is false, so never-downgrade protects it",
+    code: `const m = "rotate your key ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDx1a2b3c4d5e now";\n` },
+  { id: "unquoted-config-path-slug", ext: "yaml", expect: [], why: "an UNQUOTED yaml value that is a route/path slug (/api/v2/diffie-hellman/rotate) names an endpoint, not a key exchange — downgraded even though it is not a string span",
+    code: `routes:\n  rotate: /api/v2/diffie-hellman/rotate\n` },
+  { id: "guard-unquoted-config-real-dh", ext: "yaml", expect: ["dh-keyexchange"], why: "a bare algorithm value (keyExchange: diffie-hellman) is a real DH posture, NOT a path — it still fires",
+    code: `security:\n  keyExchange: diffie-hellman\n` },
 ];
 
 /**
@@ -288,17 +298,13 @@ export const KNOWN_GAPS: QCase[] = [
   //  - v0.3.10: bare enum-constant references (the call-vs-reference stand-in)
   //  - v0.5.1: coincidental ambiguous shapes in NON-crypto files — file-scope
   //    corroboration (coincidence-*/control-* cases)
+  //  - v0.5.2: ssh key-type NAME in prose (bareKeyName + proseMention) and unquoted
+  //    config path/route slugs (ssh-rsa-name-in-prose/unquoted-config-path-slug)
   //
-  // ── OPEN (v0.5.1) — the residual the zero-dependency lexical engine cannot close
-  //    without call-vs-object DATA FLOW (ENG-01b / tree-sitter AST). Documented and
-  //    measured, NOT gated, so the 1.0 gate stays honest. ──
+  // ── OPEN — the residual the zero-dependency lexical engine cannot close without
+  //    call-vs-object DATA FLOW (ENG-01b / tree-sitter AST). Documented and measured,
+  //    NOT gated, so the 1.0 gate stays honest. ──
   { id: "gap-ambiguous-in-crypto-file", ext: "js", gapKind: "fp", expect: [],
-    why: "an ambiguous shape (dh.generate, dh = a DateHelper) that shares a FILE with real crypto is kept actionable by file-scope corroboration — telling the coincidental receiver from a real DiffieHellman needs data flow (ENG-01b), not lexical file context",
+    why: "an ambiguous shape (dh.generate where dh is a DateHelper) that shares a FILE with real crypto is kept actionable by file-scope corroboration — telling the coincidental receiver from a real DiffieHellman needs data flow (ENG-01b), not lexical file context. Rare in real code (a DateHelper is not named `dh` in a file that also holds a DiffieHellman), so held as the marker for ENG-01b rather than chased lexically.",
     code: `const dh = new DateHelper(tz);\nconst when = dh.generate(schedule);\nconst real = createDiffieHellman(2048);\n` },
-  { id: "gap-ssh-rsa-name-in-prose", ext: "js", gapKind: "fp", expect: [],
-    why: "the key-type NAME ssh-rsa in a prose log/redaction string is still actionable: ssh-rsa-key is KEY_MATERIAL (never-downgrade) and a bare name is indistinguishable from a real key line by the mention rule alone — needs a key-bytes vs name-only distinction",
-    code: `logger.info("redacted an ssh-rsa entry from the audit output");\n` },
-  { id: "gap-unquoted-config-slug", ext: "yaml", gapKind: "fp", expect: [],
-    why: "an UNQUOTED yaml/config value that is a URL/route slug (route: /api/v2/diffie-hellman/rotate) is not a string span, so the path/URL classifier never runs on it — the quoted form is already downgraded; unquoted config values need span-equivalent handling",
-    code: `routes:\n  rotate: /api/v2/diffie-hellman/rotate\n` },
 ];

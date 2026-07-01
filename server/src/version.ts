@@ -1,5 +1,11 @@
 /** Single source of truth for the tool version stamped into exports (CBOM tool
- *  metadata, OpenAPI, etc.) and reported by /api/health. 0.5.1 = messy-app-code
+ *  metadata, OpenAPI, etc.) and reported by /api/health. 0.5.2 = closed two v0.5.1
+ *  residual precision gaps: an ssh key-type NAME in prose (a log/label with no
+ *  adjacent key bytes) now yields the never-downgrade rule (bareKeyName +
+ *  proseMention — a real key line's base64 blob still protects it, and a key named
+ *  in a URL path still wins per path-keymaterial-stays); and an UNQUOTED config
+ *  path/route slug is downgraded like the quoted form. qbench 104 @ 1.0/1.0.
+ *  0.5.1 = messy-app-code
  *  precision — file-scope crypto corroboration downgrades coincidental ambiguous
  *  shapes (a `dh.generate` on a DateHelper, `new DSA` = Delivery Service Area, a
  *  bare `des3`/`md5sum`/`pkcs12`/`.p12` token) to possible-mentions in files with
@@ -22,4 +28,4 @@
  *  (DH/Java) + PKCS#12 + authorized_keys filename gate. 0.3.6 = recall expansion
  *  (Go/EVP/WebCrypto/X.509). 0.3.5 = mention classifier. 0.3.4 = qbench benchmark.
  *  0.3.3 = Action baseline. 0.3.2 = CI ratchet. 0.3.1 = version vis. */
-export const VERSION = "0.5.1";
+export const VERSION = "0.5.2";

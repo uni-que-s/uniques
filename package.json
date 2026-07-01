@@ -1,6 +1,6 @@
 {
   "name": "quantumvault",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Quantum-safe cryptography platform — crypto asset discovery, risk scoring, and compliance automation.",
   "scripts": {
