@@ -772,12 +772,28 @@ const CODE_TOKEN_UPGRADE = new Set<string>(["jwt-rsa-alg", "jwt-ecdsa-alg"]);
 
 export function resolveConfidence(
   patternId: string,
-  ctx: { mention: boolean; disabled?: boolean; enumRef?: boolean; codeToken?: boolean; docstring?: boolean },
+  ctx: {
+    mention: boolean;
+    disabled?: boolean;
+    enumRef?: boolean;
+    codeToken?: boolean;
+    docstring?: boolean;
+    ambiguous?: boolean;
+    cryptoContext?: boolean;
+  },
 ): Confidence {
   const base = confidenceFor(patternId);
   if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
   if (ctx.enumRef) return "low"; // a bare enum-constant read is a reference, not a use
-  if (ctx.codeToken && CODE_TOKEN_UPGRADE.has(patternId)) return "medium"; // bare code JOSE alg = real use
+  // An ambiguous SHAPE (`dh.generate`, `new DSA`, a bare `des3`/`md5sum`/`pkcs12`
+  // token, a `.p12` filename) in a file that shows NO real crypto anywhere is a
+  // coincidental application identifier, not a use — a possible mention. Real crypto
+  // files corroborate (`hasCryptoContext`), so a genuine use keeps its confidence.
+  if (ctx.ambiguous && !ctx.cryptoContext) return "low";
+  // A bare code JOSE-alg token (`SignatureAlgorithm RS256 = …`) is a real use — but
+  // only in a file that actually does JWT/JOSE crypto. A coincidental constant named
+  // `ES256` ("east-storage-256") in non-crypto code stays a low possible-mention.
+  if (ctx.codeToken && CODE_TOKEN_UPGRADE.has(patternId)) return ctx.cryptoContext ? "medium" : "low";
   // A prose mention downgrades — for key material only when it's inside a
   // triple-quoted docstring (unambiguous prose; an authorized_keys file or config
   // is never a docstring, so real keys keep their never-downgrade protection).

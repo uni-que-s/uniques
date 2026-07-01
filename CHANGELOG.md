@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing unreleased._
 
+## [0.5.1] - 2026-07-01
+
+### Changed
+
+- **Messy-app-code precision — file-scope crypto corroboration.** A crypto *shape*
+  that is lexically identical to an ordinary application identifier — `dh.generate()`
+  on a DateHelper, `new DSA(zone)` for a "Delivery Service Area", a bare
+  `des3`/`aes_128`/`md5sum`/`pkcs12` token, a `report.p12` filename — is now
+  downgraded to a **possible mention** unless the file shows a real cryptographic
+  signal (a crypto import, a PEM block, a curve/key-size, an unambiguous primitive).
+  Real crypto files corroborate, so recall is preserved — verified: caddy's
+  production ECDSA/RSA findings and every qbench positive still fire. A field
+  measurement across ten languages found a **43% false-positive rate (64/149) on
+  coincidental identifiers** before this change; the ambiguous-shape class is now
+  cleared in non-crypto files. qbench is **100 cases at 1.0/1.0** (19 new). The
+  honest residual — a coincidence that shares a *file* with real crypto — needs
+  call-vs-object data flow (ENG-01b) and is tracked, measured, and NOT gated
+  (see `KNOWN_GAPS`).
+- **Completed the user-facing UniQueS rebrand.** The scan-summary banner, the
+  branded assessment and compliance reports, the SARIF `tool.driver.name`, and the
+  CBOM `metadata.tools[].name` now read **UniQueS** (the CLI `--help` banner already
+  did). Internal identifiers — the `quantumvault` service id, `QV_*` env vars, the
+  package name — are unchanged.
+
+### Fixed
+
+- **Disable-directive detection now covers the C# indexer (`["ssh-rsa"] = false`)
+  and the PHP/JS arrow (`'ssh-rsa' => false`) forms** — an explicitly turned-off
+  algorithm is remediation, not a live posture, and is downgraded even for key
+  material.
+- **A JSON object with `"kty":"EC"` but no JWK companion field** (crv/x/y/n/e/kid)
+  is a coincidental descriptor, not a JWK, and no longer flags as key material.
+- **Web container healthcheck now targets `127.0.0.1`, not `localhost`.** On
+  `nginx:alpine`, `localhost` resolves to `::1` first while nginx binds IPv4 only,
+  so the dashboard container reported `unhealthy` while serving correctly.
+
 ## [0.5.0] - 2026-07-01
 
 ### Changed

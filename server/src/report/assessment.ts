@@ -330,7 +330,7 @@ function buildRoadmap(critical: number, high: number, medium: number): RoadmapPh
       horizon: "0–3 months",
       body:
         `Migrate the ${p1} critical/high-priority asset${p1 === 1 ? "" : "s"} to hybrid PQC (ML-KEM for key ` +
-        `exchange, ML-DSA for signing). Add QuantumVault to CI with \`--fail-on high\` so no new ` +
+        `exchange, ML-DSA for signing). Add UniQueS to CI with \`--fail-on high\` so no new ` +
         `quantum-vulnerable crypto merges.`,
     },
     {

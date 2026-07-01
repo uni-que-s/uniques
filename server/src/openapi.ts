@@ -28,7 +28,7 @@ export function openApiDocument(): Record<string, unknown> {
   return {
     openapi: "3.1.0",
     info: {
-      title: "QuantumVault API",
+      title: "UniQueS API",
       version: VERSION,
       description:
         "Quantum-safe cryptography platform: cryptographic asset discovery, risk scoring, " +

@@ -143,7 +143,7 @@ test("scan → list → patch status → CSV export, all org-scoped", async () =
   assert.match(sarif.headers.get("content-type") ?? "", /sarif\+json/);
   const sarifBody = await sarif.json();
   assert.equal(sarifBody.version, "2.1.0");
-  assert.equal(sarifBody.runs[0].tool.driver.name, "QuantumVault");
+  assert.equal(sarifBody.runs[0].tool.driver.name, "UniQueS");
   assert.ok(sarifBody.runs[0].results.length >= 2);
 
   // Org B is isolated: sees no assets and cannot mutate org A's asset.

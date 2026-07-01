@@ -533,7 +533,7 @@ test("sarif: emits a valid SARIF 2.1.0 log with rules, results, and levels", () 
 
   assert.equal(sarif.version, "2.1.0");
   const driver = sarif.runs[0].tool.driver;
-  assert.equal(driver.name, "QuantumVault");
+  assert.equal(driver.name, "UniQueS");
   assert.ok(driver.rules.some((r: any) => r.id === "rsa-pem-header"));
 
   const result = sarif.runs[0].results[0];
@@ -557,7 +557,7 @@ test("sarif: critical/high map to error level", () => {
 test("openapi: emits a valid 3.1 document covering the key endpoints", () => {
   const doc = openApiDocument() as any;
   assert.equal(doc.openapi, "3.1.0");
-  assert.equal(doc.info.title, "QuantumVault API");
+  assert.equal(doc.info.title, "UniQueS API");
   assert.equal(doc.servers[0].url, "/api");
   assert.ok(doc.components.securitySchemes.bearerAuth);
   // representative endpoints across the surface are described

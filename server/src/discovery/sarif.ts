@@ -71,7 +71,7 @@ export function assetsToSarif(assets: CryptoAsset[], meta: SarifMeta = {}): Reco
       {
         tool: {
           driver: {
-            name: "QuantumVault",
+            name: "UniQueS",
             informationUri: INFO_URI,
             version: meta.toolVersion ?? VERSION,
             rules,

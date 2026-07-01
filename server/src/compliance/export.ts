@@ -67,7 +67,7 @@ export function renderReportHtml(report: ComplianceReport, orgName: string): str
 <body>
   <div class="head">
     <div>
-      <div class="brand"><div class="logo">Q</div><strong>QuantumVault</strong></div>
+      <div class="brand"><div class="logo">U</div><strong>UniQueS</strong></div>
       <h1>${esc(report.framework)} Control-Gap Report</h1>
       <div class="muted">${esc(orgName)} &middot; Generated ${esc(generated)} &middot; Scan ${esc(report.scanId)}</div>
       <div class="muted">Control-gap evidence for review &mdash; not a certification of compliance.</div>
@@ -86,7 +86,7 @@ export function renderReportHtml(report: ComplianceReport, orgName: string): str
   </table>
 
   <footer>
-    QuantumVault automated post-quantum compliance assessment. This report maps discovered
+    UniQueS automated post-quantum compliance assessment. This report maps discovered
     cryptographic assets to ${esc(report.framework)} control requirements. Confidential &amp; Proprietary.
   </footer>
 </body></html>`;

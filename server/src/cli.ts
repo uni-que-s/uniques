@@ -90,7 +90,7 @@ function printTable(job: ScanJob, assets: CryptoAsset[]): void {
   for (const a of actionable) byPriority[a.risk?.priority ?? "low"] += 1;
 
   process.stdout.write(
-    `\nQuantumVault — ${job.filesScanned} files scanned, ${actionable.length} quantum-vulnerable assets` +
+    `\nUniQueS — ${job.filesScanned} files scanned, ${actionable.length} quantum-vulnerable assets` +
       (mentions ? ` · ${mentions} possible mention${mentions === 1 ? "" : "s"} (low confidence)` : "") +
       ` (${job.durationMs}ms)\n`,
   );

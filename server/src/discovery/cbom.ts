@@ -115,7 +115,7 @@ export function assetsToCbom(assets: CryptoAsset[], meta: CbomMeta = {}): Record
       timestamp: meta.generatedAt ?? new Date().toISOString(),
       tools: {
         components: [
-          { type: "application", name: "QuantumVault", version: meta.toolVersion ?? VERSION },
+          { type: "application", name: "UniQueS", version: meta.toolVersion ?? VERSION },
         ],
       },
       component: { type: "application", "bom-ref": appRef, name: meta.target ?? "scan-target" },

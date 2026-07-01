@@ -44,7 +44,7 @@ test("cli: --sarif emits a valid SARIF 2.1.0 log", () => {
     const { stdout } = runCli([dir, "--sarif"]);
     const sarif = JSON.parse(stdout);
     assert.equal(sarif.version, "2.1.0");
-    assert.equal(sarif.runs[0].tool.driver.name, "QuantumVault");
+    assert.equal(sarif.runs[0].tool.driver.name, "UniQueS");
     assert.ok(sarif.runs[0].results.length >= 1);
   } finally {
     rmSync(dir, { recursive: true, force: true });

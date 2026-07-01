@@ -48,7 +48,7 @@ if (process.env.QV_SEED === "force" || !store.hasAnyScan()) {
 }
 
 const server = app.listen(PORT, () => {
-  console.log(`QuantumVault API listening on http://localhost:${PORT}`);
+  console.log(`UniQueS API listening on http://localhost:${PORT}`);
 });
 
 // Continuous monitoring: re-scan configured targets on a schedule. Tick interval

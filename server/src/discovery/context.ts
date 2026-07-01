@@ -260,8 +260,13 @@ export function isDisableDirectiveAt(
   }
   const isSpace = (c: string) => c === " " || c === "\t";
   while (pos < content.length && isSpace(content[pos])) pos++;
+  // A C# dictionary-initializer key closes with `]` before the assignment
+  // (`["ssh-rsa"] = false`); skip it so the directive is still recognized.
+  if (content[pos] === "]") { pos++; while (pos < content.length && isSpace(content[pos])) pos++; }
   if (content[pos] !== ":" && content[pos] !== "=") return false;
   pos++;
+  // A PHP/JS arrow assignment (`'ssh-rsa' => false`) has `>` after the `=`.
+  if (content[pos] === ">") pos++;
   while (pos < content.length && isSpace(content[pos])) pos++;
   // Read the value token up to the next delimiter, strip quotes, lowercase.
   let j = pos;
@@ -314,4 +319,124 @@ export function isEnumConstRefAt(content: string, start: number, end: number, ma
   // in `=` (`==` `!=` `<=` `>=`) — those are references that may guard a use.
   const before = content[p - 1];
   return before !== "=" && before !== "!" && before !== "<" && before !== ">";
+}
+
+/**
+ * FILE-LEVEL crypto corroboration — the file-scope companion to the per-occurrence
+ * context above, and the second (file-scope) down-payment on the call-vs-object
+ * data flow a full AST (ENG-01b) would give.
+ *
+ * Some crypto *shapes* are lexically identical whether the receiver / identifier is
+ * a real cryptographic object or an ordinary application one: `dh.generate()` reads
+ * the same whether `dh` is a DiffieHellman or a DateHelper; `new DSA(zone)` whether
+ * DSA is the Digital Signature Algorithm or a "Delivery Service Area"; a bare
+ * `des3` / `aes_128` / `md5sum` / `pkcs12` token, or a `report.p12` filename, the
+ * same whether it is Triple-DES / AES-128 / a keystore or a mundane business code.
+ * At the call site alone they cannot be told apart. But a file that genuinely *does*
+ * cryptography carries an unambiguous co-signal — a crypto import, a PEM block, a
+ * curve constant, a keygen of a named primitive, a key-size. This scans the whole
+ * file once for such signals. An ambiguous shape in a file WITHOUT any is treated as
+ * a possible mention (still surfaced for review, not counted as hard exposure) —
+ * the honest default. Real crypto files corroborate, so recall is preserved.
+ *
+ * The signal set is deliberately broad (favouring corroboration) so a real crypto
+ * file almost never fails to corroborate — the cost of a false *negative* here is a
+ * recall loss, which this project weighs more heavily than an extra possible-mention.
+ * It excludes the ambiguous tokens themselves (a bare `dsa`/`rsa`/`dh`/`des3` is NOT
+ * a corroborator — that would be circular and let a coincidental variable vouch for
+ * its own call).
+ */
+const CRYPTO_CONTEXT_RE = new RegExp(
+  [
+    // ── library imports / namespaces / packages ──
+    "\\bcrypto\\b", "cryptography", "System\\.Security\\.Cryptography", "javax\\.crypto",
+    "java\\.security", "BouncyCastle", "bouncycastle", "libsodium", "\\bsodium\\b", "tweetnacl",
+    "node-forge", "forge\\.pki", "CryptoKit", "mbedtls", "wolfssl", "openssl", "OpenSSL::",
+    "Crypto\\.(?:PublicKey|Cipher|Hash|Signature)", "\\bpyca\\b", "\\bjose\\b", "jsonwebtoken",
+    "jwcrypto", "\\bnimbus", "\\bjjwt\\b",
+    // ── unambiguous operations / structured crypto tokens ──
+    "createDiffieHellman", "DiffieHellman", "KeyPairGenerator", "MessageDigest",
+    "Cipher\\.getInstance", "SecureRandom", "-----BEGIN", "\\bsecp256", "prime256v1",
+    "\\bP-(?:256|384|521)\\b", "ssh-rsa\\s+AAAA", "ssh-dss\\s+AAAA", "KeyFactory", "KeyFactorySpi",
+    "generatePrivateKey", "\\bx509\\b", "\\bpkcs8\\b", "\\bPrivateKey\\b", "\\bPublicKey\\b",
+    "\\bECDSA\\b", "\\bECDH\\b", "\\bEd25519\\b", "\\bX25519\\b", "RSACryptoServiceProvider",
+    "RSACng", "DSACryptoServiceProvider", "SignatureAlgorithm", "JWSAlgorithm", "SignedJWT",
+    "\\bECDHE\\b", "AES-(?:128|192|256)-(?:CBC|GCM|CTR)", "hashlib", "createHash", "createCipher",
+    "\\bHKDF\\b", "\\bPBKDF2\\b", "subtle\\.(?:sign|verify|generateKey|deriveKey|importKey)",
+    "modulusLength", "namedCurve", "\\bJWK\\b", "\\bJWS\\b",
+  ].join("|"),
+  "i",
+);
+
+export function hasCryptoContext(content: string): boolean {
+  return CRYPTO_CONTEXT_RE.test(content);
+}
+
+// A local (line-adjacent) corroborator for the keygen/keyload shapes: a key size, a
+// key-size parameter, or an algorithm passed as an argument. Lets an isolated
+// `RSA.Create(2048)` / `generateKeyPairSync("rsa", { modulusLength: 2048 })` stay
+// actionable even when the file offers no other crypto signal, while a bare
+// `RSA.Create(config)` / `orderBook.generateKeyPair(shardCount)` does not.
+const LOCAL_KEYISH = /\b(?:512|768|1024|2048|3072|4096|7680|8192|15360)\b|modulusLength|\bbits\b|namedCurve|["'](?:rsa|ec|dsa|secp|prime|ed25519)|\bcurve\b/i;
+
+/**
+ * Is this occurrence an inherently-AMBIGUOUS crypto shape — one that resembles a
+ * cryptographic operation but is lexically indistinguishable from an ordinary
+ * application identifier, and so must be corroborated by file-level crypto context
+ * (see `hasCryptoContext`) before it counts as exposure?
+ *
+ * Scoped per pattern to the specific ambiguous ARM(s) only — the unambiguous arms of
+ * the same pattern (`createDiffieHellman`, `DSA_generate`, `des-ede3`, `hashlib.md5`,
+ * `pkcs12.Decode(…)`) return false here and keep their base confidence. A trailing
+ * window is consulted so a key size / algorithm argument (`LOCAL_KEYISH`) rescues a
+ * genuine keygen that happens to share the shape.
+ */
+export function isAmbiguousMatch(
+  patternId: string, matchText: string, content: string, end: number,
+): boolean {
+  const m = matchText.trim();
+  const win = content.slice(end, end + 64); // trailing args: a key size / algorithm token rescues real keygen
+  switch (patternId) {
+    case "dsa-usage":
+      // `dsa.generate(…)` and `new DSA(…)` collide with a DataSourceAdapter / a
+      // "Delivery Service Area" class. `DSA_generate`, `ssh-dss`, `DSAPrivateKey`,
+      // `SignatureAlgorithm.DSA` are specific and are NOT matched here.
+      return /^dsa\.generate$/i.test(m) || (/^new DSA$/.test(m) && !LOCAL_KEYISH.test(win));
+    case "dh-keyexchange":
+      return /^dh\.generate$/i.test(m); // a DateHelper / DispatchHandler .generate()
+    case "rsa-dotnet":
+      return /^RSA\.Create$/.test(m) && !LOCAL_KEYISH.test(win); // RSA = "Regional Sales Aggregator" app class
+    case "dsa-dotnet":
+      return /^DSA\.Create$/.test(m) && !LOCAL_KEYISH.test(win);
+    case "sym-des-3des":
+      return /^des3$/i.test(m); // "destination hop 3", "detail expansion stage 3" — not Triple-DES
+    case "sym-aes128":
+      return /^(?:AES128|aes_128)$/i.test(m); // an enum member / location code; `aes-128-cbc` etc. stay
+    case "hash-md5-sha1":
+      return /^md5sum$/i.test(m); // a non-security cache-key label named `md5sum`
+    case "pkcs12-keystore":
+      // A real parse/decode CALL (`pkcs12.Decode(data, …)`) keeps confidence; a bare
+      // `pkcs12` identifier or a `.p12`/`.pfx` FILENAME string (period-12, page-12,
+      // carton-standard-12) is the ambiguous business-code form.
+      if (/^pkcs12$/i.test(m)) return !/^\s*\.\s*(?:Decode|decode|Parse|parse|Load|load|Read|read|From|Import|import)/.test(win);
+      return true;
+    case "rsa-keygen-openssl":
+      // `generateKeyPair(…)` is a generic method name (sharding, id allocation).
+      // `RSA.generate`, `rsa_generate_key`, `new RSACryptoServiceProvider` are not
+      // matched here. A key size / `"rsa"` / `modulusLength` argument rescues it.
+      return /generateKeyPair/i.test(m) && !LOCAL_KEYISH.test(win);
+    case "ecc-swift-cryptokit":
+      return /^P(?:256|384|521)\.(?:Signing|KeyAgreement)$/.test(m); // a "Premium 256" product SKU enum case
+    case "jwk-asymmetric-key": {
+      // A real JWK carries companion fields — crv/x/y (EC), n/e (RSA), or kid/use/
+      // alg/d. A JSON with `"kty":"EC"` but NONE of these is a coincidental
+      // descriptor (kty = "kind-type", EC = "Economy Class"), not a key. This is a
+      // self-contained shape test, so the field presence — not file context —
+      // decides it; a genuine key object keeps its never-downgrade protection.
+      const w = content.slice(Math.max(0, end - 200), end + 200);
+      return !/"(?:crv|x|y|n|e|d|kid|use|key_ops|alg)"\s*:/.test(w);
+    }
+    default:
+      return false;
+  }
 }

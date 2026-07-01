@@ -12,6 +12,8 @@ import {
   isEnumConstRefAt,
   isCodeTokenAt,
   isInTripleQuoteAt,
+  hasCryptoContext,
+  isAmbiguousMatch,
   tripleQuoteAt,
   tripleQuoteEnd,
 } from "./context.js";
@@ -271,8 +273,16 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
     // offset (used for syntactic-context lookup); CRLF would otherwise drift it.
     const normalized = content.indexOf("\r") === -1 ? content : content.replace(/\r\n?/g, "\n");
     const lines = normalized.split("\n");
-    const codeLines = maskComments(normalized, language).split("\n");
+    const maskedContent = maskComments(normalized, language);
+    const codeLines = maskedContent.split("\n");
     const stringSpans = lexStringSpans(normalized, language);
+    // File-scope crypto corroboration: does this file do cryptography anywhere?
+    // Ambiguous shapes (a `dh.generate` call, a bare `des3` token, a `.p12`
+    // filename) only count as exposure in a file that shows a real crypto signal.
+    // Computed on the COMMENT-MASKED view so a crypto *word* in a comment or
+    // docstring ("… not a cryptographic call …") can't vouch for the file — only
+    // real crypto code/strings corroborate.
+    const cryptoContext = hasCryptoContext(maskedContent);
     // Absolute start offset of each line in `normalized`, so `lineStart[i] +
     // matchColumn` locates a match in the file's string/code segment map.
     const lineStart: number[] = new Array(lines.length);
@@ -309,6 +319,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         let enumRef = true;
         let docstring = true; // every occurrence sits inside a triple-quoted docstring
         let codeToken = false; // any occurrence is a bare code token (not in a string)
+        let ambiguous = true; // every occurrence is an ambiguous shape (needs file crypto context)
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
@@ -319,7 +330,8 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           if (enumRef && !isEnumConstRefAt(normalized, off, endOff, occ[0])) enumRef = false;
           if (docstring && !isInTripleQuoteAt(normalized, stringSpans, off)) docstring = false;
           if (!codeToken && isCodeTokenAt(stringSpans, off)) codeToken = true;
-          if (!mention && !disabled && !enumRef) break;
+          if (ambiguous && !isAmbiguousMatch(pattern.id, occ[0], normalized, endOff)) ambiguous = false;
+          if (!mention && !disabled && !enumRef && !ambiguous) break;
         }
         if (!matched) continue;
 
@@ -335,7 +347,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

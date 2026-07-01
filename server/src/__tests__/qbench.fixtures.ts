@@ -208,8 +208,10 @@ export const QBENCH: QCase[] = [
   { id: "enum-ref-dsa-assign", ext: "ts", expect: [], why: "a bare enum read assigned to a variable (= SignatureAlgorithm.DSA) is a reference, not a signing use — downgraded to a possible mention",
     code: `const x = SignatureAlgorithm.DSA;\n` },
   // recall guards: the enum-ref rule must NOT swallow real DSA/DES uses
-  { id: "guard-dsa-method-call", ext: "ts", expect: ["dsa-usage"], why: "a real keygen call (dsa.generate(...)) has a lower-case member — fails the enum-const shape and still fires",
+  { id: "guard-dsa-method-call-bare", ext: "ts", expect: [], why: "an isolated dsa.generate(...) on an unknown receiver is lexically identical to a DataSourceAdapter.generate() — a possible mention, not exposure, until the file shows real crypto context (ENG-01a file-scope corroboration)",
     code: `const k = dsa.generate(params);\n` },
+  { id: "guard-dsa-method-call-corroborated", ext: "ts", expect: ["dsa-usage"], why: "the SAME dsa.generate(...) call in a file that imports crypto is corroborated — a real keygen, actionable",
+    code: `import "crypto";\nconst k = dsa.generate(params);\n` },
   { id: "guard-dsa-enum-arg", ext: "java", expect: ["dsa-usage"], why: "passing the enum to a signer (signWith(SignatureAlgorithm.DSA, key)) is an argument-position use — not a bare read, still fires",
     code: `signer.signWith(SignatureAlgorithm.DSA, key);\n` },
   { id: "guard-dsa-fluent-sign", ext: "ts", expect: ["dsa-usage"], why: "a fluent signing call (SignatureAlgorithm.DSA.sign(...)) is a real use — the trailing '.' keeps it at base confidence (not a bare read)",
@@ -220,6 +222,53 @@ export const QBENCH: QCase[] = [
     code: `if (algo == SignatureAlgorithm.DSA) { sign(); }\n` },
   { id: "regex-quote-no-mask-leak", ext: "ts", expect: [], why: "a regex with quote chars (/[\"']/) must not leak the comment-masker's string state into the next line — the following comment names a primitive and must stay masked",
     code: `const s = raw.replace(/^["']+|["']+$/g, "");\n// legacy diffie-hellman support was removed\n` },
+
+  // ── messy-app-code precision (v0.5.1): coincidental identifiers that RESEMBLE a
+  //    crypto shape but mean something mundane, in a file with NO crypto anywhere.
+  //    An ambiguous shape without file-level corroboration is a possible mention,
+  //    not exposure (see hasCryptoContext / isAmbiguousMatch). Each case is its own
+  //    file, so — as in a real codebase where crypto lives in its own module — the
+  //    coincidence file carries no crypto signal. ──
+  { id: "coincidence-dh-generate", ext: "js", expect: [], why: "dh is a DateHelper; dh.generate() yields a date, not a Diffie-Hellman key — no crypto in the file, a possible mention",
+    code: `const dh = new DateHelper(tz);\nconst nextRun = dh.generate(schedule);\n` },
+  { id: "coincidence-dsa-generate", ext: "ts", expect: [], why: "dsa is a DataSourceAdapter; .generate() runs a query — no crypto context, a possible mention not exposure",
+    code: `const dsa = new DataSourceAdapter(pool);\nconst rows = dsa.generate(reportQuery);\n` },
+  { id: "coincidence-new-dsa", ext: "ts", expect: [], why: "DSA is a 'Delivery Service Area' value object; new DSA(zone) constructs a shipping zone, not a keypair",
+    code: `class DSA { constructor(public zone: string) {} }\nconst area = new DSA("us-west");\n` },
+  { id: "coincidence-rsa-create", ext: "cs", expect: [], why: "RSA is a 'Regional Sales Aggregator' app class; RSA.Create(cfg) with no key size and no crypto context is not System.Security.Cryptography",
+    code: `var agg = RSA.Create(regionConfig);\n` },
+  { id: "coincidence-dsa-create", ext: "cs", expect: [], why: "DSA is an app class (Delivery Schedule Assignment); DSA.Create(cfg) with no key size / crypto context is coincidental",
+    code: `var plan = DSA.Create(routeConfig);\n` },
+  { id: "coincidence-des3-hop", ext: "js", expect: [], why: "des3 = 'destination hop 3', a routing waypoint — a bare des3 token with no crypto context is not Triple-DES",
+    code: `const des3 = hops[2];\ndeliver(des3);\n` },
+  { id: "coincidence-aes128-enum", ext: "ts", expect: [], why: "AES128 is a retired billing-plan enum member ('annual-enterprise-svc-128'), not the cipher, in a file with no crypto",
+    code: `enum PlanCode { BASIC, AES128, PRO }\nconst p = PlanCode.AES128;\n` },
+  { id: "coincidence-md5sum-label", ext: "js", expect: [], why: "md5sum is the label of a non-security dedupe key (plain string concat, no hashing) — a possible mention",
+    code: `const md5sum = plan.areaCode + ':' + plan.slot;\nreturn md5sum;\n` },
+  { id: "coincidence-pkcs12-carton", ext: "php", expect: [], why: "'pkcs12' = 'Packing & Carton Set, 12-unit' warehouse code — a bare string, not a keystore, no crypto in the file",
+    code: `$batch = 'pkcs12';\nreturn shipCartons($batch);\n` },
+  { id: "coincidence-p12-filename", ext: "rb", expect: [], why: "report.p12 is an accounting 'period 12' export filename — the .p12 is not a PKCS#12 keystore, no crypto context",
+    code: `path = "exports/reconcile_report.p12"\nupload(path)\n` },
+  { id: "coincidence-generatekeypair-shard", ext: "cs", expect: [], why: "orderBook.generateKeyPair(shardCount) allocates a (partition, replica) tuple; a generic generateKeyPair with no key size / algorithm / crypto context is not RSA keygen",
+    code: `var tuple = orderBook.generateKeyPair(shardCount);\n` },
+  { id: "coincidence-p256-sku", ext: "swift", expect: [], why: "'P256.Signing' is an e-signature product SKU string (the 'Premium 256' add-on), not CryptoKit, in a file with no crypto",
+    code: `let sku = "P256.Signing"\ncatalog.add(sku)\n` },
+  { id: "coincidence-es256-warehouse", ext: "cs", expect: [], why: "ES256 = 'east-storage-256' warehouse tier constant; a bare JOSE-alg code token only upgrades in a JWT/JOSE file, so with no crypto context it stays a low mention",
+    code: `const string ES256 = "east-storage-256";\n` },
+  { id: "coincidence-jwk-shipping", ext: "php", expect: [], why: "a JSON with \"kty\":\"EC\" but NO JWK companion field (crv/x/y/n/e/kid) is a shipping descriptor (kty='kind-type', EC='Economy Class'), not a JWK",
+    code: `$d = '{"kty":"EC","service":"ground","insured":false}';\n` },
+  { id: "coincidence-ssh-rsa-disable-arrow", ext: "php", expect: [], why: "'ssh-rsa' => false is a PHP-array disable directive; an explicitly turned-off algorithm is remediation, not a live posture (disable overrides never-downgrade)",
+    code: `$transports = ['ssh-rsa' => false, 'ssh-ed25519' => true];\n` },
+
+  // ── recall controls: the SAME shapes, corroborated, MUST still fire ──
+  { id: "control-rsa-create-keysize", ext: "cs", expect: ["rsa-dotnet"], why: "RSA.Create(2048) has a key-size argument — a real keygen, actionable even without other file context",
+    code: `var r = RSA.Create(2048);\n` },
+  { id: "control-generatekeypair-rsa", ext: "js", expect: ["rsa-keygen-openssl"], why: "generateKeyPairSync('rsa', { modulusLength: 2048 }) names the algorithm and key size — a real RSA keygen, stays actionable",
+    code: `const { publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });\n` },
+  { id: "control-des-ede3-real", ext: "js", expect: ["sym-des-3des"], why: "the unambiguous 3DES cipher spec (des-ede3-cbc) is a real use — not gated by corroboration",
+    code: `const c = createCipheriv("des-ede3-cbc", key, iv);\n` },
+  { id: "control-p256-cryptokit-real", ext: "swift", expect: ["ecc-swift-cryptokit"], why: "P256.Signing.PrivateKey() alongside a real crypto token (PrivateKey / CryptoKit) is corroborated — a real CryptoKit use",
+    code: `import CryptoKit\nlet key = P256.Signing.PrivateKey()\n` },
 ];
 
 /**
@@ -231,18 +280,25 @@ export const QBENCH: QCase[] = [
  * benchmark or an adversarial probe surfaces a real precision miss.
  */
 export const KNOWN_GAPS: QCase[] = [
-  // ── EMPTY — the precision worklist is cleared as of v0.3.10. ──
-  // Every gap surfaced by qbench or an adversarial probe has been resolved and
-  // promoted into the gated QBENCH corpus:
+  // History (resolved + promoted into the gated QBENCH corpus):
   //  - v0.3.5: short label strings, no-stopword messages, identifier substrings
-  //    (see mention-*/identifier-* cases)
-  //  - v0.3.7: overlapping-pattern double-counts, PKCS#12, the no-extension SSH
-  //    filename gate
+  //  - v0.3.7: overlapping-pattern double-counts, PKCS#12, no-extension SSH gate
   //  - v0.3.8: URL/route path slugs and disable-directive config keys
-  //    (route-slug-*/denylist-*/yaml-disable-*)
-  //  - v0.3.9: Windows drive paths (windows-path-dh) + DH-on-config recall
-  //  - v0.3.10: bare enum-constant references (enum-ref-dsa-*), the zero-dep
-  //    stand-in for the call-vs-reference data flow a full AST would give
-  // Add a new gap here the moment a benchmark run or probe surfaces a real miss;
-  // the informational qbench-gaps check will flag it until it is resolved.
+  //  - v0.3.9: Windows drive paths + DH-on-config recall
+  //  - v0.3.10: bare enum-constant references (the call-vs-reference stand-in)
+  //  - v0.5.1: coincidental ambiguous shapes in NON-crypto files — file-scope
+  //    corroboration (coincidence-*/control-* cases)
+  //
+  // ── OPEN (v0.5.1) — the residual the zero-dependency lexical engine cannot close
+  //    without call-vs-object DATA FLOW (ENG-01b / tree-sitter AST). Documented and
+  //    measured, NOT gated, so the 1.0 gate stays honest. ──
+  { id: "gap-ambiguous-in-crypto-file", ext: "js", gapKind: "fp", expect: [],
+    why: "an ambiguous shape (dh.generate, dh = a DateHelper) that shares a FILE with real crypto is kept actionable by file-scope corroboration — telling the coincidental receiver from a real DiffieHellman needs data flow (ENG-01b), not lexical file context",
+    code: `const dh = new DateHelper(tz);\nconst when = dh.generate(schedule);\nconst real = createDiffieHellman(2048);\n` },
+  { id: "gap-ssh-rsa-name-in-prose", ext: "js", gapKind: "fp", expect: [],
+    why: "the key-type NAME ssh-rsa in a prose log/redaction string is still actionable: ssh-rsa-key is KEY_MATERIAL (never-downgrade) and a bare name is indistinguishable from a real key line by the mention rule alone — needs a key-bytes vs name-only distinction",
+    code: `logger.info("redacted an ssh-rsa entry from the audit output");\n` },
+  { id: "gap-unquoted-config-slug", ext: "yaml", gapKind: "fp", expect: [],
+    why: "an UNQUOTED yaml/config value that is a URL/route slug (route: /api/v2/diffie-hellman/rotate) is not a string span, so the path/URL classifier never runs on it — the quoted form is already downgraded; unquoted config values need span-equivalent handling",
+    code: `routes:\n  rotate: /api/v2/diffie-hellman/rotate\n` },
 ];
