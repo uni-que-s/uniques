@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing unreleased._
+
+## [0.5.0] - 2026-07-01
+
 ### Changed
 
-- **Post-quantum license signing (v0.5.0)** — the product now signs its own license
+- **Post-quantum license signing** — the product now signs its own license
   keys with **ML-DSA-65 (FIPS 204)**, the NIST post-quantum lattice signature —
   replacing the Ed25519 (elliptic-curve) signing used in v0.4.x. The consequence
   is the point: **UniQueS's own codebase now contains no quantum-vulnerable
@@ -24,9 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`server/.license-signing-seed`, gitignored) deterministically regenerates the
   keypair for the founder-only issuer.
 
+## [0.4.1] - 2026-06-30
+
 ### Added
 
-- **Grace → read-only trial enforcement (v0.4.1)** — instead of a hard lock at
+- **Grace → read-only trial enforcement** — instead of a hard lock at
   expiry, the platform now gives a **7-day grace window** (full access, loud renew
   banner) and then settles into a **read-only resting state**: a lapsed buyer can
   still *view* their existing inventory (GET), but new scans and mutations are
@@ -52,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **On-prem license gate + 30-day trial (v0.4.0)** — the commercial v0.1 of the
+- **On-prem license gate + 30-day trial (v0.4.0 milestone — shipped in the 0.4.1 release; no separate 0.4.0 tag)** — the commercial v0.1 of the
   product. The self-hosted **platform** (dashboard, scans, compliance, monitoring,
   exports) now runs a 30-day trial that auto-starts on first boot, then locks with
   a clear in-app prompt until a license key is activated. Keys are **offline
@@ -66,6 +72,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the control for paid use). Enforcement is a graceful soft-lock; health/auth/
   license endpoints stay reachable so an instance is always recoverable by
   entering a key.
+
+## [0.3.10] - 2026-06-29
+
+_Consolidates the incremental 0.2.1–0.3.10 releases; see the matching git tags
+for exact per-version dates. Each entry below is tagged inline with the version
+it shipped in._
+
+### Added
 
 - **Enum-constant references downgraded — precision worklist cleared (v0.3.10)** —
   the zero-dependency stand-in for the call-vs-reference data flow a full AST would
