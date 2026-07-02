@@ -290,6 +290,25 @@ export const QBENCH: QCase[] = [
     code: `{ "settings.key_content_ssh_placeholder": "Ξεκινάει με 'ssh-rsa', 'ecdsa-sha2-nistp256'" }\n` },
   { id: "guard-pgp-real-key-nonlocale", ext: "json", expect: ["pgp-public-block"], why: "a real PGP public-key block in a NON-locale JSON file still fires — the downgrade is scoped to localization catalogs, not all JSON",
     code: `{ "pubkey": "-----BEGIN PGP PUBLIC KEY BLOCK-----\\nmQINBGAbCdEFEEADx1a2b3c4d5e6f7g8h9i0jQ==\\n-----END PGP PUBLIC KEY BLOCK-----" }\n` },
+
+  // ── Python type-annotation references are not uses (v0.6.1; from the pyca/
+  //    cryptography benchmark). A crypto class named in a return annotation or a
+  //    typing subscript is a type, not an operation. Scoped to Python. ──
+  { id: "type-ref-return-annotation", ext: "py", expect: [], why: "a crypto type in a return annotation (-> DSAPrivateKey:) on an abstract/interface method names the type but performs no operation",
+    code: `class DSAParameters:\n    def generate_private_key(self) -> DSAPrivateKey:\n        ...\n` },
+  { id: "type-ref-union-member", ext: "py", expect: [], why: "a crypto type as a member of a typing subscript (Union[..., DSAPrivateKey]) is a type reference — the enclosing keyword 'Union', not the comma, proves it",
+    code: `PKCS12Types = Union[\n    rsa.RSAPrivateKey,\n    dsa.DSAPrivateKey,\n]\n` },
+  { id: "guard-type-instantiation-fires", ext: "py", expect: ["dsa-usage"], why: "DSAPrivateKey followed by ( is an instantiation, not a type reference — it still fires (the type-ref rule excludes anything followed by '(')",
+    code: `import cryptography\nk = DSAPrivateKey(params)\n` },
+  { id: "ini-semicolon-comment", ext: "ini", expect: [], why: "a leading ';' in an INI/config file is a comment — an 'openssl pkcs12' example there is documentation, not config (config lang now masks leading ';')",
+    code: `;; example: openssl pkcs12 -in cert.pfx -out cert.pem -nokeys\nport = 8080\n` },
+
+  // ── an empty PEM block is a placeholder, not key material (v0.6.1; from the
+  //    smallstep/certificates benchmark — used as negative test inputs). ──
+  { id: "empty-pem-placeholder", ext: "pem", expect: [], why: "-----BEGIN CERTIFICATE----- immediately followed by -----END----- with no base64 body is a negative/error test placeholder, not a cert — downgraded despite the key-material never-downgrade rule",
+    code: `-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n` },
+  { id: "guard-real-pem-cert", ext: "pem", expect: ["x509-cert-body"], why: "a PEM block WITH a base64 body is real certificate material and still fires — the empty-block downgrade requires the absence of any base64 body",
+    code: `-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJAKZ7D5Yb0zzKMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMDA1MDEwMDAwMDBaFw0zMDA1MDEwMDAwMDBaMBQ=\n-----END CERTIFICATE-----\n` },
 ];
 
 /**
@@ -311,6 +330,10 @@ export const KNOWN_GAPS: QCase[] = [
   //    corroboration (coincidence-*/control-* cases)
   //  - v0.5.2: ssh key-type NAME in prose (bareKeyName + proseMention) and unquoted
   //    config path/route slugs (ssh-rsa-name-in-prose/unquoted-config-path-slug)
+  //  - v0.6.0: i18n localization-catalog values (isLocaleResourceFile)
+  //  - v0.6.1: Python type-annotation references — `-> X` and Union[…]/type[…]
+  //    subscripts (isTypeReferenceAt) — and INI leading-`;` comments (type-ref-*/
+  //    ini-semicolon-comment cases)
   //
   // ── OPEN — the residual the zero-dependency lexical engine cannot close without
   //    call-vs-object DATA FLOW (ENG-01b / tree-sitter AST). Documented and measured,
@@ -319,20 +342,20 @@ export const KNOWN_GAPS: QCase[] = [
     why: "an ambiguous shape (dh.generate where dh is a DateHelper) that shares a FILE with real crypto is kept actionable by file-scope corroboration — telling the coincidental receiver from a real DiffieHellman needs data flow (ENG-01b), not lexical file context. Rare in real code (a DateHelper is not named `dh` in a file that also holds a DiffieHellman), so held as the marker for ENG-01b rather than chased lexically.",
     code: `const dh = new DateHelper(tz);\nconst when = dh.generate(schedule);\nconst real = createDiffieHellman(2048);\n` },
 
-  // ── OPEN (v0.6.0) — surfaced by the reproducible public-repo benchmark (bench/).
-  //    Each needs type/data-flow awareness a lexical pass can't cleanly give. ──
-  { id: "gap-type-annotation-ref", ext: "py", gapKind: "fp", expect: [],
-    why: "an algorithm TYPE named in a type annotation (`-> DSAPrivateKey:`, `Union[…, DSAPrivateKey]`, `type[algorithms.AES128]`) is a type reference, not a DSA/AES operation — the FP class from pyca/cryptography. Distinguishing a type position from a use needs the enum-const-ref logic extended to annotations (a lightweight AST), so it is tracked, not gated.",
-    code: `def load(self) -> DSAPrivateKey:\n    return self._key\n` },
+  // ── OPEN — surfaced by the reproducible public-repo benchmark (bench/). Each needs
+  //    type/data-flow awareness a lexical pass can't cleanly give. ──
+  { id: "gap-type-ref-isinstance-tuple", ext: "py", gapKind: "fp", expect: [],
+    why: "a crypto type inside an isinstance() / accepted-types TUPLE (isinstance(k, (rsa.RSAPrivateKey, dsa.DSAPrivateKey))) is a type reference, not a use — but a `(…)` tuple is lexically a call arg-list, so the type-ref rule (which handles `-> X` and Union[…] subscripts) leaves it. Needs isinstance/tuple-context awareness. pyca residual.",
+    code: `if isinstance(k, (rsa.RSAPrivateKey, dsa.DSAPrivateKey)):\n    pass\n` },
   { id: "gap-prose-in-interpolated-template", ext: "js", gapKind: "fp", expect: [],
-    why: "a crypto name in a NATURAL-LANGUAGE error message that is a template literal WITH an interpolation (`throw new Error(\\`… RSA-PSS … \\${alg}\\`)`) is not downgraded — the template-`${}` case is deliberately left at base confidence because a real call can live in the interpolation. The jsonwebtoken FP class; needs interpolation-vs-prose parsing.",
+    why: "a crypto name in a NATURAL-LANGUAGE error message that is a template literal WITH an interpolation (throw new Error(`… RSA-PSS … ${alg}`)) is not downgraded — the template-${} case is deliberately left at base confidence because a real call can live in the interpolation. The jsonwebtoken FP class; needs interpolation-vs-prose parsing.",
     code: "throw new Error(`Invalid RSA-PSS parameters for alg ${alg}`);\n" },
   { id: "gap-denylist-removal-call", ext: "c", gapKind: "fp", expect: [],
-    why: "an algorithm name passed to a REMOVAL/denylist function (`match_filter_denylist(list, \"diffie-hellman-group1-sha1\")`) is a disable in disguise — the line removes the algorithm for old-client compat, it does not use it. The openssh FP class; needs knowing which callees are denylist sinks (data flow).",
+    why: "an algorithm name passed to a REMOVAL/denylist function (match_filter_denylist(list, \"diffie-hellman-group1-sha1\")) is a disable in disguise — the line removes the algorithm for old-client compat, it does not use it. The openssh FP class; needs knowing which callees are denylist sinks (data flow).",
     code: `match_filter_denylist(list, "diffie-hellman-group1-sha1");\n` },
-  // Two smaller benchmark FP classes are context-dependent and not reproduced as
-  // isolated cases: (a) INI `;;` line comments are not masked (config lang masks
-  // `#`), so an `;; openssl pkcs12 …` example in a crypto-bearing .ini still fires;
-  // (b) a function name echoed in a log string one line below the real call
-  // (openssh sk-dummy skdebug) double-counts. Both tracked in bench/REPORT.md.
+  // Smaller benchmark FP classes, context-dependent and not reproduced as isolated
+  // cases (tracked in bench/REPORT.md): a Rust `pub mod pkcs12;` / `use …::pkcs12`
+  // module declaration (names crypto, no operation); a `name="DES"` display-label
+  // kwarg; a crypto token as a substring of a test-vector FILE PATH; and a function
+  // name echoed in a log string beside the real call (openssh skdebug double-count).
 ];

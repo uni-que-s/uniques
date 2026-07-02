@@ -1,0 +1,74 @@
+{
+ ".github/workflows/certs/uitacllc.key:1": {
+  "label": "TP",
+  "algorithm": "RSA",
+  "patternId": "rsa-pem-header",
+  "reason": "Real RSA private key file: '-----BEGIN RSA PRIVATE KEY-----' with Proc-Type: 4,ENCRYPTED and DEK-Info: AES-256-CBC. Genuine (encrypted) key material committed to the repo."
+ },
+ "agessh/agessh.go:40": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "const oaepLabel = \"age-encryption.org/v1/ssh-rsa\" — the RSA-OAEP domain-separation label used in rsa.EncryptOAEP/DecryptOAEP below; a genuine crypto config parameter, not a coincidental identifier."
+ },
+ "agessh/agessh.go:50": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "if pk.Type() != \"ssh-rsa\" — real RSA key-type guard inside NewRSARecipient, part of the ssh-rsa recipient construction path."
+ },
+ "agessh/agessh.go:74": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "Stanza Type: \"ssh-rsa\" set in Wrap() immediately before rsa.EncryptOAEP wraps the file key — real crypto config for the RSA wrapping operation."
+ },
+ "agessh/agessh.go:118": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "if block.Type != \"ssh-rsa\" — real algorithm dispatch in RSAIdentity.unwrap() guarding the rsa.DecryptOAEP path."
+ },
+ "agessh/agessh.go:176": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "case \"ssh-rsa\": in recipient type switch dispatching to NewRSARecipient(pubKey) — genuine RSA recipient handling."
+ },
+ "agessh/agessh.go:19": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "import \"crypto/rsa\" in a file that performs rsa.EncryptOAEP/DecryptOAEP, *rsa.PublicKey/PrivateKey handling — real RSA usage."
+ },
+ "agessh/agessh_test.go:11": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "import \"crypto/rsa\" in the round-trip test that generates and uses RSA keys — genuine RSA use (test fixture, still a real crypto op)."
+ },
+ "agessh/agessh_test.go:20": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "rsa.GenerateKey(rand.Reader, 2048) — real RSA key-generation operation in TestSSHRSARoundTrip."
+ },
+ "agessh/encrypted_keys.go:56": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "case \"ssh-rsa\": in NewEncryptedSSHIdentity type switch dispatching to NewRSARecipient — real RSA path for encrypted SSH private keys."
+ },
+ "agessh/encrypted_keys.go:10": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "import \"crypto/rsa\" in encrypted_keys.go which handles *rsa.PrivateKey via ssh.ParseRawPrivateKeyWithPassphrase and NewRSAIdentity — real RSA usage."
+ },
+ "internal/inspect/inspect.go:64": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "case \"X25519\", \"ssh-rsa\", ... classifying age header recipient stanza types as non-post-quantum — a real reference to the ssh-rsa recipient scheme (algorithm identification), not a coincidental token."
+ }
+}

@@ -1,0 +1,68 @@
+{
+ "bogo/keys/cert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Genuine PEM at line 1 (-----BEGIN CERTIFICATE-----); openssl parses it as a real X.509 cert with sha256WithRSAEncryption. TLS test fixture, real cert = TP."
+ },
+ "bogo/keys/ecdsa_p256_cert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real X.509 certificate; openssl shows ecdsa-with-SHA1 signature, id-ecPublicKey P-256. Genuine crypto material in a test fixture."
+ },
+ "bogo/keys/ecdsa_p256_key.pem:1": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "-----BEGIN PRIVATE KEY----- decodes via openssl to a real 256-bit EC private key (priv/pub scalar present). Genuine key material."
+ },
+ "bogo/keys/ecdsa_p384_cert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real X.509 certificate; openssl shows ecdsa-with-SHA1 signature. Genuine cert in test fixture."
+ },
+ "bogo/keys/ecdsa_p384_key.pem:1": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "PKCS#8 PEM decodes to a real 384-bit EC private key via openssl. Genuine key material."
+ },
+ "bogo/keys/key.pem:1": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "PKCS#8 PEM decodes to a real 2048-bit RSA private key (modulus present) via openssl. Genuine key material."
+ },
+ "bogo/keys/rsa_1024_cert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real X.509 certificate; openssl shows sha1WithRSAEncryption. Genuine (weak, 1024-bit) cert in test fixture = TP."
+ },
+ "bogo/keys/rsa_1024_key.pem:1": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "PKCS#8 PEM decodes to a real 1024-bit RSA private key (modulus present) via openssl. Genuine key material."
+ },
+ "bogo/keys/rsa_chain_cert.pem:1": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "First cert of a 2-cert chain; -----BEGIN CERTIFICATE----- at line 1 parses as a real X.509 cert. Genuine material."
+ },
+ "bogo/keys/rsa_chain_cert.pem:18": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Second -----BEGIN CERTIFICATE----- at line 18 (chain CA cert); openssl parses it with sha256WithRSAEncryption. Distinct real cert, correctly counted separately."
+ },
+ "bogo/keys/rsa_chain_key.pem:1": {
+  "label": "TP",
+  "algorithm": "Private key (PKCS#8, algorithm unspecified)",
+  "patternId": "pkcs8-pem-private-key",
+  "reason": "PKCS#8 PEM decodes to a real 2048-bit RSA private key via openssl. Genuine key material."
+ }
+}

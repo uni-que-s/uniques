@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing unreleased._
 
+## [0.6.1] - 2026-07-01
+
+### Changed
+
+- **Benchmark corpus widened to 20 repositories; precision rose to 95.9%.** The
+  public-repo corpus (`bench/repos/`) grew from 9 to 20 pinned repos — adding
+  vault, step-ca, age, rustls, libsodium, pyjwt, requests, express, lodash,
+  prometheus, and etcd, including four negative controls that produce zero findings.
+  Precision **rose** as the corpus grew (92.4% on 9 → **95.9% on 20**, 446 TP / 19
+  FP), which is the point: the number generalizes rather than reflecting a favourable
+  sample. Per-finding labels published for all 20 in `bench/repos/labels/`.
+
+### Fixed
+
+Three general false-positive classes the widened benchmark surfaced — each helps any
+codebase, not just these repos:
+
+- **Python type-annotation references** — a crypto class named in a return annotation
+  (`-> DSAPrivateKey:`) or a typing subscript (`Union[…, DSAPrivateKey]`,
+  `type[algorithms.AES128]`) is a type, not an operation. New `isTypeReferenceAt`
+  (scoped to Python; the `Union`/`type` keyword, not a bare bracket, is what proves
+  it — a list literal `[RS256, ES256]` of real algorithm constants is untouched).
+- **INI leading-`;` comments** — a `;; openssl pkcs12 …` example in a `.ini`/config
+  file is documentation, not config. Config-language comment masking now recognizes
+  a line-leading `;` (scoped so a `;` statement-separator or in-value `;` is safe).
+- **Empty PEM blocks** — a `-----BEGIN CERTIFICATE-----` immediately followed by
+  `-----END-----` with no base64 body is a negative/error test placeholder, not a
+  certificate. New `isEmptyPemBlockAt` downgrades it (allowed to override the
+  key-material never-downgrade rule, since an empty block holds nothing).
+
+The remaining benchmark false positives (Go import lines — arguably true positives;
+pyca `isinstance` tuples; openssh denylist/log-string; a jsonwebtoken template) are
+a diverse niche tail, deliberately left rather than overfit to the sample, and are
+documented + measured in `KNOWN_GAPS`. qbench is now **113 cases at 1.0/1.0**.
+
 ## [0.6.0] - 2026-07-01
 
 ### Added

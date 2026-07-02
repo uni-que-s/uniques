@@ -1,0 +1,362 @@
+{
+ "acme/api/middleware.go:5": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` used for RSA JWS public-key validation in this file."
+ },
+ "acme/api/middleware.go:160": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": null,
+  "reason": "Real JWS algorithm handling: case jose.RS256/RS384/RS512/PS256... validating an *rsa.PublicKey."
+ },
+ "acme/api/middleware.go:176": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "Real JWS algorithm case (jose.ES256/ES384/ES512/EdDSA) accepting ECDSA signatures."
+ },
+ "acme/api/middleware.go:474": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 case computing expected ECDSA signature size in JWS validation."
+ },
+ "acme/api/middleware.go:476": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES384 case in ECDSA JWS signature-size validation."
+ },
+ "acme/api/middleware.go:478": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES512 case in ECDSA JWS signature-size validation."
+ },
+ "acme/api/middleware_test.go:615": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Real EC P-256 public JWK fixture (kty EC, crv P-256, x/y coords) used as test key material."
+ },
+ "acme/api/middleware_test.go:1270": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": null,
+  "reason": "jose.Header{Algorithm: jose.RS256, JSONWebKey: &pub} — real RSA JWS config in test."
+ },
+ "acme/api/middleware_test.go:1300": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": null,
+  "reason": "RS256 JWS header with RSA JSONWebKey in test signature construction."
+ },
+ "acme/api/middleware_test.go:1323": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "jose.Header{Algorithm: jose.ES256} — real ECDSA JWS algorithm config in test."
+ },
+ "acme/api/middleware_test.go:1340": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header in test signature construction."
+ },
+ "acme/api/middleware_test.go:1359": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header (Algorithm: jose.ES256) in test."
+ },
+ "acme/api/middleware_test.go:1386": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header with KeyID and JSONWebKey in test."
+ },
+ "acme/api/middleware_test.go:1412": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header in test signature construction."
+ },
+ "acme/api/middleware_test.go:1436": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header with KeyID in test."
+ },
+ "acme/api/middleware_test.go:1466": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "ES256 JWS header with JSONWebKey in test."
+ },
+ "acme/api/middleware_test.go:1496": {
+  "label": "TP",
+  "algorithm": "RSA (JWT RS/PS)",
+  "patternId": null,
+  "reason": "RS256 JWS header with RSA JSONWebKey in test."
+ },
+ "acme/api/middleware_test.go:1821": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Real EC P-256 public JWK fixture (patchedRKey) with x/y coordinates."
+ },
+ "acme/api/middleware_test.go:1836": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Real EC P-256 public JWK fixture (patchedSKey) with x/y coordinates."
+ },
+ "acme/api/middleware_test.go:1851": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Real EC P-256 public JWK fixture (patchedRSKey) with x/y coordinates."
+ },
+ "acme/api/revoke_test.go:7": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/ecdsa\"` used for JWK thumbprint construction in this test."
+ },
+ "acme/api/revoke_test.go:9": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` used in test."
+ },
+ "acme/api/revoke_test.go:228": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Constructs RSA JWK ({\"e\",\"kty\":\"RSA\",\"n\"}) for RFC7638 thumbprint — real crypto material."
+ },
+ "acme/api/revoke_test.go:249": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "Constructs EC JWK ({\"crv\",\"kty\":\"EC\",\"x\",\"y\"}) from ecdsa.PublicKey — real crypto material."
+ },
+ "acme/api/revoke_test.go:510": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": null,
+  "reason": "jose.Header{Algorithm: jose.ES256} — real ECDSA JWS config in test."
+ },
+ "acme/challenge.go:7": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/ecdsa\"` in production ACME challenge code."
+ },
+ "acme/challenge.go:10": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` in production ACME challenge code."
+ },
+ "acme/challenge.go:1269": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Embedded Apple Enterprise Attestation Root CA — real X.509 certificate PEM body."
+ },
+ "acme/challenge.go:1375": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Embedded Yubico PIV Root CA (RSA, sha256WithRSAEncryption) — real X.509 certificate PEM body."
+ },
+ "acme/challenge.go:1397": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Embedded Yubico Attestation Root 1 — real X.509 certificate PEM body."
+ },
+ "acme/challenge_test.go:7": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/ecdsa\"` in test."
+ },
+ "acme/challenge_test.go:10": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` in test."
+ },
+ "acme/challenge_test.go:118": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256(), rand.Reader) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:163": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey then signer.Sign — real ECDSA keygen+sign."
+ },
+ "acme/challenge_test.go:217": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey then signer.Sign — real ECDSA keygen+sign."
+ },
+ "acme/challenge_test.go:2258": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "rsa.GenerateKey(rand.Reader, 2048) for TLS-ALPN validation cert — real RSA keygen."
+ },
+ "acme/challenge_test.go:3445": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:3594": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:3619": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) for otherSigner — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:3838": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:4510": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:4645": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:4941": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:5026": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "acme/challenge_test.go:5108": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) — real ECDSA keygen."
+ },
+ "api/api.go:7": {
+  "label": "TP",
+  "algorithm": "DSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/dsa\"` (legacy algorithm support) in production API code."
+ },
+ "api/api.go:8": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/ecdsa\"` in production API code."
+ },
+ "api/api.go:10": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` in production API code."
+ },
+ "api/api_test.go:7": {
+  "label": "TP",
+  "algorithm": "DSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/dsa\"` (legacy algorithm support) in test."
+ },
+ "api/api_test.go:8": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/ecdsa\"` in test."
+ },
+ "api/api_test.go:12": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "Genuine `import \"crypto/rsa\"` in test."
+ },
+ "api/api_test.go:46": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "rootPEM — real GeoTrust Global CA X.509 certificate PEM body with ASN.1."
+ },
+ "api/api_test.go:71": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "certPEM — real Google X.509 certificate PEM body with ASN.1."
+ },
+ "api/api_test.go:121": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "stepCertPEM — real Smallstep intermediate-signed X.509 certificate (ecdsa-with-SHA256) PEM body."
+ },
+ "api/api_test.go:140": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": null,
+  "reason": "pubKey — real EC P-256 public JWK (kty EC, crv P-256, ES256, x/y)."
+ },
+ "api/api_test.go:442": {
+  "label": "FP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Empty PEM marker `-----BEGIN CERTIFICATE-----\\n-----END CERTIFICATE-----` with no cert body — negative test input for empty x509.Certificate{Raw: nil}, no crypto material."
+ },
+ "api/api_test.go:475": {
+  "label": "FP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Empty/malformed PEM marker string ('empty csr' test case, END truncated) with no certificate body — negative test input, no crypto material."
+ },
+ "api/api_test.go:507": {
+  "label": "FP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": null,
+  "reason": "Empty/malformed PEM marker in {\"crt\":\"...\"} ('empty crt' error test) with no certificate body — negative test input, no crypto material."
+ },
+ "api/api_test.go:1469": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": null,
+  "reason": "ecdsa.GenerateKey(elliptic.P256()) in Test_fmtPublicKey — real ECDSA keygen."
+ },
+ "api/api_test.go:1473": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": null,
+  "reason": "rsa.GenerateKey(rand.Reader, 2048) in Test_fmtPublicKey — real RSA keygen."
+ }
+}

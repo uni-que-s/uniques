@@ -300,6 +300,61 @@ export function isDisableDirectiveAt(
   return DISABLE_VALUES.has(val);
 }
 
+// Python typing constructors whose subscript holds TYPES, not values — so a crypto
+// class named inside one is a type reference. A plain list/tuple/set literal is NOT
+// in this set, so `[RS256, ES256]` (real algorithm constants) is never mistaken for
+// a type annotation.
+const PY_TYPING_CTOR = /(?:Union|Optional|Type|type|List|Tuple|Dict|Sequence|Iterable|Iterator|Set|FrozenSet|Mapping|MutableMapping|Callable|Annotated|ClassVar|Final|Awaitable|Collection|Container)$/;
+
+/**
+ * Is the match a crypto TYPE name used as a type REFERENCE — a return annotation
+ * (`-> DSAPrivateKey:`) or a member of a typing subscript (`Union[…, DSAPrivateKey]`,
+ * `type[algorithms.AES128]`) — rather than an instantiation or call? It names the
+ * type but performs no cryptographic operation: the dominant false-positive class on
+ * typed crypto libraries (pyca/cryptography).
+ *
+ * Scoped to PYTHON, where `->` and typing subscripts are unambiguous. Deliberately
+ * does NOT use bare `[`/`,`/`|` (a list literal `[RS256, ES256]` or a Java array
+ * initializer `{RS256, ES256}` holds real algorithm CONSTANTS, not types — matching
+ * those cost 8 real findings in an earlier, looser version). TS/Java/Go type-ref is
+ * left as a tracked gap rather than risk that recall. Signals:
+ *  - not immediately followed by `(` (an instantiation `DSAPrivateKey(…)` still fires);
+ *  - preceded (after an optional dotted receiver) by `->` — a return annotation; OR
+ *  - enclosed in a subscript `Keyword[ … match … ]` whose Keyword is a typing
+ *    constructor (Union/Optional/type/List/…), found by a bounded bracket-depth scan.
+ */
+export function isTypeReferenceAt(content: string, start: number, end: number, language: string): boolean {
+  if (language !== "python") return false;
+  if (content[end] === "(") return false; // instantiation / call — a real use
+  // (a) return annotation: `-> X` (after skipping a dotted receiver like `mod.`)
+  let p = start - 1;
+  while (p >= 0 && /[\w.$]/.test(content[p])) p--;
+  let q = p;
+  while (q >= 0 && (content[q] === " " || content[q] === "\t")) q--;
+  if (q >= 1 && content[q] === ">" && content[q - 1] === "-") return true;
+  // (b) inside a typing subscript: scan left with bracket depth to the enclosing `[`
+  // (crossing newlines — pyca's Union[…] annotations are multi-line; the typing
+  // keyword before the `[`, not a line boundary, is what proves it's a type).
+  let depth = 0;
+  const limit = Math.max(0, start - 600);
+  for (let i = start - 1; i >= limit; i--) {
+    const c = content[i];
+    if (c === "]" || c === ")" || c === "}") depth++;
+    else if (c === "[") {
+      if (depth > 0) { depth--; continue; }
+      let j = i - 1; // read the identifier immediately before the enclosing `[`
+      while (j >= 0 && (content[j] === " " || content[j] === "\t" || content[j] === "\n")) j--;
+      const ke = j + 1;
+      while (j >= 0 && /[\w.$]/.test(content[j])) j--;
+      return PY_TYPING_CTOR.test(content.slice(j + 1, ke));
+    } else if (c === "(" || c === "{") {
+      if (depth > 0) depth--; // nested call/dict inside the subscript
+      else return false; // a call arg-list / dict / set literal — not a type subscript
+    }
+  }
+  return false;
+}
+
 // An enum / class constant read: an identifier, a dot, an ALL-CAPS member
 // (`SignatureAlgorithm.DSA`, `Cipher.DES`). Method calls (`dsa.generate`,
 // `RSA.Create`) have a lower/Pascal-case member and fail this; bare tokens
@@ -468,6 +523,24 @@ export function isAmbiguousMatch(
 /** Config/IaC languages where an unquoted scalar value is idiomatic (so a crypto
  *  name can sit in an unquoted path value, invisible to the string-span classifier). */
 export const CONFIG_LANG = new Set(["yaml", "config", "terraform", "json"]);
+
+/**
+ * Is the PEM header at this match an EMPTY block — a `-----BEGIN …-----` immediately
+ * followed by `-----END …-----` with no base64 body between? Such placeholders are
+ * used as deliberate negative / error test inputs (surfaced by the step-ca
+ * benchmark) and carry no key material, so — unlike a real key block — they are a
+ * possible mention, not key material. Requires at least one run of base64 before the
+ * END marker to count the block as real.
+ */
+export function isEmptyPemBlockAt(content: string, end: number): boolean {
+  const window = content.slice(end, end + 4000);
+  const endIdx = window.search(/-----END/);
+  if (endIdx === -1) return false; // END not within the window — a real (large) block, don't assume empty
+  // Only whitespace between BEGIN and END => placeholder. Strip escaped whitespace
+  // too (`\n`/`\r`/`\t`), so an empty block written as a single Go/JS string literal
+  // ("…BEGIN…\n…END…") is recognized as empty just like a multi-line one.
+  return window.slice(0, endIdx).replace(/\\[nrt]/g, "").trim() === "";
+}
 
 /** Data/resource file extensions that hold only translatable UI strings (not code). */
 const LOCALE_DATA_EXT = /\.(?:json|ya?ml|po|pot|properties|arb|xml|strings|resx|ftl)$/i;

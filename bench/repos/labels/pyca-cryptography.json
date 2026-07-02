@@ -42,10 +42,10 @@
   "reason": "Gates key_cert_algorithm to the PKCS12 format; real PKCS#12 keystore config logic."
  },
  "src/cryptography/hazmat/primitives/asymmetric/dsa.py:18": {
-  "label": "TP",
+  "label": "FP",
   "algorithm": "DSA",
   "patternId": "dsa-usage",
-  "reason": "Abstract API method to generate a DSA private key."
+  "reason": "REFINED on re-review (was TP): -> DSAPrivateKey is a return-type annotation on an @abc.abstractmethod (no body) — a type reference, not a cryptographic operation. The engine correctly classifies it as a mention."
  },
  "src/cryptography/hazmat/primitives/asymmetric/dsa.py:34": {
   "label": "TP",

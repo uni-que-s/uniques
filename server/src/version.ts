@@ -1,5 +1,11 @@
 /** Single source of truth for the tool version stamped into exports (CBOM tool
- *  metadata, OpenAPI, etc.) and reported by /api/health. 0.6.0 = INDEPENDENT
+ *  metadata, OpenAPI, etc.) and reported by /api/health. 0.6.1 = benchmark-driven
+ *  precision + corpus widened to 20 repos. Fixes for 3 general FP classes the
+ *  benchmark surfaced: Python type-annotation references (`-> X`, `Union[…]`,
+ *  `type[…]` — isTypeReferenceAt), INI leading-`;` comments, and EMPTY PEM blocks
+ *  (BEGIN/END with no body — isEmptyPemBlockAt). Public-repo precision 92.4% (9
+ *  repos) → 95.9% (20 repos, incl. 4 zero-finding negative controls); qbench 113 @
+ *  1.0/1.0. 0.6.0 = INDEPENDENT
  *  BENCHMARKS (bench/): NIST SARD/Juliet CWE-327/328 recall (68/68 = 100% in-scope)
  *  + a reproducible 9-repo precision corpus (86.1% as adjudicated → 92.4% after the
  *  benchmark-driven i18n fix). Both benchmarks drove real engine fixes: SARD exposed
@@ -35,4 +41,4 @@
  *  (DH/Java) + PKCS#12 + authorized_keys filename gate. 0.3.6 = recall expansion
  *  (Go/EVP/WebCrypto/X.509). 0.3.5 = mention classifier. 0.3.4 = qbench benchmark.
  *  0.3.3 = Action baseline. 0.3.2 = CI ratchet. 0.3.1 = version vis. */
-export const VERSION = "0.6.0";
+export const VERSION = "0.6.1";

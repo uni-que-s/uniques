@@ -1,0 +1,362 @@
+{
+ "api/auth/cert/cert_test.go:8": {
+  "label": "FP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Bare `\"crypto/ecdsa\"` import line in a test file — a package dependency declaration, not a crypto operation, key material, or config."
+ },
+ "api/auth/cert/cert_test.go:304": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation (test CA key)."
+ },
+ "api/auth/cert/cert_test.go:340": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation for a leaf cert."
+ },
+ "api/plugin_helpers.go:48": {
+  "label": "TP",
+  "algorithm": "ECDSA (JWT ES)",
+  "patternId": "jwt-ecdsa-alg",
+  "reason": "`CubbyHoleJWTSignatureAlgorithm = jose.ES512` — real crypto config selecting ECDSA P-521 (ES512) to sign the plugin unwrap token."
+ },
+ "builtin/credential/aws/backend_test.go:701": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "`expectedCert` holds a real embedded X.509 certificate PEM (real cert material in a test fixture)."
+ },
+ "builtin/credential/aws/certificates.go:15": {
+  "label": "FP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Hard-coded AWS PKCS#7 verification cert body; one of 47 real X.509 certs parsed at init() to verify EC2 instance-identity signatures."
+ },
+ "builtin/credential/aws/certificates.go:21": {
+  "label": "FP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:36": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS PKCS#7 DSA verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:54": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:72": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:90": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:108": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:126": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:144": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (BEGIN CERTIFICATE block)."
+ },
+ "builtin/credential/aws/certificates.go:164": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Cited line is a BEGIN CERTIFICATE header of a real embedded AWS verification cert."
+ },
+ "builtin/credential/aws/certificates.go:188": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:207": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:222": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:242": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:256": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:270": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:284": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:299": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:323": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:347": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:371": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Cited line is a BEGIN CERTIFICATE header of a real embedded AWS verification cert."
+ },
+ "builtin/credential/aws/certificates.go:395": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:419": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:439": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:463": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:487": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:507": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:527": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:551": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:571": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:591": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:611": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Cited line is a BEGIN CERTIFICATE header of a real embedded AWS verification cert."
+ },
+ "builtin/credential/aws/certificates.go:631": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:655": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:679": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:699": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:719": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:739": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:759": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Cited line is a BEGIN CERTIFICATE header of a real embedded AWS verification cert."
+ },
+ "builtin/credential/aws/certificates.go:783": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (rsa2048 block)."
+ },
+ "builtin/credential/aws/certificates.go:807": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (RSA SHA256 cert)."
+ },
+ "builtin/credential/aws/certificates.go:827": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:847": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body."
+ },
+ "builtin/credential/aws/certificates.go:867": {
+  "label": "TP",
+  "algorithm": "X.509 certificate (algorithm in body)",
+  "patternId": "x509-cert-body",
+  "reason": "Real embedded AWS verification X.509 certificate body (final RSA cert block)."
+ },
+ "builtin/credential/cert/backend_test.go:9": {
+  "label": "FP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Bare `\"crypto/ecdsa\"` import line — a package dependency declaration, not a crypto operation, material, or config."
+ },
+ "builtin/credential/cert/backend_test.go:95": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation (test CA)."
+ },
+ "builtin/credential/cert/backend_test.go:129": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:487": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:520": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 client key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1301": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1396": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1431": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 client key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1608": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1834": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ },
+ "builtin/credential/cert/backend_test.go:1917": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`ecdsa.GenerateKey(elliptic.P256(), rand.Reader)` — genuine ECDSA P-256 key generation."
+ }
+}

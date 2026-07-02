@@ -785,6 +785,15 @@ const CODE_TOKEN_UPGRADE = new Set<string>(["jwt-rsa-alg", "jwt-ecdsa-alg"]);
 // keeps its protection because the blob makes `bareKeyName` false.
 const SSH_KEY_NAME = new Set<string>(["ssh-rsa-key", "ssh-ecdsa-key"]);
 
+// Patterns that match a PEM `-----BEGIN …-----` header. An EMPTY block (BEGIN
+// immediately followed by END, no base64 body) is a placeholder / negative test
+// input, not key material, so it is allowed to downgrade despite never-downgrade.
+export const PEM_HEADER = new Set<string>([
+  "rsa-pem-header", "pkcs8-pem-private-key", "rsa-pgp-private-block", "ecc-pem-header",
+  "dsa-pem-header", "openssh-pem-private-key", "pkcs8-encrypted-pem", "pgp-public-block",
+  "x509-cert-body",
+]);
+
 export function resolveConfidence(
   patternId: string,
   ctx: {
@@ -798,12 +807,16 @@ export function resolveConfidence(
     bareKeyName?: boolean;
     proseMention?: boolean;
     localeFile?: boolean;
+    typeRef?: boolean;
+    emptyPem?: boolean;
   },
 ): Confidence {
   const base = confidenceFor(patternId);
+  if (ctx.emptyPem) return "low"; // an empty PEM block (BEGIN/END, no body) is a placeholder, not material
   if (ctx.disabled) return "low"; // explicit disable beats even never-downgrade
   if (ctx.localeFile) return "low"; // i18n/localization catalog value — UI text, never a use or key
   if (ctx.enumRef) return "low"; // a bare enum-constant read is a reference, not a use
+  if (ctx.typeRef) return "low"; // a crypto type name in an annotation/subscript is a reference, not a use
   // An ambiguous SHAPE (`dh.generate`, `new DSA`, a bare `des3`/`md5sum`/`pkcs12`
   // token, a `.p12` filename) in a file that shows NO real crypto anywhere is a
   // coincidental application identifier, not a use — a possible mention. Real crypto

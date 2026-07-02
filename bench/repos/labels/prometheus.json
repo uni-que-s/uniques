@@ -1,0 +1,14 @@
+{
+ "discovery/stackit/server_test.go:59": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Genuine RSA-2048 key-pair generation: `key, err := rsa.GenerateKey(rand.Reader, 2048)`, whose output is marshaled into a real PEM `RSA PRIVATE KEY` block (lines 63-66). Real crypto operation producing real key material in a test fixture — TP."
+ },
+ "discovery/stackit/server_test.go:19": {
+  "label": "FP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Cited line 19 is the bare Go import statement `\"crypto/rsa\"` — a package reference, not itself a crypto operation or key material. The actual RSA use is separately and correctly flagged at line 59; this is a redundant structural signal of that same operation, not an operation/material on its own line."
+ }
+}

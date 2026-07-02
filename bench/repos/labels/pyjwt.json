@@ -1,0 +1,56 @@
+{
+ "jwt/algorithms.py:457": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "`if key_bytes.startswith(b\"ssh-rsa\"):` branches into load_ssh_public_key() to parse a real RSA SSH public key inside RSAAlgorithm.prepare_key — genuine RSA key-handling code."
+ },
+ "jwt/algorithms.py:494": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": "jwk-asymmetric-key",
+  "reason": "`\"kty\": \"RSA\"` in RSAAlgorithm.to_jwk building a JWK from a real RSA private key (numbers = key_obj.private_numbers(); n/e/d/p/q/dp/dq/qi) — real RSA key-material serialization."
+ },
+ "jwt/algorithms.py:511": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": "jwk-asymmetric-key",
+  "reason": "`\"kty\": \"RSA\"` in RSAAlgorithm.to_jwk building a JWK from real RSA public numbers (n, e via key_obj.public_numbers()) — genuine RSA public-key material."
+ },
+ "jwt/algorithms.py:725": {
+  "label": "TP",
+  "algorithm": "JWK asymmetric key (RSA/EC)",
+  "patternId": "jwk-asymmetric-key",
+  "reason": "`\"kty\": \"EC\"` in ECAlgorithm.to_jwk serializing real elliptic-curve key material (crv/x/y, plus d for private keys) from key_obj.public_numbers() — genuine EC key material."
+ },
+ "jwt/utils.py:133": {
+  "label": "TP",
+  "algorithm": "RSA (SSH)",
+  "patternId": "ssh-rsa-key",
+  "reason": "`b\"ssh-rsa\"` in the _SSH_KEY_FORMATS tuple; feeds is_ssh_key() which gates real SSH-key loading (algorithms.py:331/458) — functional crypto config declaring the library accepts RSA SSH keys. Weaker than an operation (bare string literal) but an unambiguous crypto key-type designator, not coincidental."
+ },
+ "jwt/utils.py:134": {
+  "label": "TP",
+  "algorithm": "DSA",
+  "patternId": "dsa-usage",
+  "reason": "`b\"ssh-dss\"` in _SSH_KEY_FORMATS names the DSA SSH key format the library recognizes via is_ssh_key(); real crypto config that DSA keys are accepted (quantum-relevant). String-literal config entry, not an operation, but a genuine DSA key-type designator."
+ },
+ "jwt/utils.py:135": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "`b\"ecdsa-sha2-nistp256\"` in _SSH_KEY_FORMATS naming the P-256 ECDSA SSH key format the library accepts via is_ssh_key(); genuine crypto key-type config, not coincidental."
+ },
+ "jwt/utils.py:136": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "`b\"ecdsa-sha2-nistp384\"` in _SSH_KEY_FORMATS naming the P-384 ECDSA SSH key format the library accepts; genuine crypto key-type config."
+ },
+ "jwt/utils.py:137": {
+  "label": "TP",
+  "algorithm": "ECDSA (SSH)",
+  "patternId": "ssh-ecdsa-key",
+  "reason": "`b\"ecdsa-sha2-nistp521\"` in _SSH_KEY_FORMATS naming the P-521 ECDSA SSH key format the library accepts; genuine crypto key-type config."
+ }
+}

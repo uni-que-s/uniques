@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, join, relative, sep } from "node:path";
 import type { CryptoAsset, ScanJob } from "../types.js";
-import { PATTERNS, extractKeyBits, resolveConfidence } from "./patterns.js";
+import { PATTERNS, extractKeyBits, resolveConfidence, PEM_HEADER } from "./patterns.js";
 import {
   C_STYLE,
   HASH_STYLE,
@@ -18,6 +18,8 @@ import {
   isBareSshKeyNameAt,
   isUnquotedPathSlugAt,
   isLocaleResourceFile,
+  isTypeReferenceAt,
+  isEmptyPemBlockAt,
   tripleQuoteAt,
   tripleQuoteEnd,
 } from "./context.js";
@@ -195,7 +197,11 @@ export function maskComments(content: string, language: string): string {
   if (HASH_STYLE.has(language)) lineMarkers.push("#");
   const blockComments = C_STYLE.has(language);
   const triple = TRIPLE_QUOTE.has(language);
-  if (lineMarkers.length === 0 && !blockComments && !triple) return content;
+  // INI/config files use a leading `;` for comments. Scoped to `language === "config"`
+  // (and to line-leading position) so a `;` statement-separator in code, or a `;`
+  // inside a config value, is never mistaken for a comment.
+  const iniSemicolon = language === "config";
+  if (lineMarkers.length === 0 && !blockComments && !triple && !iniSemicolon) return content;
 
   let out = "";
   let inBlock = false;
@@ -230,7 +236,11 @@ export function maskComments(content: string, language: string): string {
       continue;
     }
     if (ch === '"' || ch === "'" || ch === "`") { quote = ch; out += ch; continue; }
-    const isLineComment = lineMarkers.some((m) => content.startsWith(m, k));
+    const isLineComment =
+      lineMarkers.some((m) => content.startsWith(m, k)) ||
+      // a leading `;` in an INI/config file: comment only when it's the first
+      // non-whitespace on the line (the emitted line so far is blank).
+      (iniSemicolon && ch === ";" && out.slice(out.lastIndexOf("\n") + 1).trim() === "");
     if (isLineComment) {
       while (k < content.length && content[k] !== "\n") { out += " "; k++; }
       if (k < content.length) out += "\n";
@@ -329,6 +339,8 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
         let ambiguous = true; // every occurrence is an ambiguous shape (needs file crypto context)
         let bareKeyName = true; // every occurrence is a bare ssh key-type NAME (no key bytes)
         let proseMention = true; // every occurrence is a natural-language prose mention (not a path)
+        let typeRef = true; // every occurrence is a type-annotation reference, not a use
+        let emptyPem = PEM_HEADER.has(pattern.id); // every occurrence is an empty PEM block (no body)
         for (const occ of codeLine.matchAll(regex)) {
           if (occ.index === undefined) continue;
           matched = true;
@@ -345,7 +357,9 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           if (ambiguous && !isAmbiguousMatch(pattern.id, occ[0], normalized, endOff)) ambiguous = false;
           if (bareKeyName && !isBareSshKeyNameAt(normalized, endOff)) bareKeyName = false;
           if (proseMention && !isProseMentionAt(normalized, stringSpans, off)) proseMention = false;
-          if (!mention && !disabled && !enumRef && !ambiguous) break;
+          if (typeRef && !isTypeReferenceAt(normalized, off, endOff, language)) typeRef = false;
+          if (emptyPem && !isEmptyPemBlockAt(normalized, endOff)) emptyPem = false;
+          if (!mention && !disabled && !enumRef && !ambiguous && !typeRef && !emptyPem) break;
         }
         if (!matched) continue;
 
@@ -361,7 +375,7 @@ export function scanDirectory(target: string, scanId: string): ScanResult {
           snippet: line.trim().slice(0, 240),
           patternId: pattern.id,
           quantumVulnerable: pattern.quantumVulnerable,
-          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext, bareKeyName, proseMention, localeFile }),
+          confidence: resolveConfidence(pattern.id, { mention, disabled, enumRef, codeToken, docstring, ambiguous, cryptoContext, bareKeyName, proseMention, localeFile, typeRef, emptyPem }),
           pqcReplacement: pattern.pqcReplacement,
           status: "open",
         });

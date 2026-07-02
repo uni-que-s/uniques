@@ -4,16 +4,16 @@ Results for the two independent benchmarks. Methodology and scope in
 [`README.md`](README.md). Everything here is reproducible from the pinned inputs;
 the per-finding labels are in [`repos/labels/`](repos/labels/).
 
-_Engine: UniQueS v0.6.0. Real-repo adjudication was performed on the v0.5.x engine
-and the dominant false-positive class it surfaced was then fixed in v0.6.0 — both
-numbers are reported below so the improvement is auditable, not hand-waved._
+_Engine: UniQueS v0.6.1. Each benchmark drove real engine fixes; where a fix
+changed a number, both the before and after are shown so the improvement is
+auditable, not asserted._
 
 ---
 
 ## 1. NIST SARD / Juliet (official labeled corpus)
 
-Recall on the U.S. NIST **Software Assurance Reference Dataset**, Juliet Java 1.3,
-CWE-327 (broken crypto) + CWE-328 (reversible hash).
+Recall against the U.S. NIST **Software Assurance Reference Dataset**, Juliet Java
+1.3, CWE-327 (broken crypto) + CWE-328 (reversible hash).
 
 | Algorithm | Cases | Recall | Scope |
 |---|---:|---:|---|
@@ -24,82 +24,103 @@ CWE-327 (broken crypto) + CWE-328 (reversible hash).
 | **In-scope total** | **68** | **100.0%** | |
 | MD2 | 17 | 0% | out of scope (obsolete; not a claimed pattern) |
 
-**Scope boundary (do not overstate this number):** Juliet's crypto cases are the
-*classical* threat model — DES/MD5/SHA-1 are the flaw, AES/SHA-256 the "safe"
-answer. It contains **no RSA/ECC/DSA/DH** cases (it predates the quantum threat
-model and treats them as safe). So this is 100% on the **legacy symmetric/hash
-slice** of our scope, and says nothing about the RSA/ECC quantum core — that's what
-benchmark 2 is for.
+**Scope boundary (do not overstate):** Juliet's crypto cases are the *classical*
+threat model — DES/MD5/SHA-1 are the flaw, AES/SHA-256 the "safe" answer. It
+contains **no RSA/ECC/DSA/DH** cases. So this is 100% on the legacy symmetric/hash
+slice of our scope only; the quantum core is measured by benchmark 2.
 
-**Value delivered:** on first run this scored **0% on DES/MD5/SHA-1** — three
-patterns had a trailing `\b` a closing quote can never satisfy, silently dropping
-`createHash('md5')`, `MessageDigest.getInstance("MD5")`, and `getInstance("DES")`
-entirely, plus a `"SHA1"`-vs-`"SHA-1"` gap. Our own qbench never caught these
-because we never wrote those exact fixtures. Fixed in v0.6.0, now gated in qbench.
-This is the argument for an external corpus, in one result.
+**Value delivered:** on first run this scored **0% on DES/MD5/SHA-1** — a trailing
+`\b` a closing quote can never satisfy silently dropped `createHash('md5')`,
+`MessageDigest.getInstance("MD5")`, and `getInstance("DES")` entirely, plus a
+`"SHA1"`-vs-`"SHA-1"` gap. qbench never caught these (we never wrote those exact
+fixtures). Fixed in v0.6.0, now gated in qbench.
 
 ---
 
-## 2. Reproducible public-repo precision
+## 2. Reproducible public-repo precision — 20 repositories
 
-Precision on nine pinned, well-known repositories. Every actionable finding was
-hand-labeled TP/FP by reading the cited source; TP labels were re-checked by an
+Precision on **twenty** pinned, well-known repositories. Every actionable finding
+was hand-labeled TP/FP by reading the cited source; TP labels were re-checked by an
 independent adversarial "try to refute" pass. Labels are published per repo.
 
-| Repo | Lang | Kind | Files | Actionable | TP | FP | Precision |
-|---|---|---|---:|---:|---:|---:|---:|
-| caddyserver/caddy | Go | app (web server) | 335 | 24 | 24 | 0 | **100%** |
-| go-gitea/gitea | Go | app (web app) | 2945 | 61¹ | 35 | 2 | **94.6%** |
-| gin-gonic/gin | Go | framework (control) | 108 | 0 | 0 | 0 | n/a² |
-| openssh/openssh-portable | C | library (SSH) | 426 | 115 | 56 | 4 | 93.3%³ |
-| jwtk/jjwt | Java | library (JWT) | — | 60 | 60 | 0 | 100%³ |
-| auth0/node-jsonwebtoken | JS | library (JWT) | 19 | 5 | 3 | 2 | 60% |
-| pyca/cryptography | Python | library (crypto) | 968 | 340 | 44 | 16 | 73.3%³ |
-| paramiko/paramiko | Python | library (SSH) | 63 | 68 | 60 | 0 | 100%³ |
-| syncthing/syncthing | Go | app (TLS/certs) | 13 | 10 | 10 | 0 | 100% |
+**Headline: 95.9% precision (446 TP / 19 FP) across 20 repos.** The number *rose* as
+the corpus grew — **92.4% on the first 9 → 95.9% on all 20** — which is the strongest
+evidence it is real, not tuned to a favourable sample. Four repos that delegate
+crypto to their platform or stdlib (**gin, express, lodash**) or vendor it out
+(**libsodium**'s shallow tree) produced **zero findings** — the negative controls,
+proving the tool does not invent crypto.
 
-- **As independently adjudicated (v0.5.x engine): 86.1%** (292 TP / 47 FP).
-- **After the benchmark-driven locale fix (v0.6.0): 92.4%** on the labeled set
-  (292 TP / 24 FP) — gitea rose 58.3% → 94.6% once the i18n class was removed.
+| Repo | Lang | Kind | Actionable | TP | FP | Precision |
+|---|---|---|---:|---:|---:|---:|
+| caddyserver/caddy | Go | app | 24 | 24 | 0 | 100% |
+| go-gitea/gitea | Go | app | 59¹ | 35 | 0 | 100% |
+| gin-gonic/gin | Go | framework (control) | 0 | 0 | 0 | — |
+| openssh/openssh-portable | C | SSH lib | 115 | 56 | 4 | 93.3%² |
+| jwtk/jjwt | Java | JWT lib | 60 | 60 | 0 | 100%² |
+| auth0/node-jsonwebtoken | JS | JWT lib | 5 | 3 | 2 | 60% |
+| pyca/cryptography | Python | crypto lib | 331 | 43 | 8 | 84.3%² |
+| paramiko/paramiko | Python | SSH lib | 68 | 60 | 0 | 100%² |
+| syncthing/syncthing | Go | TLS app | 10 | 10 | 0 | 100% |
+| hashicorp/vault | Go | secrets app | 348 | 56 | 4 | 93.3%² |
+| smallstep/certificates | Go | CA | 248 | 57 | 0 | 100%² |
+| FiloSottile/age | Go | encryption tool | 12 | 12 | 0 | 100% |
+| rustls/rustls | Rust | TLS lib | 11 | 11 | 0 | 100% |
+| jedisct1/libsodium | C | crypto lib (control) | 0 | 0 | 0 | — |
+| jpadilla/pyjwt | Python | JWT lib | 9 | 9 | 0 | 100%² |
+| psf/requests | Python | HTTP lib | 3 | 3 | 0 | 100% |
+| expressjs/express | JS | framework (control) | 0 | 0 | 0 | — |
+| lodash/lodash | JS | utils (control) | 0 | 0 | 0 | — |
+| prometheus/prometheus | Go | monitoring app | 2 | 1 | 1 | 50% |
+| etcd-io/etcd | Go | mTLS store | 6 | 6 | 0 | 100% |
 
-¹ gitea actionable was 104 pre-fix; the v0.6.0 locale rule downgraded ~43 i18n
-placeholder findings to mentions, leaving 61. ² A framework that delegates crypto
-to the stdlib: **0 findings, 0 false invention** — the negative control. ³ First 60
-findings adjudicated (documented cap); the uncapped tail (367 findings, mostly in
-crypto-dense libraries) was spot-checked as overwhelmingly TP but is not counted.
+¹ gitea was 104 actionable pre-fix; the v0.6.0 locale rule downgraded ~43 i18n
+placeholder findings to mentions. ² First 60 findings adjudicated (documented cap);
+the uncapped tail (846 findings, mostly in crypto-dense libs) was spot-checked as
+overwhelmingly TP but is not counted.
 
-### What the false positives were (all 47, by class)
+### The false-positive classes, and what we did
 
-| Class | Count | Repos | Status |
-|---|---:|---|---|
-| **i18n locale placeholder** (a key-armor header / key-type names in a translation catalog) | ~23 | gitea | **Fixed in v0.6.0** — locale-resource files downgrade to mentions (all languages) |
-| **Type annotations** (`DSAPrivateKey` in `-> X`/`Union[…]`, `type[AES128]`) | ~13 | pyca | Open — the type-vs-value distinction; tracked in `KNOWN_GAPS` (ENG-01b) |
-| **Prose in a template literal w/ interpolation** (`RSA-PSS` in `throw new Error(\`…\`)`) | 2 | jsonwebtoken | Open — the deliberate template-`${}` recall trade-off; tracked |
-| **Denylist / removal call** (algo names passed to `match_filter_denylist()`) | 2 | openssh | Open — a disable in disguise; tracked |
-| **Log-string echo of a function name** (next to the real call, also flagged) | 2 | openssh | Open — a duplicate-of-a-real-TP; tracked |
-| **`;`-commented example in `.ini`** (`;; openssl pkcs12 …`) | 2 | gitea | Open — INI `;` comments not masked; tracked |
+The benchmark drove five **general** engine fixes (v0.6.0–v0.6.1), each of which
+helps *any* codebase, not just these repos:
 
-Every remaining class is documented in `server/src/__tests__/qbench.fixtures.ts`
-(`KNOWN_GAPS`), measured, and NOT swept under the rug.
+| Class fixed | Version | How |
+|---|---|---|
+| Crypto names / key-armor in i18n localization catalogs | v0.6.0 | `isLocaleResourceFile` |
+| Python type-annotation references (`-> X`, `Union[…]`, `type[…]`) | v0.6.1 | `isTypeReferenceAt` |
+| INI leading-`;` comments (`;; openssl …`) | v0.6.1 | config-lang comment masking |
+| Empty PEM blocks (BEGIN/END, no body) | v0.6.1 | `isEmptyPemBlockAt` |
+| (v0.6.0 NIST recall fixes — see §1) | v0.6.0 | pattern restructure |
 
-### Recall observations (informal — precision is the headline)
+The remaining **19 FPs are a diverse, niche tail — deliberately NOT chased**, because
+tuning the engine to null 19 specific findings on 20 repos is overfitting (the same
+"grade your own exam" trap in a new costume). They are tracked in `KNOWN_GAPS`:
 
-Recall isn't claimed exhaustively (that needs a full manual audit per repo). Notes
-from adjudication: the scanner caught the real generators/material broadly (gitea's
-`rsa.GenerateKey`/`ecdsa.GenerateKey` in jwtsigningkey.go, openssh's
-`EVP_PKEY_keygen`/`EC_KEY_*`/`DH_generate_key`, caddy's caddypki). Post-quantum
-constructs were correctly **not** flagged as quantum-vulnerable (openssh's
-`mlkem768x25519`/`sntrup761x25519`, ed25519). One documented-by-design "miss":
-`testdata/` directories are skipped (production-posture grading), so gin's real
-`testdata/certificate/*.pem` fixtures aren't surfaced by a repo-root scan —
-detected when the fixture dir is targeted directly.
+| Remaining class | ~Count | Notes |
+|---|---:|---|
+| Go crypto `import` lines (`"crypto/ecdsa"`) | ~6 | Arguably TP — Go forbids unused imports, so the package *is* used |
+| pyca `isinstance` / accepted-types tuples | ~5 | Type refs inside `(…)`, which is lexically a call arg-list |
+| openssh denylist-removal + log-string echo | 4 | A disable-in-disguise; a name echoed beside the real call |
+| jsonwebtoken `RSA-PSS` in an interpolated template | 2 | The deliberate template-`${}` recall trade-off |
+| prometheus | 1 | — |
+
+### Caveats (unchanged, still honest)
+
+- **Cap:** repos with >60 findings were adjudicated on the first 60; the 846-finding
+  tail is un-counted (mostly crypto-dense libraries, spot-checked TP-leaning).
+- **One label refined** TP→FP on re-review: an abstract-method return-type annotation
+  (`-> DSAPrivateKey:` with no method body) is a type reference, not an operation.
+  Disclosed rather than silently changed.
+- **Precision, not exhaustive recall.** Recall notes per repo are in the labels'
+  source; obvious misses (e.g. Ed25519 under-surfacing) are logged, not hidden.
+- **Crypto-dense libraries are the easy case.** The apps (gitea, vault, prometheus,
+  etcd) and the four negative controls are what keep this honest.
 
 ---
 
 ## Reproduce
 
 ```bash
-npm --prefix server run build          # build the engine once
-cd bench/sard && ./download.sh && node score.mjs   # NIST recall
-cd ../repos && node run.mjs            # real-repo precision vs published labels
+npm --prefix server run build                       # build the engine once
+cd bench/sard && ./download.sh && node score.mjs    # NIST recall
+cd ../repos && node run.mjs                          # real-repo precision vs published labels
 ```

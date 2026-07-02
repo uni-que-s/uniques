@@ -72,6 +72,94 @@
       "commit": "6be1ff84802810ebf6ab5a5169f865333607a8a5",
       "lang": "Go",
       "kind": "application (TLS/certs)"
+    },
+    {
+      "slug": "vault",
+      "repo": "hashicorp/vault",
+      "ref": "v1.21.4",
+      "commit": "ffe7023c481dc1ea2d8550bbaca8d85f8e611e0b",
+      "lang": "Go",
+      "kind": "application (secrets)"
+    },
+    {
+      "slug": "step-ca",
+      "repo": "smallstep/certificates",
+      "ref": "v0.30.2",
+      "commit": "6e8ec61405239cf3f37b2bbf260a587b7d2e4e31",
+      "lang": "Go",
+      "kind": "library (CA)"
+    },
+    {
+      "slug": "age",
+      "repo": "FiloSottile/age",
+      "ref": "v1.3.1",
+      "commit": "b8564adb6d58329b8a3e267360ca2b0abc4efe1d",
+      "lang": "Go",
+      "kind": "tool (encryption)"
+    },
+    {
+      "slug": "rustls",
+      "repo": "rustls/rustls",
+      "ref": "v/0.23.41",
+      "commit": "642a10300a1e703279bdc70e73f7e6db8d99ccbf",
+      "lang": "Rust",
+      "kind": "library (TLS)"
+    },
+    {
+      "slug": "libsodium",
+      "repo": "jedisct1/libsodium",
+      "ref": "1.0.22",
+      "commit": "77e1ce5d6dee871c49ef211222ba18ef0c486bda",
+      "lang": "C",
+      "kind": "library (crypto)"
+    },
+    {
+      "slug": "pyjwt",
+      "repo": "jpadilla/pyjwt",
+      "ref": "2.13.0",
+      "commit": "7144e4534c34810f4525dc4578a32addd8212cff",
+      "lang": "Python",
+      "kind": "library (JWT)"
+    },
+    {
+      "slug": "requests",
+      "repo": "psf/requests",
+      "ref": "v2.34.2",
+      "commit": "6e83187b8feb273ed4c6cdab5efd8d54901dfab3",
+      "lang": "Python",
+      "kind": "library (HTTP — near-negative control)"
+    },
+    {
+      "slug": "express",
+      "repo": "expressjs/express",
+      "ref": "v5.2.1",
+      "commit": "dbac741a49a5a64336b70c06e85c2e2706e36336",
+      "lang": "JavaScript",
+      "kind": "framework (near-negative control)"
+    },
+    {
+      "slug": "lodash",
+      "repo": "lodash/lodash",
+      "ref": "4.17.21",
+      "commit": "f299b52f39486275a9e6483b60a410e06520c538",
+      "lang": "JavaScript",
+      "kind": "utils (negative control)"
+    },
+    {
+      "slug": "prometheus",
+      "repo": "prometheus/prometheus",
+      "ref": "v3.13.0",
+      "commit": "40af9c2cdc0eda00f3622e867a27f6359f7295f3",
+      "lang": "Go",
+      "kind": "application (monitoring)"
+    },
+    {
+      "slug": "etcd",
+      "repo": "etcd-io/etcd",
+      "ref": "v3.6.13",
+      "commit": "b0f9ef190952e6e66a778513097a02ee41220727",
+      "lang": "Go",
+      "kind": "application (mTLS store)"
     }
   ]
 }

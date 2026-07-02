@@ -1,0 +1,38 @@
+{
+ "client/pkg/transport/listener.go:19": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Import of standard-library `crypto/ecdsa`; the package is genuinely used (ecdsa.GenerateKey at line 297) to mint the self-signed TLS cert, so this is real ECDSA usage, not a coincidental identifier."
+ },
+ "client/pkg/transport/listener.go:297": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "`priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)` generates a real P-521 ECDSA private key used to create an x509 certificate at line 306 — a genuine key-generation crypto operation."
+ },
+ "server/auth/jwt.go:21": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Import of `crypto/rsa`; used at lines 54 and 171 (*rsa.PrivateKey / *rsa.PublicKey) to dispatch JWT signing/verification method — genuine RSA use in the auth token path."
+ },
+ "server/auth/jwt.go:19": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Import of `crypto/ecdsa`; used at lines 56 and 163 (*ecdsa.PrivateKey / *ecdsa.PublicKey) to select the ECDSA JWT signing algorithm — genuine ECDSA use, not prose or a type-only stub."
+ },
+ "server/auth/options.go:21": {
+  "label": "TP",
+  "algorithm": "RSA (Go crypto)",
+  "patternId": "go-crypto-rsa",
+  "reason": "Import of `crypto/rsa`; used at lines 121-122 (*rsa.PrivateKey / *rsa.PublicKey) when parsing/holding the RSA JWT signing key pair — genuine RSA crypto config."
+ },
+ "server/auth/options.go:19": {
+  "label": "TP",
+  "algorithm": "ECDSA (Go crypto)",
+  "patternId": "go-ecdsa",
+  "reason": "Import of `crypto/ecdsa`; used at lines 159-160 (*ecdsa.PrivateKey / *ecdsa.PublicKey) when parsing/holding the ECDSA JWT signing key pair — genuine ECDSA crypto config."
+ }
+}

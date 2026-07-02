@@ -1,0 +1,20 @@
+{
+ "src/requests/auth.py:179": {
+  "label": "TP",
+  "algorithm": "MD5/SHA-1",
+  "patternId": "hash-md5-sha1",
+  "reason": "Genuine executed primitive: `return hashlib.md5(x, usedforsecurity=False).hexdigest()` inside md5_utf8, the real MD5 hash used for HTTP Digest Authentication (RFC 2617). usedforsecurity=False, but it is a live invocation of the MD5 primitive."
+ },
+ "src/requests/auth.py:187": {
+  "label": "TP",
+  "algorithm": "MD5/SHA-1",
+  "patternId": "hash-md5-sha1",
+  "reason": "Genuine executed primitive: `return hashlib.sha1(x, usedforsecurity=False).hexdigest()` inside sha_utf8, the real SHA-1 hash used for the SHA variant of HTTP Digest Auth. A live hashlib.sha1 call, not a mention."
+ },
+ "src/requests/auth.py:237": {
+  "label": "TP",
+  "algorithm": "MD5/SHA-1",
+  "patternId": "hash-md5-sha1",
+  "reason": "Genuine executed primitive: `cnonce = hashlib.sha1(s, usedforsecurity=False).hexdigest()[:16]` computes the client nonce for digest auth; runs unconditionally (not behind an algorithm branch). Real SHA-1 invocation."
+ }
+}
